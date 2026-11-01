@@ -552,13 +552,14 @@ test('超额伤害致死', () => {
 
 ```
 lunego/                      # 公开仓库：框架、模板、文档
-my-studio/                   # 私有工作区
+lunego-workspace/            # 私有工作区
 ├── pnpm-workspace.yaml      # 包含 lunego/packages/* 与 games/*
 ├── lunego/                  # git submodule → 公开的 lunego 仓库
 └── games/
-    └── arpg/                # 第一款游戏
+    └── p9/                  # 第一款游戏
 ```
 
+- 第一款游戏代号 p9，目录为 `games/p9`。
 - 日常在工作区里同时开发游戏和框架。游戏通过 `workspace:*` 直接引用框架源码，改动立即生效。
 - 框架的改动在 `lunego/` 里提交（附变更记录）并推送到公开仓库；游戏的改动提交到私有仓库。
 - 框架接口变化时，同一轮提交里把游戏也一起改好。
