@@ -59,7 +59,7 @@ LuneGo 的做法是把"形状"和"功能"分开处理：
 | Query / Event | `Query` / `Event`，另加 `Cue` | Cue 是专门发给表现层的反馈提示 |
 | Controller | 表现层（渲染 / UI / 音频 / 输入） | 只读状态镜像，只能发 Command |
 | BindableProperty | Model 镜像 + Solid signals | 自动同步，只读 |
-| 规则靠约定 | 规则靠编译器、lint、运行时守卫、CI | **根本差异** |
+| 规则靠约定 | 规则靠编译器、lint、运行时守卫、本地检查 | **根本差异** |
 
 ---
 
@@ -317,7 +317,7 @@ ctx.cue(HitCue, { at, power: 0.8 })
 ## 5. 确定性
 
 - **禁用清单**：逻辑层禁止使用 `Math.random`、`Date`、`performance.now`、`setTimeout`、`async`/`Promise`、DOM、`Intl` 及依赖区域设置的 API，也禁止模块级可变状态。
-- **数学函数**：`sin`、`cos`、`atan2`、`exp`、`pow` 等一律走 `@lunego/core/math`，用纯 JS 软件实现。这样跨引擎一致在原理上可行，是为联机预留的零成本约束；等真正做联机时，再加三引擎 CI 校验。
+- **数学函数**：`sin`、`cos`、`atan2`、`exp`、`pow` 等一律走 `@lunego/core/math`，用纯 JS 软件实现。这样跨引擎一致在原理上可行，是为联机预留的零成本约束；等真正做联机时，再加三引擎本地校验。
 - **顺序确定**：查询按实体索引升序返回；排序比较函数必须是全序，相等时用实体 ID 决出先后。
 - **随机数**：带种子的 PRNG，按名称分流，例如 `ctx.rng('loot')`、`ctx.rng('ai')`。各条流互不影响，RNG 状态也写进存档。
 - **哈希与回放**：`world.hash()` 计算状态哈希。回放文件包含种子或初始存档、命令日志和周期性的哈希检查点，可以用来校验、二分定位第一个不一致的 tick，或者停在指定 tick 检查状态。
@@ -471,7 +471,7 @@ export const combatCues = defineCueMap({
 3. **注册期**：World 启动时校验依赖无环、调度无歧义、写权限归属。
 4. **运行时（开发模式）**：访问未声明的状态就抛错，tick 之外写入就抛错，每个 tick 检查不变量。
 5. **测试期**：确定性双跑、黄金回放、读档透明。
-6. **CI**：以上全部，外加生成文件是否最新的检查。
+6. **提交前本地检查**：`pnpm check` 覆盖以上全部，外加生成文件是否最新的检查。本项目不使用 GitHub Actions/CI。
 
 ### 10.2 规则表
 
@@ -493,7 +493,7 @@ export const combatCues = defineCueMap({
 | LG012 | 禁止杂物目录（含 utils.ts）、模块级可变状态（含 const 容器后续 mutation）、超长文件 | lint |
 | LG013 | 不写临时实现：禁止 `any`、`@ts-ignore`/`eslint-disable` 和"先这样"式的占位代码 | lint + 审查 |
 | LG014 | 不手改 `_generated/` 下的文件 | `lunego gen --check` |
-| LG015 | 新 feature 必须有 README 契约和测试；修改框架必须附变更记录 | check + CI |
+| LG015 | 新 feature 必须有 README 契约和测试；修改框架必须附变更记录 | check + 提交前本地检查 |
 
 ### 10.3 生成器与模板
 
@@ -502,8 +502,8 @@ export const combatCues = defineCueMap({
   - 从内容、资源、Cue 定义生成类型化 ID；
   - 生成 feature README 中的自动段落和 `docs/generated/` 下的项目地图。
 
-  生成物放在 `_generated/` 目录并提交进仓库，CI 会重新生成一遍核对是否一致。
-- **`lunego new <kind> <name>`（脚手架）**：复制 `templates/` 中对应的模板、替换占位名，然后运行 gen。模板是唯一来源，本身也受 CI 检查。
+  生成物放在 `_generated/` 目录并提交进仓库；提交前运行 `pnpm check` 会重新生成并核对是否一致。
+- **`lunego new <kind> <name>`（脚手架）**：复制 `templates/` 中对应的模板、替换占位名，然后运行 gen。模板是唯一来源，本身也受本地 `pnpm check` 检查。
 
 ### 10.4 AI 上下文
 
@@ -619,7 +619,7 @@ lunego-workspace/            # 私有工作区
 
 | 方向                 | 现在已经遵守的约束                                                          | 什么时候做            | 要点                                                                                      |
 | ------------------ | ------------------------------------------------------------------ | ---------------- | --------------------------------------------------------------------------------------- |
-| 联机（客户端联机、Steam 联机） | 命令带 `source`；逻辑确定且数学函数走软件实现；World 之外没有隐藏状态；世界存档与玩家档案分离；Cue 带确定性 ID | 核心玩法稳定后，决定做合作模式时 | 推荐锁步同步，加本地角色的表现预测；主机掉线时任意玩家可以接任；网页用 WebRTC，Steam 用 Steam Networking；届时新增 `net` 包和三引擎 CI |
+| 联机（客户端联机、Steam 联机） | 命令带 `source`；逻辑确定且数学函数走软件实现；World 之外没有隐藏状态；世界存档与玩家档案分离；Cue 带确定性 ID | 核心玩法稳定后，决定做合作模式时 | 推荐锁步同步，加本地角色的表现预测；主机掉线时任意玩家可以接任；网页用 WebRTC，Steam 用 Steam Networking；届时新增 `net` 包和三引擎本地校验 |
 | Worker 运行          | Host 协议边界                                                          | 主线程性能不够时         | 改配置即可                                                                                   |
 | 桌面与 Steam          | 平台能力只在表现侧使用                                                        | 准备上架时            | 推荐 Electron：各平台都是同一个 Chromium，Steam Deck 上表现稳定，steamworks.js 成熟；新增平台抽象（成就、云存档、大厅）       |
 | Devtools           | —                                                                  | M1 之后按需          | 实体检查器、命令日志、时间回溯、特效调参                                                                    |
@@ -640,7 +640,7 @@ lunego-workspace/            # 私有工作区
 | 003 | 内核 | 自研逻辑内核：统一的 World（ECS + Model），Command 是唯一的外部写入入口 | 已定 |
 | 004 | ECS 与数据 | 列式存储；自研 schema DSL；内容用 TS 编写、编译成 JSON；Model 草稿写入 | 已定 |
 | 005 | 模块化 | Feature 竖切 + `schema.ts` 契约 + 写权限归属 | 已定 |
-| 006 | 防腐 | 规则由机器强制（tsconfig、lint、注册期、运行时、测试、CI） | 已定 |
+| 006 | 防腐 | 规则由机器强制（tsconfig、lint、注册期、运行时、测试、本地检查） | 已定 |
 | 007 | 开源与仓库 | MIT；公开仓库 + 私有工作区（submodule） | 已定 |
 | 008 | 头号原则 | 要么不做，要做就按终局形状做；远期需求只留零成本约束 | 提议 |
 | 009 | 确定性 | 逐位确定、可回放；数学函数走软件实现，为跨引擎一致留路 | 提议 |

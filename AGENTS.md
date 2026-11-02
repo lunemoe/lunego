@@ -48,7 +48,7 @@ templates/game/      可运行俯视角模板：移动、Y 排序、相机、存
 3. 结构性变更在 flush 生效；查询按实体索引升序。
 4. 形状一次到位，功能按需生长；不写临时实现、TODO、`any`、`@ts-ignore`、`as unknown as`。
 5. 框架代码不出现玩法名词；游戏代码只通过 feature 的 `schema.ts` 跨 feature 通信。
-6. 规则由工具强制：tsconfig、ESLint、dependency-cruiser、注册期校验、开发期守卫、测试、CI。
+6. 规则由工具强制：tsconfig、ESLint、dependency-cruiser、注册期校验、开发期守卫、测试、本地 `pnpm check`。本项目不使用 GitHub Actions/CI。
 
 ## 常用命令
 
