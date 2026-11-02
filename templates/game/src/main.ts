@@ -53,6 +53,7 @@ declare global {
       readonly load: () => void
       readonly hud: () => HudView | null
       readonly position: () => { readonly x: number; readonly y: number } | null
+      readonly pendingCommands: () => number
     }
   }
 }
@@ -251,7 +252,10 @@ async function boot(): Promise<void> {
     const value = game.view.get(player, ActorPosition)
     return value === undefined ? null : { x: value.x, y: value.y }
   }
-  exposeBrowserDebug('__luneGame', { game, vfx, renderer, input, gamepad, save, load, hud, position })
+  exposeBrowserDebug('__luneGame', {
+    game, vfx, renderer, input, gamepad, save, load, hud, position,
+    pendingCommands: () => game.pendingCommandCount,
+  })
 }
 
 await boot()

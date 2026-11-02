@@ -58,6 +58,7 @@ export class WorldCatalog {
   readonly featureNames: ReadonlySet<string>
   readonly stateByName = new Map<string, StateDef>()
   readonly stateOwners = new Map<StateDef, string>()
+  readonly featureWrites = new Map<StateDef, Set<string>>()
   readonly allowedWriters = new Map<StateDef, ReadonlySet<string>>()
   readonly storesByName = new Map<string, ComponentStore>()
   readonly storesByDef = new Map<ComponentDef | TagDef, ComponentStore>()
@@ -80,6 +81,7 @@ export class WorldCatalog {
     for (const feature of this.featureList) {
       this.registerFeatureSchema(feature)
     }
+    this.buildFeatureWrites()
     validateWriters(this)
     for (const feature of this.featureList) {
       for (const system of feature.systems) {
@@ -170,6 +172,24 @@ export class WorldCatalog {
       }
     }
     return patches
+  }
+
+  private buildFeatureWrites(): void {
+    for (const feature of this.featureList) {
+      for (const def of feature.writes) {
+        if (this.stateByName.get(def.name) !== def) {
+          throw registrationError(
+            `feature ${feature.name} declares writes for unregistered state ${def.name}`,
+          )
+        }
+        let writers = this.featureWrites.get(def)
+        if (writers === undefined) {
+          writers = new Set()
+          this.featureWrites.set(def, writers)
+        }
+        writers.add(feature.name)
+      }
+    }
   }
 
   private registerFeatureSchema(feature: FeatureDef): void {

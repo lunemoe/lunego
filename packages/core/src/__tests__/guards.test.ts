@@ -190,6 +190,86 @@ describe('runtime guards', () => {
     expect(world.get(entity, Shared)).toEqual({ value: 2 })
   })
 
+  it('allows a feature to write another feature state by declaring writes', () => {
+    const Shared = defineComponent('FeatureShared', { value: t.i32 })
+    const owner = defineFeature({
+      name: 'owner',
+      schema: { components: [Shared] },
+    })
+    const intruder = defineFeature({
+      name: 'intruder',
+      deps: [owner],
+      writes: [Shared],
+      systems: [
+        defineSystem({
+          name: 'intruder.writeFeatureShared',
+          phase: 'update',
+          writes: [Shared],
+          run(ctx) {
+            const view = ctx.write(Shared)
+            for (const entity of ctx.query(Shared)) {
+              view.value[entity] += 1
+            }
+          },
+        }),
+      ],
+    })
+    const world = new World({ features: [owner, intruder] })
+    const entity = world.spawn({ FeatureShared: { value: 1 } })
+    world.step()
+    expect(world.get(entity, Shared)).toEqual({ value: 2 })
+  })
+
+  it('keeps feature write declarations separate per World', () => {
+    const Shared = defineComponent('IsolatedShared', { value: t.i32 })
+    const owner = defineFeature({
+      name: 'owner',
+      schema: { components: [Shared] },
+    })
+    const writerSystem = defineSystem({
+      name: 'writer.writeIsolatedShared',
+      phase: 'update',
+      writes: [Shared],
+      run(ctx) {
+        ctx.write(Shared)
+      },
+    })
+    const declaring = defineFeature({
+      name: 'writer',
+      deps: [owner],
+      writes: [Shared],
+      systems: [writerSystem],
+    })
+    const undeclared = defineFeature({
+      name: 'writer',
+      deps: [owner],
+      systems: [writerSystem],
+    })
+    expect(() => new World({ features: [owner, declaring] })).not.toThrow()
+    expectRule(
+      capture(() => {
+        new World({ features: [owner, undeclared] })
+      }),
+      'LG005',
+    )
+  })
+
+  it('rejects feature writes for an unregistered state', () => {
+    const Ghost = defineComponent('GhostState', { value: t.i32 })
+    const feature = defineFeature({
+      name: 'ghost-writer',
+      writes: [Ghost],
+    })
+    const error = capture(() => {
+      new World({ features: [feature] })
+    })
+    expect(error).toBeInstanceOf(LuneGoError)
+    if (error instanceof LuneGoError) {
+      expect(error.code).toBe('registration')
+      expect(error.message).toContain('unregistered state GhostState')
+    }
+  })
+
   it('rejects undeclared emitted events and cues (LG003)', () => {
     const Marker = defineTag('test.marker')
     const missingEvent = defineFeature({

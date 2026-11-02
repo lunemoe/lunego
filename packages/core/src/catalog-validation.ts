@@ -13,6 +13,7 @@ export interface CatalogValidationView {
   readonly stateByName: ReadonlyMap<string, StateDef>
   readonly stateOwners: ReadonlyMap<StateDef, string>
   readonly featureNames: ReadonlySet<string>
+  readonly featureWrites: ReadonlyMap<StateDef, ReadonlySet<string>>
   readonly allowedWriters: Map<StateDef, ReadonlySet<string>>
   readonly systemBindings: ReadonlyMap<SystemDef, SystemBinding>
   readonly handlerBindings: ReadonlyMap<string, HandlerBinding>
@@ -50,6 +51,9 @@ export function validateWriters(catalog: CatalogValidationView): void {
           'LG005',
         )
       }
+      allowed.add(writer)
+    }
+    for (const writer of catalog.featureWrites.get(def) ?? []) {
       allowed.add(writer)
     }
     catalog.allowedWriters.set(def, allowed)

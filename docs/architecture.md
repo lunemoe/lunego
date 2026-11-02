@@ -278,6 +278,10 @@ ctx.cue(HitCue, { at, power: 0.8 })
 | Query | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ |
 | 表现层 | 只读镜像 | ✗ | ✗ | ✓ 已同步的 | ✓ | ✓ 异步 | ✓ |
 
+- **写入许可来自三处**：状态定义 feature（owner）、状态定义处的 `writers: [...]`，以及写入方 feature 上的 `feature.writes: [StateDef, ...]`。后两者只在该 `WorldCatalog` 内生效，每个 World 独立计算，互不继承。
+- **只声明不修改**：`feature.writes` 是注册期声明，不会改写 component/model 的 `options.writers`；同一个 StateDef 可以被多个 feature 的 `writes` 声明，实际允许集合是 owner ∪ writers ∪ featureWrites。
+- **违规处理**：System/Handler 的 `writes` 不在允许集合内即抛 LG005；`feature.writes` 指向未注册状态则在注册期直接报错。
+
 ---
 
 ## 4. 运行时
@@ -379,7 +383,7 @@ export const HealthFeature = defineFeature({
 
 - **只能 import 对方的 `schema.ts`。** 可以读对方的组件和模型、读对方的事件、发出对方会监听的事件、调用对方的 Query。不能调用对方的 System 或内部函数。
 - **`deps` 必须无环**，并且与实际的 import 关系一致。
-- **写权限**：组件和模型默认只有定义它的 feature 能写；需要多方写入时，在定义处显式声明 `writers`。其他 feature 想改变它，就发出请求事件，由拥有者结算。这样任何一个字段的写入者都可以列举出来。
+- **写权限**：组件和模型默认只有定义它的 feature 能写；需要多方写入时，有两种显式声明：在定义处声明 `writers: [...]`（逐个状态列举允许写入的 feature），或在写入方 feature 上声明 `writes: [StateDef, ...]`（从 feature 的角度声明它要写别人拥有的状态）。`defineFeature({ writes })` 声明的每个状态必须已由某个 feature 注册，否则注册期报错；`WorldCatalog` 把两类声明合并进该 catalog 自己的 `featureWrites` / `allowedWriters`，所以不同 World 之间不会串用。其他 feature 想改变它，就发出请求事件，由拥有者结算。这样任何一个字段的写入者都可以列举出来。
 
 ### 6.4 Kit 也是 Feature
 

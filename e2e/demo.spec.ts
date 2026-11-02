@@ -37,13 +37,48 @@ test('plays the template slice through UI commands and persists world + profile'
   await page.waitForFunction((gold) => (window.__luneGame?.hud()?.gold ?? 0) < gold, beforeShop)
   await page.keyboard.press('Escape')
 
-  await page.getByRole('button', { name: 'Save' }).click()
-  const saved = await page.evaluate(() => window.__luneGame?.game.frame.hash ?? '')
-  await page.keyboard.down('ArrowLeft')
-  await page.waitForTimeout(120)
-  await page.keyboard.up('ArrowLeft')
-  await page.getByRole('button', { name: 'Load' }).click()
-  await page.waitForFunction((hash) => (window.__luneGame?.game.frame.hash ?? '') === hash, saved)
+  // Save, change state, drain queued commands and load inside one page task:
+  // separate roundtrips let frames advance and let commands stay queued across the
+  // load, which the host rejects with `game_loaded` (a real page error).
+  const roundTrip = await page.evaluate(async () => {
+    const click = (label: string): void => {
+      const button = [...document.querySelectorAll('button')].find(
+        (element) => element.textContent?.trim() === label,
+      )
+      button?.click()
+    }
+    const frame = () => window.__luneGame?.game.frame
+    const nextFrame = async (): Promise<void> => {
+      const { promise, resolve } = Promise.withResolvers<void>()
+      requestAnimationFrame(() => resolve())
+      await promise
+    }
+    const drain = async (): Promise<void> => {
+      for (let attempt = 0; attempt < 600; attempt += 1) {
+        if ((window.__luneGame?.pendingCommands() ?? 1) === 0) return
+        await nextFrame()
+      }
+    }
+
+    click('Save')
+    const saved = { hash: frame()?.hash ?? '', tick: frame()?.tick ?? -1 }
+    click('Move right')
+    await nextFrame()
+    await drain()
+    click('Load')
+    for (let attempt = 0; attempt < 600; attempt += 1) {
+      const current = frame()
+      if (current !== undefined && current.tick <= saved.tick) {
+        return { saved, restored: { hash: current.hash, tick: current.tick } }
+      }
+      await nextFrame()
+    }
+    return { saved, restored: null }
+  })
+  expect(roundTrip.saved.hash).not.toBe('')
+  expect(roundTrip.restored).not.toBeNull()
+  expect(roundTrip.restored?.tick).toBe(roundTrip.saved.tick)
+  expect(roundTrip.restored?.hash).toBe(roundTrip.saved.hash)
 
   await page.evaluate(() => {
     const event = new Event('gamepadconnected')

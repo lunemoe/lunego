@@ -9,6 +9,7 @@ import type {
   InvariantDef,
   ModelDef,
   QueryDef,
+  StateDef,
   SystemDef,
   TagDef,
 } from './definitions.js'
@@ -43,6 +44,8 @@ export interface FeatureDefinition {
   readonly queries?: readonly QueryDef[]
   readonly invariants?: readonly InvariantDef[]
   readonly registry?: FeatureRegistry
+  /** States owned by other features that this feature declares it writes. */
+  readonly writes?: readonly StateDef[]
 }
 
 export interface FeatureDef {
@@ -54,6 +57,7 @@ export interface FeatureDef {
   readonly handlers: readonly HandlerDef[]
   readonly queries: readonly QueryDef[]
   readonly invariants: readonly InvariantDef[]
+  readonly writes: readonly StateDef[]
 }
 
 function normalizeSchema(schema: FeatureSchema | undefined): NormalizedFeatureSchema {
@@ -78,5 +82,6 @@ export function defineFeature(def: FeatureDefinition): FeatureDef {
     handlers: [...(def.handlers ?? []), ...(def.registry?.handlers ?? [])],
     queries: [...(def.queries ?? []), ...(def.registry?.queries ?? [])],
     invariants: [...(def.invariants ?? []), ...(def.registry?.invariants ?? [])],
+    writes: [...(def.writes ?? [])],
   }
 }

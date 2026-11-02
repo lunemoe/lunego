@@ -48,6 +48,7 @@ declare global {
       readonly gamepad: {
         readonly connected: boolean
       }
+      readonly pendingCommands: () => number
       readonly hud: () => {
         readonly player: number
         readonly hp: number
