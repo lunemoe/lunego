@@ -11,7 +11,7 @@
     "build": "pnpm -r build",
     "test": "vitest run",
     "lint": "pnpm --filter @lunego/eslint-plugin build && eslint .",
-    "depcruise": "depcruise packages --config .dependency-cruiser.cjs",
+    "depcruise": "depcruise . --config .dependency-cruiser.cjs",
     "check": "pnpm build && pnpm lint && pnpm depcruise && pnpm test && pnpm gen:check && pnpm test:e2e",
     "changeset": "changeset",
     "version-packages": "changeset version",

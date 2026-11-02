@@ -9,6 +9,14 @@ import {
   rectSpec,
 } from '@lunego/render-pixi'
 import {
+  CanvasEffectSurface,
+  Effects,
+  VfxSystem,
+  defineCueMap,
+} from '@lunego/vfx'
+import type { VfxSystem as VfxSystemType } from '@lunego/vfx'
+import {
+  MoveDust,
   MoveIntent,
   Player,
   Position,
@@ -23,6 +31,7 @@ declare global {
   interface Window {
     __luneGame?: {
       readonly game: Game
+      readonly vfx: VfxSystemType
       readonly save: () => void
       readonly load: () => void
     }
@@ -30,10 +39,27 @@ declare global {
 }
 
 async function boot(): Promise<void> {
+  const vfx = new VfxSystem({ width: 480, height: 270, maxEffects: 64 })
+  const cueMap = defineCueMap({
+    [MoveDust.name]: (cue) => {
+      const { at } = cue.payload as { at: { x: number; y: number } }
+      return [
+        {
+          effect: Effects.poof,
+          x: at.x,
+          y: at.y,
+          layer: 'ground',
+          scale: 0.55,
+        },
+      ]
+    },
+  })
   const game = createGame({
     features: [MotionFeature],
     dt: 1 / 60,
+    schemaVersion: 2,
     timeMode: 'realtime',
+    onFrame: (frame) => vfx.consume(frame, cueMap),
   })
 
   const renderer = await createPixiRenderer({
@@ -42,6 +68,12 @@ async function boot(): Promise<void> {
     background: 0x0b1018,
     container: document.querySelector<HTMLElement>('#game') ?? document.body,
   })
+
+  const overlay = document.createElement('canvas')
+  overlay.className = 'vfx-layer'
+  const container = document.querySelector<HTMLElement>('#game') ?? document.body
+  container.appendChild(overlay)
+  const surface = new CanvasEffectSurface(vfx, overlay)
 
   const renderSystem = new RenderSystem(renderer)
   renderSystem.add(
@@ -112,6 +144,8 @@ async function boot(): Promise<void> {
   void game.send(Start, {})
 
   let previous = performance.now()
+  let cameraX = 0
+  let cameraY = 0
   function frame(now: number): void {
     const delta = Math.max(0, Math.min(0.1, (now - previous) / 1000))
     previous = now
@@ -123,15 +157,24 @@ async function boot(): Promise<void> {
     if (player !== undefined) {
       const position = game.view.get(player, Position)
       if (position !== undefined) {
-        renderSystem.setCamera(position.x - 240, position.y - 135)
+        cameraX = Math.round(position.x - 240)
+        cameraY = Math.round(position.y - 135)
+        renderSystem.setCamera(cameraX, cameraY)
       }
     }
+    vfx.update(delta)
     renderSystem.sync(game.view)
+    const canvas = renderer.element
+    overlay.style.width = canvas.style.width
+    overlay.style.height = canvas.style.height
+    overlay.style.left = `${canvas.offsetLeft}px`
+    overlay.style.top = `${canvas.offsetTop}px`
+    surface.render(cameraX, cameraY)
     requestAnimationFrame(frame)
   }
 
   requestAnimationFrame(frame)
-  window.__luneGame = { game, save, load }
+  window.__luneGame = { game, vfx, save, load }
 }
 
 await boot()

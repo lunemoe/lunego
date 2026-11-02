@@ -60,7 +60,7 @@ export function motionFeature(extraSystems: readonly SystemDef[] = []): FeatureD
   const integrate = defineSystem({
     name: 'motion.integrate',
     phase: 'update',
-    reads: [Velocity],
+    reads: [Velocity, Frozen],
     writes: [Position],
     run(ctx) {
       const position = ctx.write(Position)

@@ -1,4 +1,4 @@
-import { defineCommand, defineComponent, defineTag, t } from '@lunego/core'
+import { defineCommand, defineComponent, defineCue, defineTag, t } from '@lunego/core'
 
 export const Position = defineComponent(
   'Position',
@@ -22,3 +22,4 @@ export const Renderable = defineComponent(
 
 export const Start = defineCommand('motion.start', {})
 export const MoveIntent = defineCommand('motion.moveIntent', { x: t.f32, y: t.f32 })
+export const MoveDust = defineCue('motion.moveDust', { at: t.vec2 })

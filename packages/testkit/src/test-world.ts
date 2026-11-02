@@ -22,6 +22,7 @@ import {
   type WorldSnapshot,
 } from '@lunego/core'
 import type { DeepReadonly, SchemaShape, SchemaValue } from '@lunego/core'
+import { worldInternals } from '@lunego/core/internal'
 
 export type TestWorldOptions = WorldOptions
 
@@ -77,7 +78,7 @@ export class TestWorld {
   }
 
   emit<E extends EventDef>(event: E, payload: EventPayload<E>): void {
-    this.world.queueEvent(event, payload)
+    worldInternals(this.world).queueEvent(event, payload)
   }
 
   send<C extends CommandDef>(
@@ -117,7 +118,10 @@ export class TestWorld {
     return this.world.frame.cues
   }
 
-  get<S extends SchemaShape>(entity: Entity, component: ComponentDef<S>): SchemaValue<S> | undefined {
+  get<S extends SchemaShape>(
+    entity: Entity,
+    component: ComponentDef<S>,
+  ): DeepReadonly<SchemaValue<S>> | undefined {
     return this.world.get(entity, component)
   }
 

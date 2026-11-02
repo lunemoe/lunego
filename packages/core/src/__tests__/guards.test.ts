@@ -242,6 +242,59 @@ describe('runtime guards', () => {
     expect(world.failed).toBe(true)
   })
 
+  it('keeps internal write capabilities off the public World', () => {
+    const Box = defineComponent('GuardBox', { items: t.array(t.i32) }, { persist: 'world' })
+    const feature = defineFeature({ name: 'surface', schema: { components: [Box] } })
+    const world = new World({ features: [feature] })
+    const entity = world.spawn({ GuardBox: { items: [] } })
+    expect('readModelValue' in world).toBe(false)
+    expect('draftModelValue' in world).toBe(false)
+    expect('componentView' in world).toBe(false)
+    expect('spawnFromContext' in world).toBe(false)
+    expect('addFromContext' in world).toBe(false)
+    expect('emitEvent' in world).toBe(false)
+    expect('currentEvents' in world).toBe(false)
+    const copy = world.get(entity, Box) as { items: number[] } | undefined
+    copy?.items.push(9)
+    expect(world.get(entity, Box)).toEqual({ items: [] })
+  })
+
+  it('rejects hash and snapshot while a tick is running', () => {
+    let worldReference: World | null = null
+    const feature = defineFeature({
+      name: 'tick-snapshot',
+      systems: [
+        defineSystem({
+          name: 'tick.hash',
+          phase: 'update',
+          run() {
+            worldReference?.hash()
+          },
+        }),
+      ],
+    })
+    const world = new World({ features: [feature] })
+    worldReference = world
+    expectRule(capture(() => world.step()), 'LG004')
+
+    let snapshotReference: World | null = null
+    const snapshotFeature = defineFeature({
+      name: 'tick-snapshot2',
+      systems: [
+        defineSystem({
+          name: 'tick.snapshot',
+          phase: 'update',
+          run() {
+            snapshotReference?.snapshot()
+          },
+        }),
+      ],
+    })
+    const snapshotWorld = new World({ features: [snapshotFeature] })
+    snapshotReference = snapshotWorld
+    expectRule(capture(() => snapshotWorld.step()), 'LG004')
+  })
+
   it('exposes guard errors with rule ids', () => {
     expect(guardError('LG005', 'owner mismatch').rule).toBe('LG005')
   })

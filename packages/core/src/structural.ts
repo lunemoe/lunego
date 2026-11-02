@@ -4,6 +4,7 @@ import type { ComponentStore } from './ecs/component-store.js'
 import { entityIndex, type EntityStore } from './ecs/entity-store.js'
 import type { Entity } from './schema.js'
 import type { WorldCatalog } from './catalog.js'
+import { coerceComponentValue } from './catalog-coercion.js'
 
 interface PendingComponent {
   readonly store: ComponentStore
@@ -45,7 +46,7 @@ export class StructuralQueue {
     const pending: PendingComponent[] = []
     for (const name of Object.keys(components).sort()) {
       const stateDef = this.catalog.getStateDef(name)
-      if (stateDef === undefined || stateDef.kind === 'model') {
+      if (stateDef === undefined || stateDef.kind === 'model' || stateDef.kind === 'state') {
         throw registrationError(`unknown component ${name}`)
       }
       assertWrite(name)
@@ -55,7 +56,7 @@ export class StructuralQueue {
       }
       pending.push({
         store,
-        value: this.catalog.coerceComponentValue(stateDef, components[name]),
+        value: coerceComponentValue(stateDef, components[name]),
       })
     }
     const entity = this.entityStore.allocate()
@@ -74,7 +75,7 @@ export class StructuralQueue {
       kind: 'add',
       entity,
       store: this.catalog.storeForDef(target),
-      value: this.catalog.coerceComponentValue(target, value),
+      value: coerceComponentValue(target, value),
     })
   }
 

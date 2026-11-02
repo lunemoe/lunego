@@ -4,46 +4,39 @@ import type {
   CueDef,
   EventDef,
   FeatureDef,
+  FlowStateDef,
   HandlerDef,
   InvariantDef,
   ModelDef,
   QueryDef,
   StateDef,
+  StateHookDef,
   SystemDef,
   TagDef,
 } from './definitions.js'
 import type { ContextDeclarations } from './context.js'
+import type {
+  HandlerBinding,
+  InvariantBinding,
+  QueryBinding,
+  SystemBinding,
+} from './catalog-types.js'
 import { declarationsFrom } from './context.js'
-import { registrationError, schemaError } from './errors.js'
+import { registrationError } from './errors.js'
 import { ComponentStore } from './ecs/component-store.js'
 import { cloneDeep, coerceValue } from './schema-coerce.js'
 import { t } from './schema.js'
 import { diffModel, type ModelPatch } from './model.js'
 import { buildSchedule, type Diagnostic, type PhaseSchedule } from './scheduler.js'
 import { collectFeatures } from './feature-graph.js'
-
-export interface SystemBinding {
-  readonly def: SystemDef
-  readonly feature: string
-  readonly declarations: ContextDeclarations
-}
-
-export interface HandlerBinding {
-  readonly def: HandlerDef
-  readonly feature: string
-  readonly declarations: ContextDeclarations
-}
-
-export interface QueryBinding {
-  readonly def: QueryDef
-  readonly feature: string
-  readonly declarations: ContextDeclarations
-}
-
-export interface InvariantBinding {
-  readonly def: InvariantDef
-  readonly feature: string
-}
+import type { FlowStateRuntime } from './flow-state-registry.js'
+export type { HandlerBinding, InvariantBinding, QueryBinding, SystemBinding } from './catalog-types.js'
+import {
+  validateCommandsHandled,
+  validateStateDefs,
+  validateWriteOwnership,
+  validateWriters,
+} from './catalog-validation.js'
 
 export interface ModelRuntime {
   readonly def: ModelDef
@@ -77,6 +70,8 @@ export class WorldCatalog {
   readonly registeredSystems: RegisteredSystem[] = []
   readonly handlerBindings = new Map<string, HandlerBinding>()
   readonly invariantBindings: InvariantBinding[] = []
+  readonly flowStates = new Map<FlowStateDef, FlowStateRuntime>()
+  readonly stateHookBindings = new Map<StateHookDef, { declarations: ContextDeclarations; feature: string }>()
   readonly schedule: PhaseSchedule
 
   constructor(features: readonly FeatureDef[], report: (diagnostic: Diagnostic) => void) {
@@ -85,7 +80,7 @@ export class WorldCatalog {
     for (const feature of this.featureList) {
       this.registerFeatureSchema(feature)
     }
-    this.validateWriters()
+    validateWriters(this)
     for (const feature of this.featureList) {
       for (const system of feature.systems) {
         this.registerSystem(feature, system)
@@ -101,8 +96,8 @@ export class WorldCatalog {
       }
     }
     this.schedule = buildSchedule(this.registeredSystems, report)
-    this.validateWriteOwnership()
-    this.validateCommandsHandled()
+    validateWriteOwnership(this)
+    validateCommandsHandled(this)
   }
 
   getStateDef(name: string): StateDef | undefined {
@@ -143,33 +138,6 @@ export class WorldCatalog {
     return def
   }
 
-  coerceComponentValue(
-    target: ComponentDef | TagDef,
-    value: unknown,
-  ): Record<string, unknown> {
-    if (target.kind === 'tag') {
-      if (value !== undefined && value !== true) {
-        schemaError(target.name, 'tag value true')
-      }
-      return {}
-    }
-    return coerceValue(t.struct(target.schema), value, target.name)
-  }
-
-  coerceEventPayload(event: EventDef, payload: unknown): unknown {
-    if (event.schema === null) {
-      if (payload !== undefined) {
-        schemaError(event.name, 'undefined payload')
-      }
-      return undefined
-    }
-    return coerceValue(t.struct(event.schema), payload, event.name)
-  }
-
-  coerceCuePayload(cue: CueDef, payload: unknown): unknown {
-    return coerceValue(t.struct(cue.schema), payload, cue.name)
-  }
-
   readModelValue(model: ModelDef): unknown {
     const runtime = this.modelRuntimes.get(model)
     if (runtime === undefined) {
@@ -189,10 +157,13 @@ export class WorldCatalog {
     return runtime.draft
   }
 
-  commitModels(): ModelPatch[] {
+  commitModels(validate: boolean): ModelPatch[] {
     const patches: ModelPatch[] = []
     for (const runtime of this.modelRuntimes.values()) {
       if (runtime.draft !== null) {
+        if (validate) {
+          runtime.draft = coerceValue(t.struct(runtime.def.schema), runtime.draft, runtime.def.name)
+        }
         patches.push(...diffModel(runtime.def.name, runtime.committed, runtime.draft))
         runtime.committed = cloneDeep(runtime.draft)
         runtime.draft = null
@@ -209,6 +180,9 @@ export class WorldCatalog {
       this.registerState(def, feature)
     }
     for (const def of feature.schema.models) {
+      this.registerState(def, feature)
+    }
+    for (const def of feature.schema.states) {
       this.registerState(def, feature)
     }
     for (const def of feature.schema.events) {
@@ -240,6 +214,20 @@ export class WorldCatalog {
     }
     this.stateByName.set(def.name, def)
     this.stateOwners.set(def, feature.name)
+    if (def.kind === 'state') {
+      this.flowStates.set(def, { def, current: def.options.initial })
+      for (const value of def.values) {
+        const enter = def.options.onEnter[value]
+        if (enter !== undefined) {
+          this.registerStateHook(feature, enter)
+        }
+        const exit = def.options.onExit[value]
+        if (exit !== undefined) {
+          this.registerStateHook(feature, exit)
+        }
+      }
+      return
+    }
     if (def.kind === 'model') {
       const initial = coerceValue(t.struct(def.schema), def.initial, def.name)
       this.modelRuntimes.set(def, {
@@ -257,32 +245,27 @@ export class WorldCatalog {
     this.storesByDef.set(def, store)
   }
 
-  private validateWriters(): void {
-    for (const def of this.stateByName.values()) {
-      const owner = this.stateOwners.get(def)
-      if (owner === undefined) {
-        throw registrationError(`state ${def.name} has no owner feature`)
-      }
-      const allowed = new Set<string>([owner])
-      for (const writer of def.options.writers) {
-        if (!this.featureNames.has(writer)) {
-          throw registrationError(
-            `state ${def.name} declares unknown writer feature ${writer}`,
-            'LG005',
-          )
-        }
-        allowed.add(writer)
-      }
-      this.allowedWriters.set(def, allowed)
+  private registerStateHook(feature: FeatureDef, hook: StateHookDef): void {
+    validateStateDefs(this, hook.reads, `state hook in ${feature.name}`)
+    validateStateDefs(this, hook.writes, `state hook in ${feature.name}`)
+    for (const event of hook.emits) {
+      this.assertEventRegistered(event)
     }
+    for (const cue of hook.cues) {
+      this.assertCueRegistered(cue)
+    }
+    this.stateHookBindings.set(hook, {
+      declarations: declarationsFrom(hook.reads, hook.writes, hook.emits, hook.cues),
+      feature: feature.name,
+    })
   }
 
   private registerSystem(feature: FeatureDef, def: SystemDef): void {
     if (this.systemBindings.has(def)) {
       throw registrationError(`system ${def.name} is registered more than once`)
     }
-    this.validateStateDefs(def.reads, `system ${def.name}`)
-    this.validateStateDefs(def.writes, `system ${def.name}`)
+    validateStateDefs(this, def.reads, `system ${def.name}`)
+    validateStateDefs(this, def.writes, `system ${def.name}`)
     for (const event of def.emits) {
       this.assertEventRegistered(event)
     }
@@ -309,8 +292,8 @@ export class WorldCatalog {
     if (this.handlerBindings.has(def.command.type)) {
       throw registrationError(`duplicate handler for command ${def.command.type}`)
     }
-    this.validateStateDefs(def.reads, `handler ${def.command.type}`)
-    this.validateStateDefs(def.writes, `handler ${def.command.type}`)
+    validateStateDefs(this, def.reads, `handler ${def.command.type}`)
+    validateStateDefs(this, def.writes, `handler ${def.command.type}`)
     for (const event of def.emits) {
       this.assertEventRegistered(event)
     }
@@ -328,7 +311,7 @@ export class WorldCatalog {
     if (this.queries.has(def.name)) {
       throw registrationError(`duplicate query name ${def.name}`)
     }
-    this.validateStateDefs(def.reads, `query ${def.name}`)
+    validateStateDefs(this, def.reads, `query ${def.name}`)
     this.queries.set(def.name, {
       def,
       feature: feature.name,
@@ -343,43 +326,6 @@ export class WorldCatalog {
     this.invariantBindings.push({ def, feature: feature.name })
   }
 
-  private validateStateDefs(defs: readonly StateDef[], context: string): void {
-    for (const def of defs) {
-      if (this.stateByName.get(def.name) !== def) {
-        throw registrationError(`${context} references unregistered state ${def.name}`)
-      }
-    }
-  }
 
-  private validateWriteOwnership(): void {
-    const check = (feature: string, writes: readonly StateDef[]): void => {
-      for (const def of writes) {
-        const allowed = this.allowedWriters.get(def)
-        if (allowed === undefined) {
-          throw registrationError(`state ${def.name} has no writer set`)
-        }
-        if (!allowed.has(feature)) {
-          throw registrationError(
-            `feature ${feature} writes ${def.name}, which belongs to another feature; add it to writers`,
-            'LG005',
-          )
-        }
-      }
-    }
-    for (const binding of this.systemBindings.values()) {
-      check(binding.feature, binding.def.writes)
-    }
-    for (const binding of this.handlerBindings.values()) {
-      check(binding.feature, binding.def.writes)
-    }
-  }
-
-  private validateCommandsHandled(): void {
-    for (const type of this.commands.keys()) {
-      if (!this.handlerBindings.has(type)) {
-        throw registrationError(`command ${type} has no handler`)
-      }
-    }
-  }
 }
 

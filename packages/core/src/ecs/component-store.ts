@@ -1,6 +1,7 @@
 import { guardError } from '../errors.js'
 import { createModelProxy } from '../model.js'
 import { isNumericKind, type AnyTypeDef, type ComponentView, type SchemaShape } from '../schema.js'
+import { coerceValue } from '../schema-coerce.js'
 import type { Entity } from '../schema.js'
 
 export type NumericArray =
@@ -129,6 +130,10 @@ export interface ViewAccess {
   assertWritable(): void
 }
 
+export interface EntityIndexResolver {
+  resolve(entity: Entity): number | undefined
+}
+
 function indexKey(prop: string | symbol): number | null {
   if (typeof prop !== 'string') {
     return null
@@ -142,13 +147,21 @@ function indexKey(prop: string | symbol): number | null {
   return prop.length === 0 ? null : Number(prop)
 }
 
-function numericView(column: Column, access: ViewAccess | null): NumericArray {
+function numericView(
+  column: Column,
+  type: AnyTypeDef,
+  fieldName: string,
+  access: ViewAccess | null,
+  entities: EntityIndexResolver,
+  validate: boolean,
+): NumericArray {
   const target = new Float32Array(0)
   const proxy = new Proxy(target, {
     get(_target, prop) {
-      const index = indexKey(prop)
-      if (index !== null) {
-        return column.get(index)
+      const entity = indexKey(prop)
+      if (entity !== null) {
+        const index = entities.resolve(entity)
+        return index === undefined ? undefined : column.get(index)
       }
       if (prop === 'length') {
         return column.length
@@ -161,27 +174,42 @@ function numericView(column: Column, access: ViewAccess | null): NumericArray {
       return undefined
     },
     set(_target, prop, value) {
-      const index = indexKey(prop)
-      if (index === null) {
+      const entity = indexKey(prop)
+      if (entity === null) {
         return false
       }
       if (access === null) {
         throw guardError('LG004', 'read-only component view used for a write')
       }
       access.assertWritable()
-      column.set(index, value)
+      const index = entities.resolve(entity)
+      if (index === undefined) {
+        throw guardError('LG004', `entity ${entity} is not alive`)
+      }
+      column.set(index, validate ? coerceValue(type, value, fieldName) : value)
       return true
     },
   })
   return proxy
 }
 
-function plainView(column: Column, access: ViewAccess | null): Array<unknown> {
+function plainView(
+  column: Column,
+  type: AnyTypeDef,
+  fieldName: string,
+  access: ViewAccess | null,
+  entities: EntityIndexResolver,
+  validate: boolean,
+): Array<unknown> {
   const target: Array<unknown> = []
   const proxy = new Proxy(target, {
     get(_target, prop) {
-      const index = indexKey(prop)
-      if (index !== null) {
+      const entity = indexKey(prop)
+      if (entity !== null) {
+        const index = entities.resolve(entity)
+        if (index === undefined) {
+          return undefined
+        }
         const value = column.get(index)
         if (value === null || typeof value !== 'object') {
           return value
@@ -202,15 +230,19 @@ function plainView(column: Column, access: ViewAccess | null): Array<unknown> {
       return undefined
     },
     set(_target, prop, value) {
-      const index = indexKey(prop)
-      if (index === null) {
+      const entity = indexKey(prop)
+      if (entity === null) {
         return false
       }
       if (access === null) {
         throw guardError('LG004', 'read-only component view used for a write')
       }
       access.assertWritable()
-      column.set(index, value)
+      const index = entities.resolve(entity)
+      if (index === undefined) {
+        throw guardError('LG004', `entity ${entity} is not alive`)
+      }
+      column.set(index, validate ? coerceValue(type, value, fieldName) : value)
       return true
     },
   })
@@ -319,11 +351,17 @@ export class ComponentStore<S extends SchemaShape = SchemaShape> {
 export function buildComponentView<S extends SchemaShape>(
   store: ComponentStore<S>,
   access: ViewAccess | null,
+  entities: EntityIndexResolver,
+  validate: boolean,
 ): ComponentView<S> {
   const view: Record<string, unknown> = {}
   for (const [field, column] of store.columns) {
+    const type = store.def.schema[field]
+    const fieldName = `${store.def.name}.${field}`
     view[field] =
-      column instanceof NumericColumn ? numericView(column, access) : plainView(column, access)
+      column instanceof NumericColumn
+        ? numericView(column, type, fieldName, access, entities, validate)
+        : plainView(column, type, fieldName, access, entities, validate)
   }
   return view as ComponentView<S>
 }

@@ -1,4 +1,5 @@
 import { LuneGoError } from './errors.js'
+import type { FlowStateDef } from './state-definitions.js'
 import type {
   HandlerContext,
   InvariantContext,
@@ -8,7 +9,16 @@ import type {
 } from './context-types.js'
 import type { PersistScope, SchemaShape, SchemaValue } from './schema.js'
 
-export type StateDef = ComponentDef | TagDef | ModelDef
+export type { FlowStateDef } from './state-definitions.js'
+export type {
+  FlowStateOptions,
+  NormalizedFlowStateOptions,
+  StateHookDef,
+  StateHookDefinition,
+  StateTransition,
+} from './state-definitions.js'
+
+export type StateDef = ComponentDef | TagDef | ModelDef | FlowStateDef
 
 export interface ComponentOptions {
   readonly persist?: PersistScope
@@ -55,10 +65,23 @@ export interface ModelDef<S extends SchemaShape = SchemaShape> {
   readonly options: NormalizedModelOptions
 }
 
+export interface EventOptions {
+  /** Replicate the event to the presentation layer through the frame. */
+  readonly replicate?: boolean
+}
+
 export interface EventDef<S extends SchemaShape | null = SchemaShape | null> {
   readonly kind: 'event'
   readonly name: string
   readonly schema: S
+  readonly replicate: boolean
+}
+
+export interface FeatureRegistry {
+  readonly systems?: readonly SystemDef[]
+  readonly handlers?: readonly HandlerDef[]
+  readonly queries?: readonly QueryDef[]
+  readonly invariants?: readonly InvariantDef[]
 }
 
 export interface CueDef<S extends SchemaShape = SchemaShape> {
@@ -265,13 +288,22 @@ export function defineModel<const S extends SchemaShape>(
   }
 }
 
-export function defineEvent(name: string): EventDef<null>
-export function defineEvent<S extends SchemaShape>(name: string, schema: S): EventDef<S>
-export function defineEvent(name: string, schema?: SchemaShape): EventDef<SchemaShape | null> {
+export function defineEvent(name: string, schema?: undefined, options?: EventOptions): EventDef<null>
+export function defineEvent<S extends SchemaShape>(
+  name: string,
+  schema: S,
+  options?: EventOptions,
+): EventDef<S>
+export function defineEvent(
+  name: string,
+  schema?: SchemaShape,
+  options: EventOptions = {},
+): EventDef<SchemaShape | null> {
   return {
     kind: 'event',
     name: definitionName(name, 'event'),
     schema: schema === undefined ? null : { ...schema },
+    replicate: options.replicate ?? false,
   }
 }
 

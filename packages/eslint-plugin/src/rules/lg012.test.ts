@@ -14,49 +14,54 @@ const ruleTester = new RuleTester({
   },
 })
 
-const longFile = Array.from({ length: 401 }, (_, index) => `const line${index} = ${index}`).join(
-  '\n',
-)
-
 ruleTester.run('lg012', lg012, {
   valid: [
+    'function f() { let x = 0; x += 1; return x }',
+    'const list = [1, 2, 3]; export const first = list[0]',
+    'const cache = new Set([1, 2]); export const size = cache.size',
+    'const box = { n: 1 }; export const value = box.n',
+    'const read = new Map([["a", 1]]); export const entry = read.get("a")',
     {
-      filename: 'packages/core/src/motion.ts',
-      code: 'export const x = 1\nexport function f() { let local = 1; return local }',
-    },
-    {
-      filename: 'packages/core/src/motion.ts',
-      code: "import { Position } from './schema'",
-    },
-    {
-      filename: 'packages/core/src/motion.ts',
-      code: "import { ESLintUtils } from '@typescript-eslint/utils'\nvoid ESLintUtils",
+      code: 'export const ok = 1',
+      filename: 'src/motion.ts',
     },
   ],
   invalid: [
+    { code: 'let x = 0', errors: [{ messageId: 'moduleMutable' }] },
+    { code: 'export let x = 0', errors: [{ messageId: 'moduleMutable' }] },
+    { code: 'var x = 0', errors: [{ messageId: 'moduleMutable' }] },
     {
-      filename: 'src/utils/thing.ts',
+      code: 'const list = []; list.push(1)',
+      errors: [{ messageId: 'moduleMutable' }],
+    },
+    {
+      code: 'const box = { n: 0 }; box.n += 1',
+      errors: [{ messageId: 'moduleMutable' }],
+    },
+    {
+      code: 'const cache = new Map(); cache.set("a", 1)',
+      errors: [{ messageId: 'moduleMutable' }],
+    },
+    {
+      code: 'const seen = new Set(); seen.add(1)',
+      errors: [{ messageId: 'moduleMutable' }],
+    },
+    {
       code: 'export const x = 1',
+      filename: 'src/utils.ts',
       errors: [{ messageId: 'junkDirectory' }],
     },
     {
-      filename: 'src/game.ts',
-      code: "import { x } from './helpers/x'",
+      code: "import { a } from './helpers/a'\nvoid a",
       errors: [{ messageId: 'junkImport' }],
     },
     {
-      filename: 'src/game.ts',
-      code: 'let counter = 0',
-      errors: [{ messageId: 'moduleMutable' }],
+      code: 'export const x = 1',
+      filename: 'src/common/types.ts',
+      errors: [{ messageId: 'junkDirectory' }],
     },
     {
-      filename: 'src/game.ts',
-      code: 'const cache = new Map()',
-      errors: [{ messageId: 'moduleMutable' }],
-    },
-    {
-      filename: 'src/long.ts',
-      code: longFile,
+      code: ('// pad\n'.repeat(401)) + 'export const x = 1',
       errors: [{ messageId: 'tooLong' }],
     },
   ],

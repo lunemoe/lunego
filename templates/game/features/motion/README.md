@@ -7,6 +7,7 @@
 - 组件：`Position`、`Velocity`、`Renderable`
 - Tag：`Player`
 - 命令：`motion.start`、`motion.moveIntent`
+- Cue：`motion.moveDust`（脚下落脚尘，表现层映射为 pixelfx 特效）
 - System：`motion.integrate`
 
 ## 不变量

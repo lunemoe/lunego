@@ -6,6 +6,7 @@ import {
   defineSystem,
   defineTag,
   entityIndex,
+  type ComponentView,
   removed,
   without,
 } from '../index.js'
@@ -115,6 +116,41 @@ describe('ECS', () => {
     ])
   })
 
+  it('masks packed ids in component views after generation reuse', () => {
+    let captured: ComponentView<{ x: typeof t.f32; y: typeof t.f32 }> | null = null
+    const feature = defineFeature({
+      name: 'masked-view',
+      schema: { components: [Position] },
+      systems: [
+        defineSystem({
+          name: 'masked.write',
+          phase: 'update',
+          writes: [Position],
+          run(ctx) {
+            const view = ctx.write(Position)
+            captured = view
+            for (const entity of ctx.query(Position)) {
+              view.x[entity] += 1
+            }
+          },
+        }),
+      ],
+    })
+    const world = new World({ features: [feature] })
+    const first = world.spawn({ Position: { x: 1, y: 1 } })
+    world.step()
+    expect(world.get(first, Position)?.x).toBe(2)
+    expect(captured?.x.length).toBeLessThan(1000)
+    world.despawn(first)
+    const second = world.spawn({ Position: { x: 1, y: 1 } })
+    world.step()
+    expect(entityIndex(second)).toBe(entityIndex(first))
+    expect(world.get(second, Position)?.x).toBe(2)
+    expect(captured?.x[second]).toBe(2)
+    expect(captured?.x[first]).toBeUndefined()
+    expect(captured?.x.length).toBeLessThan(1000)
+  })
+
   it('supports adding and removing tags inside systems with buffered state', () => {
     const marker = defineTag('test.marker')
     const feature = defineFeature({
@@ -124,6 +160,7 @@ describe('ECS', () => {
         defineSystem({
           name: 'test.tagOps',
           phase: 'update',
+          reads: [Position],
           writes: [marker],
           run(ctx) {
             for (const entity of ctx.query(Position)) {

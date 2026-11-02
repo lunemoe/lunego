@@ -14,6 +14,8 @@ export interface WorldHashInput {
   readonly rng: RngRegistry
   readonly tick: number
   readonly schemaVersion: number
+  readonly dt: number
+  readonly contentHash: string
   readonly previousEvents: readonly EmittedEvent[]
 }
 
@@ -36,6 +38,8 @@ export function hashWorld(input: WorldHashInput): string {
   const hasher = new StateHasher()
   hasher.string('lunego-world')
   hasher.u32(input.schemaVersion)
+  hasher.f32(input.dt)
+  hasher.string(input.contentHash)
   hasher.safeInteger(input.tick)
   const table = entityStore.snapshot()
   hashEntityTable(hasher, table)

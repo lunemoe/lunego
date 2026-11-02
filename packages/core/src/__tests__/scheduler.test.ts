@@ -167,6 +167,7 @@ describe('scheduler', () => {
     const conditional = defineSystem({
       name: 'run.if',
       phase: 'update',
+      reads: [Enabled],
       writes: [Log],
       runIf: (ctx) => ctx.model(Enabled).value,
       run(ctx) {
@@ -187,6 +188,7 @@ describe('scheduler', () => {
     const offConditional = defineSystem({
       name: 'run.if.off',
       phase: 'update',
+      reads: [OffEnabled],
       writes: [OffLog],
       runIf: (ctx) => ctx.model(OffEnabled).value,
       run(ctx) {

@@ -2,6 +2,7 @@ import type {
   ComponentDef,
   Entity,
   QueryArg,
+  DeepReadonly,
   SchemaShape,
   SchemaValue,
   TagDef,
@@ -35,19 +36,19 @@ export interface RenderSource {
   get<S extends SchemaShape>(
     entity: Entity,
     component: ComponentDef<S>,
-  ): SchemaValue<S> | undefined
+  ): DeepReadonly<SchemaValue<S>> | undefined
   prev<S extends SchemaShape>(
     entity: Entity,
     component: ComponentDef<S>,
-  ): SchemaValue<S> | undefined
+  ): DeepReadonly<SchemaValue<S>> | undefined
   has(entity: Entity, target: ComponentDef | TagDef): boolean
 }
 
 export interface EntityView {
   readonly entity: Entity
   readonly alpha: number
-  get<S extends SchemaShape>(component: ComponentDef<S>): SchemaValue<S> | undefined
-  prev<S extends SchemaShape>(component: ComponentDef<S>): SchemaValue<S> | undefined
+  get<S extends SchemaShape>(component: ComponentDef<S>): DeepReadonly<SchemaValue<S>> | undefined
+  prev<S extends SchemaShape>(component: ComponentDef<S>): DeepReadonly<SchemaValue<S>> | undefined
   has(target: ComponentDef | TagDef): boolean
   lerp(component: ComponentDef<{ readonly x: AnyTypeDef; readonly y: AnyTypeDef }>): Vec2
 }

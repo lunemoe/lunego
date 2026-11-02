@@ -4,6 +4,7 @@ import type {
   CuePayload,
   EventDef,
   EventPayload,
+  FlowStateDef,
   ModelDef,
   QueryArg,
   QueryDef,
@@ -20,6 +21,39 @@ import type {
   SchemaValue,
 } from './schema.js'
 
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+
+export interface LogEntry {
+  readonly level: LogLevel
+  readonly context: string
+  readonly tick: number
+  readonly message: string
+  readonly data: unknown
+}
+
+export interface LogService {
+  debug(message: string, data?: unknown): void
+  info(message: string, data?: unknown): void
+  warn(message: string, data?: unknown): void
+  error(message: string, data?: unknown): void
+}
+
+export interface MathService {
+  readonly PI: number
+  readonly TAU: number
+  sin(value: number): number
+  cos(value: number): number
+  tan(value: number): number
+  atan(value: number): number
+  atan2(y: number, x: number): number
+  log(value: number): number
+  log2(value: number): number
+  log10(value: number): number
+  exp(value: number): number
+  pow(base: number, exponent: number): number
+  sqrt(value: number): number
+}
+
 export interface TimeService {
   readonly tick: number
   readonly dt: number
@@ -29,6 +63,9 @@ export interface TimeService {
 export interface BaseContext {
   readonly tick: number
   readonly time: TimeService
+  readonly math: MathService
+  readonly log: LogService
+  state<V extends string>(def: FlowStateDef<V>): V
   read<S extends SchemaShape>(component: ComponentDef<S>): ComponentView<S>
   has(entity: Entity, target: ComponentDef | TagDef): boolean
   query(...args: QueryArg[]): Entity[]
@@ -55,6 +92,7 @@ export interface StructuralContext {
 export type QueryContext = BaseContext
 
 export interface HandlerContext extends BaseContext, StructuralContext {
+  setState<V extends string>(def: FlowStateDef<V>, next: V): void
   write<S extends SchemaShape>(component: ComponentDef<S>): ComponentView<S>
   mutModel<S extends SchemaShape>(model: ModelDef<S>): SchemaValue<S>
   emit<E extends EventDef>(event: E, payload: EventPayload<E>): void
@@ -69,6 +107,9 @@ export interface SystemContext extends HandlerContext {
 
 export interface RunIfContext {
   readonly tick: number
+  readonly math: MathService
+  readonly log: LogService
+  state<V extends string>(def: FlowStateDef<V>): V
   model<S extends SchemaShape>(model: ModelDef<S>): DeepReadonly<SchemaValue<S>>
 }
 

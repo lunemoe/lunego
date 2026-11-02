@@ -14,7 +14,8 @@
     "@lunego/core": "workspace:*",
     "@lunego/host": "workspace:*",
     "@lunego/input": "workspace:*",
-    "@lunego/render-pixi": "workspace:*"
+    "@lunego/render-pixi": "workspace:*",
+    "@lunego/vfx": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

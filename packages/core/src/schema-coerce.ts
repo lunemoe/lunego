@@ -151,6 +151,23 @@ export function coerceValue<T extends AnyTypeDef>(
   return coerceUnknown(type as ConcreteTypeDef, value, path) as Infer<T>
 }
 
+/** Recursively freezes plain data so event/payload readers cannot poison it. */
+export function deepFreeze<T>(value: T): T {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      deepFreeze(item)
+    }
+    return Object.freeze(value) as T
+  }
+  if (isRecord(value)) {
+    for (const key of Object.keys(value)) {
+      deepFreeze(value[key])
+    }
+    return Object.freeze(value) as T
+  }
+  return value
+}
+
 /** Deep clone for schema-shaped plain data (objects, arrays, primitives). */
 export function cloneDeep<T>(value: T): T {
   if (Array.isArray(value)) {

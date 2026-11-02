@@ -3,7 +3,7 @@ import type { CommandQueue } from './commands.js'
 import type { WorldCatalog } from './catalog.js'
 import type { CommandEnvelope, SendOptions } from './world-types.js'
 import { LuneGoError } from './errors.js'
-import { coerceValue } from './schema-coerce.js'
+import { coerceValue, deepFreeze } from './schema-coerce.js'
 import { t } from './schema.js'
 
 export interface SendState {
@@ -45,13 +45,13 @@ export function sendCommand(
     )
   }
   const coerced = coerceValue(t.struct(def.schema), payload, def.type)
-  const envelope: CommandEnvelope = {
+  const envelope: CommandEnvelope = deepFreeze({
     tick: targetTick,
     seq: state.commands.nextSequence(),
     source,
     type: def.type,
     payload: coerced,
-  }
+  })
   const { promise, resolve, reject } = Promise.withResolvers<CommandOutcome>()
   state.commands.enqueue(envelope, resolve, reject)
   return promise

@@ -4,12 +4,18 @@ import lunego from '@lunego/eslint-plugin'
 
 export default tseslint.config(
   {
+    linterOptions: {
+      noInlineConfig: true,
+    },
+  },
+  {
     ignores: [
       '**/dist/**',
       '**/node_modules/**',
       '**/coverage/**',
       '**/_generated/**',
       '**/*.d.ts',
+      'packages/vfx/vendor/**',
     ],
   },
   js.configs.recommended,
@@ -50,12 +56,29 @@ export default tseslint.config(
   {
     files: [
       'packages/core/src/**/*.ts',
-      'features/**/logic/**/*.ts',
-      'kits/**/logic/**/*.ts',
+      '**/features/**/schema.ts',
+      '**/features/**/logic/**/*.ts',
+      '**/features/**/content/**/*.ts',
+      '**/kits/**/schema.ts',
+      '**/kits/**/logic/**/*.ts',
+      '**/kits/**/content/**/*.ts',
+      '**/games/**/schema.ts',
+      '**/games/**/logic/**/*.ts',
+      '**/games/**/content/**/*.ts',
+      '**/games/**/app/**/*.ts',
+      '**/apps/**/*.ts',
     ],
     ignores: ['**/__tests__/**', '**/*.test.ts'],
     rules: {
       '@lunego/lg002': 'error',
+    },
+  },
+  {
+    files: ['packages/core/src/world.ts'],
+    rules: {
+      // The context host is an object literal of getters/arrows that closes
+      // over the owning World; aliasing `this` here is the factory pattern.
+      '@typescript-eslint/no-this-alias': 'off',
     },
   },
   {

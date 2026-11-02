@@ -36,7 +36,7 @@ const isBackground = (r: number, g: number, b: number): boolean => r < 20 && g <
 test('renders a moving square and redraws the canvas', async ({ page }, testInfo) => {
   await page.goto('/')
   await page.waitForFunction(() => (window.__luneGame?.game.frame.tick ?? 0) >= 3)
-  const canvas = page.locator('canvas')
+  const canvas = page.locator('canvas:not(.vfx-layer)')
   await expect(canvas).toBeVisible()
   const box = await canvas.boundingBox()
   if (box === null) {

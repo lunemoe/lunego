@@ -21,6 +21,9 @@ ruleTester.run('lg002', lg002, {
     'const obj = { Date: 1 }; obj.Date',
     'const dt = ctx.time.dt',
     'const total = 1 + 2',
+    'type D = Date',
+    'function f(value: Promise<void>): void { void value }',
+    'const { sin } = Math; void sin',
     {
       code: 'const pending: Promise<void> | null = null',
       options: [{ allowPromise: true }],
@@ -58,6 +61,46 @@ ruleTester.run('lg002', lg002, {
     {
       code: 'async function run() { await 1 }',
       errors: [{ messageId: 'banned' }, { messageId: 'banned' }],
+    },
+    {
+      code: 'const { random } = Math; random()',
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: 'const { sin } = Math; sin(1)',
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: 'globalThis.Math.random()',
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: 'globalThis.Date.now()',
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: 'globalThis.performance.now()',
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: 'globalThis.document.title',
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: 'Math["random"]()',
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: 'const M = Math; M.random()',
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: "Reflect.get(Math, 'random')()",
+      errors: [{ messageId: 'banned' }],
+    },
+    {
+      code: 'eval("Math.random()")',
+      errors: [{ messageId: 'banned' }],
     },
   ],
 })

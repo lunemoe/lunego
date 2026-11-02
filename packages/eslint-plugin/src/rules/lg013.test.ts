@@ -17,26 +17,40 @@ const ruleTester = new RuleTester({
 ruleTester.run('lg013', lg013, {
   valid: [
     'const value: unknown = 1',
-    'declare const input: unknown; const value = input as string',
-    '// a normal explanatory comment\nconst value = 1',
-    'function check(input: unknown): string { return typeof input === "string" ? input : "" }',
+    'const cast = value as SomeType',
+    'const message = "TODOS are fine"',
+    'const note = "not implemented"',
   ],
   invalid: [
+    { code: 'const value: any = 1', errors: [{ messageId: 'anyType' }] },
+    { code: 'const value = 1 as any', errors: [{ messageId: 'anyType' }] },
     {
-      code: 'const value: any = 1',
-      errors: [{ messageId: 'anyType' }],
+      code: 'const value = input as unknown as SomeType',
+      errors: [{ messageId: 'castThroughUnknown' }],
     },
     {
       code: '// @ts-ignore\nconst value = 1',
       errors: [{ messageId: 'tsIgnore' }],
     },
     {
-      code: '// TODO: finish this\nconst value = 1',
+      code: '// @ts-expect-error\nconst value = 1',
+      errors: [{ messageId: 'tsIgnore' }],
+    },
+    {
+      code: '// TODO fix this\nconst value = 1',
       errors: [{ messageId: 'placeholder' }],
     },
     {
-      code: 'declare const input: unknown; const value = input as unknown as string',
-      errors: [{ messageId: 'castThroughUnknown' }],
+      code: '// FIXME later\nconst value = 1',
+      errors: [{ messageId: 'placeholder' }],
+    },
+    {
+      code: '// eslint-disable-next-line no-console\nconst value = 1',
+      errors: [{ messageId: 'eslintDisable' }],
+    },
+    {
+      code: '/* eslint-disable no-console */\nconst value = 1',
+      errors: [{ messageId: 'eslintDisable' }],
     },
   ],
 })

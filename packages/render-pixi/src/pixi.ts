@@ -39,6 +39,10 @@ export class PixiAdapter implements RenderAdapter<Container> {
     window.addEventListener('resize', () => this.fit(options.container))
   }
 
+  get element(): HTMLCanvasElement {
+    return this.app.canvas
+  }
+
   create(spec: DisplaySpec): Container {
     const graphics = new Graphics()
     this.update(graphics, spec)

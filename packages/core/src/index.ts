@@ -19,6 +19,7 @@ export {
   without,
 } from './definitions.js'
 export { defineFeature } from './features.js'
+export { defineState } from './state-definitions.js'
 export type {
   BaseContext,
   CommandDef,
@@ -29,10 +30,15 @@ export type {
   CueDef,
   CuePayload,
   EventDef,
+  EventOptions,
   EventPayload,
   FeatureDef,
   FeatureDefinition,
+  FeatureRegistry,
   FeatureSchema,
+  FlowStateDef,
+  FlowStateOptions,
+  NormalizedFlowStateOptions,
   HandlerContext,
   HandlerDef,
   HandlerDefinition,
@@ -51,6 +57,9 @@ export type {
   QueryFilter,
   RunIfContext,
   StateDef,
+  StateHookDef,
+  StateHookDefinition,
+  StateTransition,
   StructuralContext,
   SystemContext,
   SystemDef,
@@ -59,6 +68,8 @@ export type {
   TimeService,
 } from './definitions.js'
 
+export type { LogEntry, LogLevel, LogService, MathService } from './context-types.js'
+export { LOGIC_MATH } from './math-service.js'
 export { isNumericKind, t } from './schema.js'
 export { cloneDeep, coerceValue } from './schema-coerce.js'
 export type {
@@ -110,6 +121,7 @@ export type {
   SnapshotComponentState,
   SnapshotEvent,
   SnapshotRng,
+  SnapshotScope,
   WorldOptions,
   WorldSnapshot,
 } from './world.js'

@@ -3,6 +3,8 @@ import type {
   ComponentDef,
   CueDef,
   EventDef,
+  FeatureRegistry,
+  FlowStateDef,
   HandlerDef,
   InvariantDef,
   ModelDef,
@@ -19,6 +21,7 @@ export interface FeatureSchema {
   readonly events?: readonly EventDef[]
   readonly cues?: readonly CueDef[]
   readonly commands?: readonly CommandDef[]
+  readonly states?: readonly FlowStateDef[]
 }
 
 export interface NormalizedFeatureSchema {
@@ -28,6 +31,7 @@ export interface NormalizedFeatureSchema {
   readonly events: readonly EventDef[]
   readonly cues: readonly CueDef[]
   readonly commands: readonly CommandDef[]
+  readonly states: readonly FlowStateDef[]
 }
 
 export interface FeatureDefinition {
@@ -38,6 +42,7 @@ export interface FeatureDefinition {
   readonly handlers?: readonly HandlerDef[]
   readonly queries?: readonly QueryDef[]
   readonly invariants?: readonly InvariantDef[]
+  readonly registry?: FeatureRegistry
 }
 
 export interface FeatureDef {
@@ -59,6 +64,7 @@ function normalizeSchema(schema: FeatureSchema | undefined): NormalizedFeatureSc
     events: [...(schema?.events ?? [])],
     cues: [...(schema?.cues ?? [])],
     commands: [...(schema?.commands ?? [])],
+    states: [...(schema?.states ?? [])],
   }
 }
 
@@ -68,9 +74,9 @@ export function defineFeature(def: FeatureDefinition): FeatureDef {
     name: definitionName(def.name, 'feature'),
     deps: [...(def.deps ?? [])],
     schema: normalizeSchema(def.schema),
-    systems: [...(def.systems ?? [])],
-    handlers: [...(def.handlers ?? [])],
-    queries: [...(def.queries ?? [])],
-    invariants: [...(def.invariants ?? [])],
+    systems: [...(def.systems ?? []), ...(def.registry?.systems ?? [])],
+    handlers: [...(def.handlers ?? []), ...(def.registry?.handlers ?? [])],
+    queries: [...(def.queries ?? []), ...(def.registry?.queries ?? [])],
+    invariants: [...(def.invariants ?? []), ...(def.registry?.invariants ?? [])],
   }
 }

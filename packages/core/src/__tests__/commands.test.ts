@@ -8,6 +8,7 @@ import {
   ok,
   reject,
   t,
+  type CommandOutcome,
 } from '../index.js'
 import { Hit, Moved, Reward, Spend, Wallet } from './fixtures.js'
 
@@ -118,6 +119,59 @@ describe('commands', () => {
     expect(() => world.send(Reward, { amount: 1.5 })).toThrow(/i32/)
     expect(() => world.send(Reward, { amount: 1 }, { source: -1 })).toThrow(/source/)
     expect(() => world.send('test.unknown', {})).toThrow(/not registered/)
+  })
+
+  it('rejects the current and remaining command promises when a handler throws', async () => {
+    const Boom = defineCommand('test.boom', {})
+    const feature = defineFeature({
+      name: 'boom',
+      schema: { commands: [Boom] },
+      handlers: [
+        defineHandler(Boom, {
+          run() {
+            throw new Error('boom handler')
+          },
+        }),
+      ],
+    })
+    const world = new World({ features: [feature] })
+    const first = world.send(Boom, {})
+    const second = world.send(Boom, {})
+    const third = world.send(Boom, {})
+    try {
+      world.step()
+      throw new Error('expected step to throw')
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error)
+      if (error instanceof Error) {
+        expect(error.message).toContain('handler test.boom failed at tick 1')
+        expect(error.message).toContain('boom handler')
+      }
+    }
+    const results = await Promise.allSettled([first, second, third])
+    expect(results.every((entry) => entry.status === 'rejected')).toBe(true)
+    expect(world.failed).toBe(true)
+  })
+
+  it('rejects remaining promises on an invalid handler outcome', async () => {
+    const Bad = defineCommand('test.bad', {})
+    const feature = defineFeature({
+      name: 'bad-outcome',
+      schema: { commands: [Bad] },
+      handlers: [
+        defineHandler(Bad, {
+          run() {
+            return { status: 'bad' } as CommandOutcome
+          },
+        }),
+      ],
+    })
+    const world = new World({ features: [feature] })
+    const first = world.send(Bad, {})
+    const second = world.send(Bad, {})
+    expect(() => world.step()).toThrow(/invalid command outcome/)
+    const results = await Promise.allSettled([first, second])
+    expect(results.every((entry) => entry.status === 'rejected')).toBe(true)
   })
 
   it('rejects commands sent while the world is stepping', () => {

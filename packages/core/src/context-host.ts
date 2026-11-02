@@ -1,6 +1,7 @@
 import type {
   ComponentDef,
   CueDef,
+  FlowStateDef,
   CuePayload,
   EventDef,
   EventPayload,
@@ -11,6 +12,7 @@ import type {
 } from './definitions.js'
 import type { ViewAccess } from './ecs/component-store.js'
 import type { RngStream } from './rng.js'
+import type { LogLevel } from './context-types.js'
 import type {
   ComponentView,
   ContentId,
@@ -24,6 +26,9 @@ export interface ContextHost {
   readonly dev: boolean
   readonly dt: number
   readonly tick: number
+  readFlowState(def: FlowStateDef): string
+  requestStateChange(def: FlowStateDef, next: string): void
+  log(level: LogLevel, context: string, message: string, data: unknown): void
   componentView<S extends SchemaShape>(
     component: ComponentDef<S>,
     access: ViewAccess | null,

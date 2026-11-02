@@ -43,6 +43,39 @@ export class CommandQueue {
     return [...bucket].sort((left, right) => left.envelope.seq - right.envelope.seq)
   }
 
+  pendingEnvelopes(): readonly CommandEnvelope[] {
+    const entries: CommandEnvelope[] = []
+    for (const bucket of this.pendingByTick.values()) {
+      for (const pending of bucket) {
+        entries.push(pending.envelope)
+      }
+    }
+    return entries.sort((left, right) => left.tick - right.tick || left.seq - right.seq)
+  }
+
+  restorePending(envelopes: readonly CommandEnvelope[]): void {
+    for (const envelope of envelopes) {
+      const pending: PendingCommand = {
+        envelope: {
+          tick: envelope.tick,
+          seq: envelope.seq,
+          source: envelope.source,
+          type: envelope.type,
+          payload: envelope.payload,
+        },
+        resolve: () => undefined,
+        reject: () => undefined,
+      }
+      this.log.push(pending.envelope)
+      const bucket = this.pendingByTick.get(pending.envelope.tick)
+      if (bucket === undefined) {
+        this.pendingByTick.set(pending.envelope.tick, [pending])
+      } else {
+        bucket.push(pending)
+      }
+    }
+  }
+
   rejectAll(error: Error): void {
     for (const bucket of this.pendingByTick.values()) {
       for (const pending of bucket) {

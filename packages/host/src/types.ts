@@ -13,6 +13,7 @@ import type {
   ModelPatch,
   QueryArg,
   QueryDef,
+  DeepReadonly,
   SchemaShape,
   SchemaValue,
   SendOptions,
@@ -49,11 +50,11 @@ export interface RenderSource {
   get<S extends SchemaShape>(
     entity: Entity,
     component: ComponentDef<S>,
-  ): SchemaValue<S> | undefined
+  ): DeepReadonly<SchemaValue<S>> | undefined
   prev<S extends SchemaShape>(
     entity: Entity,
     component: ComponentDef<S>,
-  ): SchemaValue<S> | undefined
+  ): DeepReadonly<SchemaValue<S>> | undefined
   has(entity: Entity, target: ComponentDef | TagDef): boolean
 }
 

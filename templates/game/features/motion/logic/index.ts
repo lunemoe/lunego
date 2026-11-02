@@ -1,6 +1,7 @@
 import { defineFeature } from '@lunego/core'
 import { handlers, systems } from '../_generated/registry.js'
 import {
+  MoveDust,
   MoveIntent,
   Player,
   Position,
@@ -15,6 +16,7 @@ export const MotionFeature = defineFeature({
     components: [Position, Velocity, Renderable],
     tags: [Player],
     commands: [Start, MoveIntent],
+    cues: [MoveDust],
   },
   systems,
   handlers,

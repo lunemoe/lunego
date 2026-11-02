@@ -7,6 +7,8 @@ import type {
 import type { ModelPatch } from './model.js'
 import type { WorldCatalog } from './catalog.js'
 import type { EmittedEvent } from './events.js'
+import { deepFreeze } from './schema-coerce.js'
+import { coerceCuePayload, coerceEventPayload } from './catalog-coercion.js'
 import {
   emptyFrame,
   type CueInstance,
@@ -36,7 +38,7 @@ export class EventState {
     catalog.assertEventRegistered(event)
     this.injected.push({
       def: event,
-      payload: catalog.coerceEventPayload(event, payload),
+      payload: deepFreeze(coerceEventPayload(event, payload)),
     })
   }
 
@@ -48,7 +50,7 @@ export class EventState {
     catalog.assertEventRegistered(event)
     this.current.push({
       def: event,
-      payload: catalog.coerceEventPayload(event, payload),
+      payload: deepFreeze(coerceEventPayload(event, payload)),
     })
   }
 
@@ -80,7 +82,7 @@ export class EventState {
       tick,
       sequence,
       source,
-      payload: catalog.coerceCuePayload(cue, payload),
+      payload: deepFreeze(coerceCuePayload(cue, payload)),
     })
   }
 
@@ -97,8 +99,8 @@ export class EventState {
     }
     this.previous = this.current
     this.current = []
-    this.frameValue = frame
-    return frame
+    this.frameValue = deepFreeze(frame)
+    return this.frameValue
   }
 
   get previousList(): readonly EmittedEvent[] {

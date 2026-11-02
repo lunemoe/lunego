@@ -84,6 +84,7 @@ LuneGo 的做法是把"形状"和"功能"分开处理：
 | `@lunego/core` | 两侧共享 | schema DSL、ECS、World、调度器、Command / Event / Cue / Query、RNG 与数学库、序列化与哈希、Feature 机制。零依赖，不碰 DOM |
 | `@lunego/host` | 桥接 | 运行逻辑；逻辑与表现之间的通信协议；时间模型；存档读写 |
 | `@lunego/render-pixi` | 表现 | 渲染绑定、插值、图层、相机、帧动画、像素完美 |
+| `@lunego/vfx` | 表现 | pixelfx 特效层（MIT，vendor）、Cue → 特效映射、俯视角地面投影、地面/前景分层 |
 | `@lunego/ui` | 表现 | Solid 绑定、Model 镜像、基础组件 |
 | `@lunego/input` | 表现 | 设备 → 抽象动作 → Command |
 | `@lunego/audio` | 表现 | Web Audio、由 Cue 驱动的音效、发声数限制 |
@@ -426,7 +427,14 @@ export const combatCues = defineCueMap({
 - **统一入口**：所有反馈都经过这一层。以后要加画质档位、无障碍选项、特效数量上限，都只改这一处。
 - 特效的具体能力（粒子、闪白、震屏、飘字……）按游戏需要逐步加入，加入方式就是往这张映射表里加新的效果类型。
 
-### 8.4 音频与输入
+### 8.4 特效库（pixelfx，俯视角适配）
+
+- **来源**：`@lunego/vfx` vendor [pixelfx 0.3.0](https://github.com/patch-gg/pixelfx)（MIT，commit `a841596…`），保留 LICENSE/NOTICE 与 `THIRD_PARTY_NOTICES.md`。只取代码驱动的特效层：core 图（含横版 `act`/actor 骨架模块，`core/index.js` 会导出它们）原样 vendor，但加载时拒绝任何导出 `act` 的 effect，视图从不绘制 body/target。
+- **只走 Cue**：`defineCueMap` 把每个 Cue 名映射为若干 `EffectRequest`；逻辑层不知道 pixelfx 的存在。种子由 Cue 的确定性 ID 派生，所有粒子抖动来自 pixelfx 自带的 seeded RNG，不使用 `Math.random`。
+- **俯视角**：禁用横版 body/target/act；`angle` 由朝向向量决定；地面特效按 `groundScaleY`/`skewX` 投影；锚点在实体脚下（`footOffset`）；`ground` 层在角色之后、`front` 层在角色之前。
+- **协作**：`VfxSystem` 按脚下深度排序并输出 `ground`/`front` 两个像素缓冲；`CanvasEffectSurface` 用于透明叠加，`PixiEffectRenderer` 把两个缓冲挂到 render-pixi 的 `tiles`/`foreground` 容器。数量上限、帧池与 `destroy()` 由特效系统负责。
+
+### 8.5 音频与输入
 
 - **音频**：Web Audio，按总线分组；音效由 Cue 触发，音高可以随机变化；同一音效同时播放的数量有上限，避免几百个敌人同时受击时声音糊成一片。
 - **输入**：设备 → 动作映射 → 游戏定义的 `toCommands(actions)` → Command。支持改键。
@@ -436,7 +444,10 @@ export const combatCues = defineCueMap({
 ## 9. 存档
 
 - **世界存档与玩家档案分开** **[提议]**：世界存档记录世界的状态，玩家档案记录跟着玩家走的数据（角色、解锁内容）。由组件的 `persist: 'world' | 'profile'` 决定数据进哪一份。这是为联机预留的零成本约束：将来玩家可以带着自己的角色加入别人的世界。
-- **格式**：JSON，记录各 schema 版本、内容哈希、tick 和 RNG 状态。
+- **快照内容**：schema 版本、`dt`、内容哈希、tick、RNG 状态、待执行命令、上一 tick 事件。  
+  - `previousEvents` 是"事件不进存档"的唯一例外：跨 tick 的 `{ prev: true }` 监听需要它，恢复后必须与连续运行一致。  
+  - 待执行命令按 `{tick, seq}` 写进存档，读档后仍在原 tick 执行；世界档与档案档用 `World.fromSnapshots({ world, profile })` 一次显式载入，两份必须同 tick、同实体表。  
+  - `persist: null` 的状态不会进档；开发模式在首次快照时给出 `snapshot-ephemeral` 告警。
 - **读档透明**："连续跑 N 个 tick"与"跑 N/2 个 tick、存档、读档、再跑 N/2 个 tick"必须得到相同的哈希。
 - **迁移**：持久化 schema 带版本号和迁移函数。`schema.lock.json` 记录结构哈希，结构变了却没升版本，check 就会失败。这项从第一次对外测试开始启用，在此之前开发存档可以直接丢弃。
 - **可靠性**：原子写入、保留最近几份备份；Web 平台申请持久化存储（`navigator.storage.persist()`），并支持导出存档文件。
@@ -461,7 +472,7 @@ export const combatCues = defineCueMap({
 | 编号 | 规则 | 强制手段 |
 |---|---|---|
 | LG001 | 逻辑层不依赖 DOM 和浏览器 API | tsconfig |
-| LG002 | 逻辑层不使用非确定性 API（见第 5 节禁用清单） | lint + 双跑 |
+| LG002 | 逻辑层不使用非确定性 API（见第 5 节禁用清单） | lint（别名/解构/globalThis/计算属性/Reflect.get/eval；类型位置不误报）+ 双跑 |
 | LG003 | System / Handler 必须声明读写与收发 | 运行时守卫 |
 | LG004 | 状态只能在 System / Handler 中修改 | 运行时守卫 |
 | LG005 | 写权限归属（`writers`） | 注册期校验 |
@@ -471,8 +482,8 @@ export const combatCues = defineCueMap({
 | LG009 | 不用魔法字符串引用内容或资源 | 类型化 ID + lint |
 | LG010 | 持久化 schema 变更必须升版本并提供迁移 | `schema.lock.json` |
 | LG011 | 表现层不实现游戏规则 | 审查（**无法完全由机器强制**） |
-| LG012 | 禁止杂物目录（utils/common/helpers）、模块级可变状态、超长文件 | lint |
-| LG013 | 不写临时实现：禁止 `any`、`@ts-ignore` 和"先这样"式的占位代码 | lint + 审查 |
+| LG012 | 禁止杂物目录（含 utils.ts）、模块级可变状态（含 const 容器后续 mutation）、超长文件 | lint |
+| LG013 | 不写临时实现：禁止 `any`、`@ts-ignore`/`eslint-disable` 和"先这样"式的占位代码 | lint + 审查 |
 | LG014 | 不手改 `_generated/` 下的文件 | `lunego gen --check` |
 | LG015 | 新 feature 必须有 README 契约和测试；修改框架必须附变更记录 | check + CI |
 
@@ -628,6 +639,8 @@ lunego-workspace/            # 私有工作区
 | 012 | 存档 | 世界存档与玩家档案分开 | 提议 |
 | 013 | 生成器 | `lunego gen`（注册表、类型化 ID、文档）+ `lunego new`（模板） | 提议 |
 | 014 | 生长方式 | 功能先在游戏里实现，被第二处需要时再晋升到框架 | 提议 |
+| 015 | 特效 | pixelfx 作为 `@lunego/vfx` 特效层；只取 Cue 驱动的像素特效，俯视角投影与分层显式 | 已定 |
+| 016 | 存档透明 | 快照记录 dt/contentHash/待执行命令；`previousEvents` 例外；世界档+档案档显式合并载入 | 已定 |
 
 ---
 

@@ -1,5 +1,6 @@
 import type {
   ComponentDef,
+  DeepReadonly,
   Entity,
   QueryArg,
   SchemaShape,
@@ -24,7 +25,9 @@ export function createRenderSource(input: RenderSourceInput): RenderSource {
     get: <S extends SchemaShape>(entity: Entity, component: ComponentDef<S>) =>
       input.world.get(entity, component),
     prev: <S extends SchemaShape>(entity: Entity, component: ComponentDef<S>) =>
-      input.previousValues.get(component.name)?.get(entity) as SchemaValue<S> | undefined,
+      input.previousValues.get(component.name)?.get(entity) as
+        | DeepReadonly<SchemaValue<S>>
+        | undefined,
     has: (entity: Entity, target: ComponentDef | TagDef) =>
       input.world.hasComponent(entity, target),
   }

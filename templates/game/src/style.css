@@ -20,6 +20,12 @@ body {
   place-items: center;
   background: #05070b;
   border: 1px solid #243349;
+  position: relative;
+}
+#game .vfx-layer {
+  position: absolute;
+  pointer-events: none;
+  image-rendering: pixelated;
 }
 #game canvas {
   display: block;

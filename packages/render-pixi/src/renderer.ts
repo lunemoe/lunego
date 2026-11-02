@@ -1,5 +1,6 @@
 import type {
   ComponentDef,
+  DeepReadonly,
   Entity,
   SchemaShape,
   SchemaValue,
@@ -33,7 +34,7 @@ function entityView(source: RenderSource, entity: Entity): EntityView {
   return {
     entity,
     alpha,
-    get: <S extends SchemaShape>(component: ComponentDef<S>): SchemaValue<S> | undefined =>
+    get: <S extends SchemaShape>(component: ComponentDef<S>): DeepReadonly<SchemaValue<S>> | undefined =>
       source.get(entity, component),
     prev: <S extends SchemaShape>(component: ComponentDef<S>) => source.prev(entity, component),
     has: (target) => source.has(entity, target),

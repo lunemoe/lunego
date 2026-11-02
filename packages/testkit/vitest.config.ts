@@ -5,6 +5,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@lunego/core/internal',
+        replacement: fileURLToPath(new URL('../core/src/internal.ts', import.meta.url)),
+      },
+      {
         find: '@lunego/core/math',
         replacement: fileURLToPath(new URL('../core/src/math.ts', import.meta.url)),
       },

@@ -1,12 +1,16 @@
 import type { EntityStore, EntityTableSnapshot } from './ecs/entity-store.js'
 import { entityIndex } from './ecs/entity-store.js'
 import type { Entity, PersistScope } from './schema.js'
+import type { ComponentDef } from './definitions.js'
 import { cloneDeep, coerceValue } from './schema-coerce.js'
+import { coerceEventPayload } from './catalog-coercion.js'
+import { flowStateSnapshot, restoreFlowStates } from './flow-state-registry.js'
 import { t } from './schema.js'
 import type { RngRegistry } from './rng.js'
 import { LuneGoError } from './errors.js'
 import type { WorldCatalog } from './catalog.js'
 import type { EmittedEvent } from './events.js'
+import type { CommandEnvelope } from './world-types.js'
 
 export function assertSortedEntities(entities: readonly number[]): void {
   for (let index = 1; index < entities.length; index += 1) {
@@ -16,7 +20,9 @@ export function assertSortedEntities(entities: readonly number[]): void {
   }
 }
 
-export const SNAPSHOT_FORMAT_VERSION = 1
+export const SNAPSHOT_FORMAT_VERSION = 2
+
+export type SnapshotScope = PersistScope | 'combined'
 
 export interface SnapshotComponentEntry {
   readonly entity: Entity
@@ -42,12 +48,16 @@ export interface SnapshotRng {
 export interface WorldSnapshot {
   readonly formatVersion: number
   readonly schemaVersion: number
-  readonly scope: PersistScope
+  readonly scope: SnapshotScope
   readonly tick: number
   readonly nextSeq: number
+  readonly dt: number
+  readonly contentHash: string
+  readonly pendingCommands: readonly CommandEnvelope[]
   readonly entities: EntityTableSnapshot
   readonly components: Readonly<Record<string, SnapshotComponentState>>
   readonly models: Readonly<Record<string, unknown>>
+  readonly states: Readonly<Record<string, string>>
   readonly rng: SnapshotRng
   readonly previousEvents: readonly SnapshotEvent[]
 }
@@ -59,7 +69,11 @@ export interface SnapshotInput {
   readonly tick: number
   readonly nextSeq: number
   readonly schemaVersion: number
+  readonly dt: number
+  readonly contentHash: string
+  readonly pendingCommands: readonly CommandEnvelope[]
   readonly previousEvents: readonly EmittedEvent[]
+  readonly validate: boolean
 }
 
 export function snapshotWorld(input: SnapshotInput, scope: PersistScope): WorldSnapshot {
@@ -72,7 +86,7 @@ export function snapshotWorld(input: SnapshotInput, scope: PersistScope): WorldS
   for (const name of [...catalog.storesByName.keys()].sort()) {
     const stateDef = catalog.stateByName.get(name)
     const store = catalog.storesByName.get(name)
-    if (stateDef === undefined || store === undefined) {
+    if (stateDef === undefined || store === undefined || stateDef.kind === 'state') {
       continue
     }
     if (stateDef.options.persist !== scope) {
@@ -82,7 +96,13 @@ export function snapshotWorld(input: SnapshotInput, scope: PersistScope): WorldS
     for (const entity of table.alive) {
       const index = entityIndex(entity)
       if (store.has(index)) {
-        entries.push({ entity, value: cloneDeep(store.read(index) ?? {}) })
+        const raw = store.read(index) ?? {}
+        entries.push({
+          entity,
+          value: input.validate
+            ? coerceValue(t.struct((stateDef as ComponentDef).schema), raw, `${name}.${entity}`)
+            : cloneDeep(raw),
+        })
       }
     }
     components[name] = {
@@ -98,7 +118,10 @@ export function snapshotWorld(input: SnapshotInput, scope: PersistScope): WorldS
   )
   for (const runtime of runtimes) {
     if (runtime.def.options.persist === scope) {
-      models[runtime.def.name] = cloneDeep(runtime.draft ?? runtime.committed)
+      const raw = runtime.draft ?? runtime.committed
+      models[runtime.def.name] = input.validate
+        ? coerceValue(t.struct(runtime.def.schema), raw, runtime.def.name)
+        : cloneDeep(raw)
     }
   }
 
@@ -114,6 +137,15 @@ export function snapshotWorld(input: SnapshotInput, scope: PersistScope): WorldS
     scope,
     tick: input.tick,
     nextSeq: input.nextSeq,
+    dt: input.dt,
+    contentHash: input.contentHash,
+    pendingCommands: input.pendingCommands.map((command) => ({
+      tick: command.tick,
+      seq: command.seq,
+      source: command.source,
+      type: command.type,
+      payload: cloneDeep(command.payload),
+    })),
     entities: {
       maxIndex: table.maxIndex,
       generations: [...table.generations],
@@ -122,6 +154,7 @@ export function snapshotWorld(input: SnapshotInput, scope: PersistScope): WorldS
     },
     components,
     models,
+    states: flowStateSnapshot(catalog),
     rng: { seed: rng.seed, streams },
     previousEvents: input.previousEvents.map((event) => ({
       type: event.def.name,
@@ -136,11 +169,14 @@ export interface RestoreInput {
   readonly rng: RngRegistry
   readonly snapshot: WorldSnapshot
   readonly schemaVersion: number
+  readonly dt: number
+  readonly contentHash: string
 }
 
 export interface RestoredState {
   readonly tick: number
   readonly nextSeq: number
+  readonly pendingCommands: readonly CommandEnvelope[]
   readonly previousEvents: readonly EmittedEvent[]
 }
 
@@ -160,10 +196,33 @@ export function restoreWorld(input: RestoreInput): RestoredState {
       { rule: 'LG010' },
     )
   }
-  if (snapshot.scope !== 'world' && snapshot.scope !== 'profile') {
+  if (
+    snapshot.scope !== 'world' &&
+    snapshot.scope !== 'profile' &&
+    snapshot.scope !== 'combined'
+  ) {
     throw new LuneGoError('snapshot_invalid', 'unknown snapshot persist scope', {
       rule: 'LG010',
     })
+  }
+  if (!Number.isFinite(snapshot.dt) || snapshot.dt <= 0) {
+    throw new LuneGoError('snapshot_invalid', 'snapshot dt must be positive', {
+      rule: 'LG010',
+    })
+  }
+  if (snapshot.dt !== input.dt) {
+    throw new LuneGoError(
+      'snapshot_dt_mismatch',
+      `snapshot dt ${snapshot.dt} does not match world dt ${input.dt}`,
+      { rule: 'LG010' },
+    )
+  }
+  if (snapshot.contentHash !== input.contentHash) {
+    throw new LuneGoError(
+      'snapshot_content_mismatch',
+      'snapshot content hash does not match the registered content pack',
+      { rule: 'LG010' },
+    )
   }
   if (!Number.isInteger(snapshot.tick) || snapshot.tick < 0) {
     throw new LuneGoError('snapshot_invalid', 'snapshot tick must be a non-negative integer')
@@ -174,10 +233,17 @@ export function restoreWorld(input: RestoreInput): RestoredState {
 
   entityStore.restore(snapshot.entities)
 
+  const scopes: readonly PersistScope[] =
+    snapshot.scope === 'combined' ? ['world', 'profile'] : [snapshot.scope]
   const expectedComponents = new Set<string>()
   for (const [name, store] of catalog.storesByName) {
     const stateDef = catalog.stateByName.get(name)
-    if (stateDef !== undefined && stateDef.options.persist === snapshot.scope) {
+    if (
+      stateDef !== undefined &&
+      stateDef.kind !== 'state' &&
+      stateDef.options.persist !== null &&
+      scopes.includes(stateDef.options.persist)
+    ) {
       expectedComponents.add(name)
     }
     store.clearChanges()
@@ -218,6 +284,11 @@ export function restoreWorld(input: RestoreInput): RestoredState {
           `duplicate component ${name} on entity ${entry.entity}`,
         )
       }
+      if (stateDef.kind === 'state') {
+        throw new LuneGoError('snapshot_invalid', `state ${name} is not a component`, {
+          rule: 'LG010',
+        })
+      }
       const value =
         stateDef.kind === 'tag'
           ? {}
@@ -231,7 +302,7 @@ export function restoreWorld(input: RestoreInput): RestoredState {
 
   const expectedModels = new Set<string>()
   for (const runtime of catalog.modelRuntimes.values()) {
-    if (runtime.def.options.persist === snapshot.scope) {
+    if (runtime.def.options.persist !== null && scopes.includes(runtime.def.options.persist)) {
       expectedModels.add(runtime.def.name)
       runtime.draft = null
     }
@@ -262,6 +333,8 @@ export function restoreWorld(input: RestoreInput): RestoredState {
     )
   }
 
+  restoreFlowStates(catalog, snapshot.states)
+
   const previousEvents: EmittedEvent[] = []
   for (const event of snapshot.previousEvents) {
     const def = catalog.eventDefs.get(event.type)
@@ -272,7 +345,7 @@ export function restoreWorld(input: RestoreInput): RestoredState {
     }
     previousEvents.push({
       def,
-      payload: catalog.coerceEventPayload(def, event.payload),
+      payload: coerceEventPayload(def, event.payload),
     })
   }
 
@@ -280,6 +353,7 @@ export function restoreWorld(input: RestoreInput): RestoredState {
   return {
     tick: snapshot.tick,
     nextSeq: snapshot.nextSeq,
+    pendingCommands: snapshot.pendingCommands,
     previousEvents,
   }
 }

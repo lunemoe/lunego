@@ -250,7 +250,7 @@ describe('host game', () => {
       },
     })
     expect(game.update(0.1)).toBe(0)
-    expect(game.crashReport?.message).toBe('boom')
+    expect(game.crashReport?.message).toBe('system host.broken failed at tick 1: boom')
     expect(game.crashReport?.snapshot.tick).toBe(1)
     expect(game.crashReport?.commandLog).toEqual([])
     expect(reported).toBe(true)

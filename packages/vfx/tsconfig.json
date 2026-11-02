@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "allowJs": true,
+    "lib": ["ES2024", "DOM"],
+    "checkJs": false,
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "vendor/pixelfx/src/**/*.js"],
+  "exclude": ["dist", "src/**/*.test.ts", "src/__tests__/**"]
+}

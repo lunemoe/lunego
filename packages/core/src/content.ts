@@ -1,6 +1,7 @@
 import { LuneGoError } from './errors.js'
 import { isRecord } from './guards.js'
 import { coerceValue } from './schema-coerce.js'
+import { StateHasher, writeValue } from './hash.js'
 import {
   t,
   type ContentId,
@@ -92,6 +93,29 @@ export class ContentRegistry {
       throw new LuneGoError('content_missing', `missing content ${type.name}/${id}`)
     }
     return value as Value
+  }
+
+  /** Deterministic identity of the content pack, recorded in snapshots. */
+  fingerprint(): string {
+    const hasher = new StateHasher()
+    hasher.string('lunego-content')
+    const typeNames = [...this.types.keys()].sort()
+    hasher.u32(typeNames.length)
+    for (const typeName of typeNames) {
+      const type = this.types.get(typeName)
+      const bucket = this.entries.get(typeName)
+      if (type === undefined || bucket === undefined) {
+        continue
+      }
+      hasher.string(typeName)
+      const ids = [...bucket.keys()].sort()
+      hasher.u32(ids.length)
+      for (const id of ids) {
+        hasher.string(id)
+        writeValue(hasher, t.struct(type.schema), bucket.get(id))
+      }
+    }
+    return hasher.hex()
   }
 
   ids<Name extends string>(type: ContentTypeDef<Name>): readonly string[] {

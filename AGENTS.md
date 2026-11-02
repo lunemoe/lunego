@@ -26,13 +26,14 @@ packages/core/       schema DSL、ECS、World、调度、命令、RNG、哈希�
 packages/host/       主线程运行时、时间模型、存档/读档、回放、崩溃报告
 packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘适配
 packages/render-pixi/ 渲染绑定生命周期、图层/Y 排序、PixiJS v8 适配
+packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
 packages/cli/        lunego gen / new game / check
 packages/eslint-plugin/  LG002 / LG012 / LG013 的可执行规则
 packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
 templates/game/      可运行俯视角模板：移动、Y 排序、相机、存档/回放
 ```
 
-`features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；模板通过 `lunego new game <name>` 复制到 `games/`。
+`features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；模板通过 `lunego new game <name>` 复制到 `games/`。特效来源与 MIT 许可见 `THIRD_PARTY_NOTICES.md` 与 `packages/vfx/vendor/pixelfx/`。
 
 ## 设计约束（必须遵守）
 

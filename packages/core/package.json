@@ -16,6 +16,10 @@
     "./math": {
       "types": "./dist/math.d.ts",
       "import": "./dist/math.js"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "import": "./dist/internal.js"
     }
   },
   "scripts": {

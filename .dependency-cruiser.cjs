@@ -9,6 +9,19 @@ module.exports = {
       to: { circular: true, dependencyTypesNot: ['type-only'] },
     },
     {
+      name: 'core-internal-scope',
+      severity: 'error',
+      comment:
+        'The internal capability subpath is reserved for the host bridge, testkit and framework tests.',
+      from: {
+        pathNot:
+          '(?:^|/)(packages/(core|host|testkit|eslint-plugin)/|templates/)',
+      },
+      to: {
+        path: '(?:^|/)packages/core/src/(internal|world-internals)\\.ts$',
+      },
+    },
+    {
       name: 'no-unresolved',
       severity: 'error',
       from: {},
@@ -31,10 +44,10 @@ module.exports = {
       severity: 'error',
       comment: 'Logic may not import view packages or view implementations.',
       from: {
-        path: '^(packages/core/src|packages/testkit/src|features/[^/]+/logic|kits/[^/]+/logic)',
+        path: '(?:^|/)(packages/core/src|packages/testkit/src|features/[^/]+/logic|kits/[^/]+/logic)',
       },
       to: {
-        path: '^(packages/(render-pixi|ui|input|audio)|features/[^/]+/view|kits/[^/]+/view)',
+        path: '(?:^|/)(packages/(render-pixi|vfx|ui|input|audio)|features/[^/]+/view|kits/[^/]+/view)',
       },
     },
     {
@@ -42,10 +55,10 @@ module.exports = {
       severity: 'error',
       comment: 'Logic depends on core, not on the host bridge.',
       from: {
-        path: '^(packages/core/src|features/[^/]+/logic|kits/[^/]+/logic)',
+        path: '(?:^|/)(packages/core/src|features/[^/]+/logic|kits/[^/]+/logic)',
       },
       to: {
-        path: '^packages/host/',
+        path: '(?:^|/)packages/host/',
       },
     },
     {
@@ -53,7 +66,7 @@ module.exports = {
       severity: 'error',
       comment: 'Logic must not reach render/UI/audio/input or Node builtins.',
       from: {
-        path: '^(packages/core/src|packages/testkit/src|features/[^/]+/logic|kits/[^/]+/logic)',
+        path: '(?:^|/)(packages/core/src|packages/testkit/src|features/[^/]+/logic|kits/[^/]+/logic)',
       },
       to: {
         path: '(^|/)(pixi\\.js|solid-js|@lunego/(host|render-pixi|ui|input|audio))(/|$)',
@@ -64,10 +77,10 @@ module.exports = {
       severity: 'error',
       comment: 'A feature may import another feature only through its schema.ts.',
       from: {
-        path: '^features/([^/]+)/',
+        path: '(?:^|/)features/([^/]+)/',
       },
       to: {
-        path: '^features/(?!$1/)',
+        path: '(?:^|/)features/(?!$1/)',
         pathNot: '(^|/)schema\\.ts$',
       },
     },
@@ -76,10 +89,27 @@ module.exports = {
       severity: 'error',
       comment: 'Views consume schema.ts, never logic implementation files.',
       from: {
-        path: '^features/([^/]+)/view/',
+        path: '(?:^|/)features/([^/]+)/view/',
       },
       to: {
-        path: '^features/[^/]+/logic/',
+        path: '(?:^|/)features/[^/]+/logic/',
+      },
+    },
+    {
+      name: 'kits-no-game-code',
+      severity: 'error',
+      comment: 'Kits are framework code and never import game or content code.',
+      from: { path: '(?:^|/)kits/' },
+      to: { path: '(?:^|/)(features|games|content)/' },
+    },
+    {
+      name: 'kits-direction',
+      severity: 'error',
+      comment: 'Kits may depend on core and other kits, not view/host packages.',
+      from: { path: '(?:^|/)kits/' },
+      to: {
+        path: '(?:^|/)packages/',
+        pathNot: '(?:^|/)packages/core/',
       },
     },
     {
@@ -87,17 +117,17 @@ module.exports = {
       severity: 'error',
       comment: 'Framework packages never import game or content code.',
       from: {
-        path: '^packages/',
+        path: '(?:^|/)packages/',
       },
       to: {
-        path: '^(features|games|content)/',
+        path: '(?:^|/)(features|games|content)/',
       },
     },
     {
       name: 'host-only-core',
       severity: 'error',
       comment: 'The host bridges core and view; it must not depend on view packages.',
-      from: { path: '^packages/host/' },
+      from: { path: '(?:^|/)packages/host/' },
       to: {
         path: '^packages/',
         pathNot: '^packages/(core|host)/',
@@ -107,17 +137,17 @@ module.exports = {
       name: 'host-does-not-import-view',
       severity: 'error',
       comment: 'The host bridges logic and view; it does not render.',
-      from: { path: '^packages/host/' },
-      to: { path: '^packages/(render-pixi|ui|input|audio)/' },
+      from: { path: '(?:^|/)packages/host/' },
+      to: { path: '^packages/(render-pixi|vfx|ui|input|audio)/' },
     },
     {
       name: 'view-packages-direction',
       severity: 'error',
       comment: 'View packages depend on core/host, not on each other.',
-      from: { path: '^packages/(render-pixi|ui|input|audio)/' },
+      from: { path: '^packages/(render-pixi|vfx|ui|input|audio)/' },
       to: {
         path: '^packages/',
-        pathNot: '^packages/(core|host|$1)/',
+        pathNot: '(?:^|/)packages/(core|host|vfx|render-pixi|ui|input|audio)/',
       },
     },
     {
@@ -125,7 +155,7 @@ module.exports = {
       severity: 'error',
       comment: 'Logic must run in any JS engine; no Node builtins.',
       from: {
-        path: '^(packages/core/src|packages/testkit/src|features/[^/]+/logic|kits/[^/]+/logic)',
+        path: '(?:^|/)(packages/core/src|packages/testkit/src|features/[^/]+/logic|kits/[^/]+/logic)',
         pathNot: '__tests__|\\.test\\.ts$',
       },
       to: { dependencyTypes: ['core'] },

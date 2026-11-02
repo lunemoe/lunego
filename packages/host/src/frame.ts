@@ -9,7 +9,7 @@ import type { CrashReport, GameFrame, ReplayHash } from './types.js'
 export function modelSnapshot(world: World, models: readonly ModelDef[]): Readonly<Record<string, unknown>> {
   const result: Record<string, unknown> = {}
   for (const model of models) {
-    result[model.name] = cloneDeep(world.readModelValue(model))
+    result[model.name] = cloneDeep(world.model(model))
   }
   return result
 }
