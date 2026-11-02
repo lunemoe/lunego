@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+import { runAssets } from './assets-cli.js'
 import { generate } from './gen.js'
 import { newGame } from './new.js'
 import { runCheck } from './check.js'
@@ -43,6 +44,9 @@ export async function main(args: readonly string[], cwd = process.cwd()): Promis
       console.log(`created ${result.target}`)
       return 0
     }
+    if (command === 'assets') {
+      return runAssets(workingDir, params)
+    }
     if (command === 'check') {
       const result = await runCheck(workingDir)
       for (const message of result.messages) {
@@ -51,7 +55,9 @@ export async function main(args: readonly string[], cwd = process.cwd()): Promis
       console.log(result.ok ? 'check passed' : 'check failed')
       return result.ok ? 0 : 1
     }
-    console.error('usage: lunego <gen [--check]|new game <name>|check> [--cwd path]')
+    console.error(
+      'usage: lunego <gen [--check]|new game <name>|check|assets <check|build|pack|import>> [--cwd path]',
+    )
     return 2
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error))

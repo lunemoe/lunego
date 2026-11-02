@@ -4,7 +4,13 @@ import {
   type ModelDef,
   type World,
 } from '@lunego/core'
-import type { CrashReport, GameFrame, ReplayHash } from './types.js'
+import type {
+  CrashReport,
+  GameFrame,
+  ReplayHash,
+  TimeGap,
+  TimeGapDecision,
+} from './types.js'
 
 export function modelSnapshot(world: World, models: readonly ModelDef[]): Readonly<Record<string, unknown>> {
   const result: Record<string, unknown> = {}
@@ -12,6 +18,15 @@ export function modelSnapshot(world: World, models: readonly ModelDef[]): Readon
     result[model.name] = cloneDeep(world.model(model))
   }
   return result
+}
+
+export function resolveTimeGap(
+  gap: number,
+  maxCatchUp: number,
+  tick: number,
+  handler: ((value: TimeGap) => TimeGapDecision) | undefined,
+): TimeGapDecision {
+  return handler === undefined ? 'skip' : handler({ gap, maxCatchUp, tick })
 }
 
 export function buildGameFrame(

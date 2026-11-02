@@ -98,5 +98,24 @@ export type {
 } from './minimap.js'
 export { mountUi } from './mount.js'
 export type { MountedUi, UiView } from './mount.js'
+export {
+  installUiI18n,
+  isMessageRef,
+  message,
+  resolveChild,
+  resolveText,
+  setUiTextResolver,
+  textOf,
+} from './text.js'
+export type {
+  MessageKey,
+  MessageParams,
+  MessageRef,
+  TextValue,
+  UiI18nSource,
+  UiTextResolver,
+} from './text.js'
+export { activateOnKey, createDescription } from './a11y.js'
+export type { UiDescription } from './a11y.js'
 export { UI_LAYERS, UI_STYLES, installUiStyles, themeVariables } from './theme.js'
 export type { UiTheme } from './theme.js'

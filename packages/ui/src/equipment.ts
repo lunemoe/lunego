@@ -1,15 +1,16 @@
 import { createSignal } from 'solid-js'
 import html from 'solid-js/html'
 import { currentDrag, endDrag, type DragDropEvent } from './drag.js'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiNode, type UiValue } from './ui-types.js'
 
 export interface EquipmentSlotData {
   readonly id: string
   /** Localized slot name supplied by the caller. */
-  readonly label: string
+  readonly label: TextValue
   readonly icon?: string | null
   /** Localized item name supplied by the caller; may be null for an empty slot. */
-  readonly itemLabel?: string | null
+  readonly itemLabel?: TextValue | null
   readonly itemId?: string | null
   readonly disabled?: boolean
 }
@@ -20,10 +21,11 @@ export interface EquipmentSlotsProps {
   readonly onDrop?: (event: DragDropEvent) => void
   readonly onSelect?: (slotId: string) => void
   /** Localized label for an empty slot. */
-  readonly emptyLabel?: string
+  readonly emptyLabel?: TextValue
   /** Localized accessible label for the slot group. */
-  readonly label?: string
+  readonly label?: TextValue
   readonly columns?: number
+  readonly describedBy?: string
 }
 
 /** Named equipment slots with drag/drop, roving focus and keyboard activation. */
@@ -85,14 +87,16 @@ export function EquipmentSlots(props: EquipmentSlotsProps): UiNode {
     }
   }
 
-  return html`<div class="lg-equipment" role="group" aria-label=${() => props.label ?? ''}
+  return html`<div class="lg-equipment" role="group"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}
     style=${() => ({ gridTemplateColumns: `repeat(${columns()}, minmax(0, 1fr))` })}>
     ${() =>
       slots().map((slot, index) => {
         const hasItem = () => slot.itemId !== undefined && slot.itemId !== null
         return html`<button type="button" class="lg-equipment__slot"
           data-slot-id=${slot.id}
-          aria-label=${slot.label}
+          aria-label=${() => resolveText(slot.label)}
           aria-disabled=${() => String(slot.disabled === true)}
           disabled=${slot.disabled === true}
           tabIndex=${() => (focusIndex() === index ? 0 : -1)}
@@ -118,14 +122,17 @@ export function EquipmentSlots(props: EquipmentSlotsProps): UiNode {
           ${() => {
             if (hasItem() && slot.icon !== undefined && slot.icon !== null) {
               return html`<img class="lg-equipment__icon" src=${slot.icon}
-                alt=${slot.itemLabel ?? ''} draggable="false" />`
+                alt=${() => (slot.itemLabel === undefined || slot.itemLabel === null ? '' : resolveText(slot.itemLabel))}
+                draggable="false" />`
             }
             if (hasItem()) {
-              return html`<span class="lg-equipment__item">${slot.itemLabel ?? slot.label}</span>`
+              return html`<span class="lg-equipment__item">${() =>
+                resolveText(slot.itemLabel ?? slot.label)}</span>`
             }
-            return html`<span class="lg-equipment__empty">${props.emptyLabel ?? ''}</span>`
+            return html`<span class="lg-equipment__empty">${() =>
+              props.emptyLabel === undefined ? '' : resolveText(props.emptyLabel)}</span>`
           }}
-          <span class="lg-equipment__label">${slot.label}</span>
+          <span class="lg-equipment__label">${() => resolveText(slot.label)}</span>
         </button>`
       })}
   </div>`

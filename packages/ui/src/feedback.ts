@@ -1,13 +1,15 @@
 import { createEffect, createSignal, onCleanup } from 'solid-js'
 import html from 'solid-js/html'
+import { activateOnKey } from './a11y.js'
+import { resolveChild, resolveText, textOf, type TextValue } from './text.js'
 import type { UiChild, UiNode } from './ui-types.js'
 
 export interface ToastItem {
   readonly id: string
-  readonly message: UiChild
+  readonly message: UiChild | TextValue
   readonly durationMs?: number
   /** Localized accessible label for the dismiss button. */
-  readonly dismissLabel?: string
+  readonly dismissLabel?: TextValue
 }
 
 export interface ToastQueueOptions {
@@ -99,7 +101,7 @@ export class ToastQueue {
 export interface ToastHostProps {
   readonly queue: ToastQueue
   readonly live?: 'polite' | 'assertive'
-  readonly dismissLabel?: string
+  readonly dismissLabel?: TextValue
 }
 
 export function ToastHost(props: ToastHostProps): UiNode {
@@ -110,8 +112,12 @@ export function ToastHost(props: ToastHostProps): UiNode {
   })
   return html`<div class="lg-toasts" aria-live=${props.live ?? 'polite'} aria-atomic="true">
     ${() => items().map((item) => html`<div class="lg-toast" role="status">
-      <span class="lg-toast__message">${item.message}</span>
-      <button class="lg-toast__close" aria-label=${item.dismissLabel ?? props.dismissLabel ?? ''}
+      <span class="lg-toast__message">${() => resolveChild(item.message)}</span>
+      <button class="lg-toast__close"
+        aria-label=${() => {
+          const label = item.dismissLabel ?? props.dismissLabel
+          return label === undefined ? '' : resolveText(label)
+        }}
         onClick=${() => props.queue.dismiss(item.id)}>×</button>
     </div>`)}
   </div>`
@@ -119,28 +125,30 @@ export function ToastHost(props: ToastHostProps): UiNode {
 
 export interface LoadingOverlayProps {
   readonly open: boolean
-  readonly label?: UiChild
+  readonly label?: UiChild | TextValue
   readonly progress?: number | null
-  readonly error?: UiChild | null
+  readonly error?: UiChild | TextValue | null
   readonly onCancel?: () => void
-  readonly cancelLabel?: string
+  readonly cancelLabel?: TextValue
 }
 
 export function LoadingOverlay(props: LoadingOverlayProps): UiNode {
+  const cancel = (): void => props.onCancel?.()
   return html`<div class="lg-loading" style=${{ display: props.open ? 'grid' : 'none' }}
     role="dialog" aria-modal="true" aria-busy=${() => String(props.error === undefined || props.error === null)}
-    aria-label=${typeof props.label === 'string' ? props.label : ''}>
+    aria-label=${() => textOf(props.label, '')}>
     <div class="lg-loading__panel lg-panel">
-      <div class="lg-loading__label">${props.label ?? ''}</div>
+      <div class="lg-loading__label">${() => resolveChild(props.label, '')}</div>
       ${props.progress === null || props.progress === undefined
         ? null
         : html`<progress class="lg-loading__progress" max="1" value=${props.progress}></progress>`}
       ${props.error === undefined || props.error === null
         ? null
-        : html`<div class="lg-loading__error" role="alert">${props.error}</div>`}
+        : html`<div class="lg-loading__error" role="alert">${() => resolveChild(props.error, '')}</div>`}
       ${props.onCancel === undefined
         ? null
-        : html`<button class="lg-button" onClick=${() => props.onCancel?.()}>${props.cancelLabel ?? ''}</button>`}
+        : html`<button class="lg-button" onClick=${cancel} onKeyDown=${activateOnKey(cancel)}>${() =>
+          props.cancelLabel === undefined ? '' : resolveText(props.cancelLabel)}</button>`}
     </div>
   </div>`
 }

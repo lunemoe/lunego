@@ -11,7 +11,13 @@ Solid + `solid-js/html` 的 DOM UI 层：行为、可访问性和数据绑定归
 
 ## 主题 token
 
-`UiTheme` 覆盖 `--lg-*` 变量，例如 `accent`、`font`、`radius`、`spacing`、`fontSize`、`barBackground`、`slotBackground`、`panelShadow`、`modalBackdrop`、`scale`。`Panel` 的九宫格由调用方传入：
+`UiTheme` 覆盖 `--lg-*` 变量，例如 `accent`、`font`、`radius`、`spacing`、`fontSize`、`barBackground`、`slotBackground`、`panelShadow`、`modalBackdrop`、`scale`。字体族只通过 `theme.font`/`--lg-font` 注入，组件不内置字体文件或字体图集。无障碍模式 token：
+
+- `colorblindAccent/colorblindDanger/colorblindInfo/colorblindPrimary/colorblindSecondary/colorblindTertiary` → `--lg-colorblind-*`；`UiRoot({ colorblind: true | 'name' })` 写入 `data-colorblind`，CSS 在非 `"false"` 时重映射 accent/danger 与三种条颜色。
+- `contrastBackground/contrastSurface/contrastText/contrastMuted/contrastBorder` → `--lg-contrast-*`；`UiRoot({ contrast: true | 'name' })` 写入 `data-contrast`，同时移除文字/面板阴影并加粗控件边框。
+- `prefers-reduced-motion`/`reducedMotion` 与 `uiScale`/`--lg-ui-scale` 仍然生效。
+
+`Panel` 的九宫格由调用方传入：
 
 ```ts
 Panel({
@@ -21,6 +27,20 @@ Panel({
   children: '...',
 })
 ```
+
+## 本地化与文案
+
+- 所有可显示/可朗读文案都接受 `TextValue = string | { key, params? }`：字符串是**显式覆盖**，不会走 resolver；`{ key }` 通过 resolver 解析，缺失时保留 key 本身，便于发现漏配。
+- `UiRoot({ i18n })` 接受 resolver 函数或 `{ t, subscribe }` 源（`@lunego/i18n` 的 `createI18n()` 返回值即此形状）；locale 切换经 `subscribe` 触发重新解析。也可用 `setUiTextResolver`/`installUiI18n` 全局安装，返回的函数用于恢复。
+- `message(key, params?)` 构造引用；`resolveText`/`textOf`/`resolveChild` 暴露给需要自定义渲染的调用方。
+- 组件不内置中文/英文文案、译文或本地化表；`@lunego/i18n` 只提供消息表运行时、插值和注入式复数规则。
+
+## 无障碍
+
+- 所有新控件使用原生 button 或 roving focus，并有 `aria-label`/`aria-selected`/`aria-expanded`/`aria-describedby`/`role`；`TreeView`/`GraphView`/`Dialog`/`ShopRow`/`MinimapView`/`VirtualList`/`DragSource`/`DropTarget`/`SortableGrid` 接受调用方的 `describedBy` id。
+- 键盘：拖拽 Space/Enter 拾取/放置、方向键选目标、Escape 取消；树与图用方向键/Home/End/Enter；Dialog/ChoiceList 方向键 + Enter/Space；VirtualList 支持 Arrow/PageUp/PageDown/Home/End 滚动；Shop/分页按钮额外处理 Enter/Space。
+- `.lg-ui :focus-visible` 统一提供焦点环；`aria-live` 用于对话/分页/Toast；`aria-busy` 用于加载层。
+- `UiRoot` 的 `data-colorblind`/`data-contrast` 是纯表现开关，不改变任何交互或玩法状态；游戏负责持久化这些设置。
 
 ## 菜单、反馈与无障碍
 
@@ -45,5 +65,7 @@ Panel({
 
 ## 待办
 
-- 组件默认 aria/empty 文案（`emptyLabel`/`closeLabel`/`label` 已可由游戏传入）仍需迁移到游戏的本地化 key。
+- 实际翻译内容、复数规则（按语言注入 `pluralRule`）与消息表由各游戏/内容包提供；本仓库只有契约与测试样例。
+- 字体图集/位图字体仍由游戏资源管线提供；框架只消费 `theme.font`/`--lg-font`。
 - 图标/九宫格目前是调用方 URL；与资产 manifest 的 `AssetId` 注入将在资产管线批次统一。
+- 新包 `@lunego/i18n` 的 workspace 依赖与 lockfile 由统一集成批次更新（当前 UI 通过结构性 resolver 接入，无运行时依赖）。

@@ -118,6 +118,7 @@ export type { EntityTableSnapshot } from './ecs/entity-store.js'
 export type { Diagnostic } from './scheduler.js'
 
 export { SNAPSHOT_FORMAT_VERSION, World } from './world.js'
+export { mergeSnapshots } from './snapshot-merge.js'
 export type {
   CommandEnvelope,
   CommandSource,

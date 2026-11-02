@@ -58,6 +58,21 @@ export type {
   TilesetDefinition,
 } from './tilemap.js'
 export { TextureStore } from './textures.js'
+export {
+  animationFrames,
+  assetAnchor,
+  assetFrames,
+  textureEntryFromAsset,
+  textureManifestFromAssets,
+} from './asset-frames.js'
+export type {
+  AssetAnchor as AssetManifestAnchor,
+  AssetAnchorPoint as AssetManifestAnchorPoint,
+  AssetAnimationSpec,
+  AssetDimensions,
+  AssetFrameRect as AssetManifestFrame,
+  AssetMetadata,
+} from './asset-frames.js'
 export type {
   LoadedTexture,
   TextureLoadFailure,

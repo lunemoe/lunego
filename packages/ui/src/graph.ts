@@ -1,11 +1,12 @@
 import { createSignal } from 'solid-js'
 import html from 'solid-js/html'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiNode, type UiValue } from './ui-types.js'
 
 export interface GraphNodeData {
   readonly id: string
   /** Localized label supplied by the caller. */
-  readonly label: string
+  readonly label: TextValue
   readonly x: number
   readonly y: number
   readonly disabled?: boolean
@@ -16,7 +17,7 @@ export interface GraphEdgeData {
   readonly from: string
   readonly to: string
   /** Localized edge label supplied by the caller. */
-  readonly label?: string
+  readonly label?: TextValue
 }
 
 export interface GraphViewProps {
@@ -30,11 +31,13 @@ export interface GraphViewProps {
   readonly maxZoom?: number
   readonly width?: number
   readonly height?: number
-  readonly label?: string
+  readonly label?: TextValue
+  /** Caller-owned description element id for `aria-describedby`. */
+  readonly describedBy?: string
   /** Zoom controls are only rendered when their localized labels are provided. */
-  readonly zoomInLabel?: string
-  readonly zoomOutLabel?: string
-  readonly resetLabel?: string
+  readonly zoomInLabel?: TextValue
+  readonly zoomOutLabel?: TextValue
+  readonly resetLabel?: TextValue
 }
 
 function clampZoom(value: number, min: number, max: number): number {
@@ -94,6 +97,9 @@ export function GraphView(props: GraphViewProps): UiNode {
       elements.get(node.id)?.focus()
     }
   }
+  const zoomInText = () => (props.zoomInLabel === undefined ? '' : resolveText(props.zoomInLabel))
+  const zoomOutText = () => (props.zoomOutLabel === undefined ? '' : resolveText(props.zoomOutLabel))
+  const resetText = () => (props.resetLabel === undefined ? '' : resolveText(props.resetLabel))
   const onKeyDown = (event: KeyboardEvent): void => {
     const total = nodes().length
     if (event.key === '+' || event.key === '=') {
@@ -128,9 +134,12 @@ export function GraphView(props: GraphViewProps): UiNode {
     }
   }
 
-  return html`<div class="lg-graph" role="group" aria-label=${() => props.label ?? ''}>
+  return html`<div class="lg-graph" role="group"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}>
     <div class="lg-graph__viewport"
       tabIndex="0"
+      aria-describedby=${() => props.describedBy}
       onKeyDown=${(event: KeyboardEvent) => onKeyDown(event)}
       onWheel=${(event: WheelEvent) => {
         event.preventDefault()
@@ -178,7 +187,7 @@ export function GraphView(props: GraphViewProps): UiNode {
                 <line x1=${from.x} y1=${from.y} x2=${to.x} y2=${to.y} />
                 ${edge.label === undefined
                   ? null
-                  : html`<text x=${(from.x + to.x) / 2} y=${(from.y + to.y) / 2}>${edge.label}</text>`}
+                  : html`<text x=${(from.x + to.x) / 2} y=${(from.y + to.y) / 2}>${() => resolveText(edge.label as TextValue)}</text>`}
               </g>`
             })}
         </svg>
@@ -188,7 +197,7 @@ export function GraphView(props: GraphViewProps): UiNode {
             return html`<button type="button" class=${() =>
               selectedId() === node.id ? 'lg-graph__node lg-graph__node--selected' : 'lg-graph__node'}
               data-node-id=${node.id}
-              aria-label=${node.label}
+              aria-label=${() => resolveText(node.label)}
               aria-disabled=${() => String(node.disabled === true)}
               disabled=${node.disabled === true}
               tabIndex=${() => (focusIndex() === index ? 0 : -1)}
@@ -214,7 +223,7 @@ export function GraphView(props: GraphViewProps): UiNode {
               ${hasIcon
                 ? html`<img class="lg-graph__icon" src=${node.icon} alt="" draggable="false" />`
                 : null}
-              <span class="lg-graph__label">${node.label}</span>
+              <span class="lg-graph__label">${() => resolveText(node.label)}</span>
             </button>`
           })}
       </div>
@@ -226,22 +235,22 @@ export function GraphView(props: GraphViewProps): UiNode {
             ${props.zoomInLabel === undefined
               ? null
               : html`<button type="button" class="lg-button"
-                  aria-label=${props.zoomInLabel}
-                  onClick=${() => setZoom(zoom() * 1.1)}>${props.zoomInLabel}</button>`}
+                  aria-label=${() => zoomInText()}
+                  onClick=${() => setZoom(zoom() * 1.1)}>${() => zoomInText()}</button>`}
             ${props.zoomOutLabel === undefined
               ? null
               : html`<button type="button" class="lg-button"
-                  aria-label=${props.zoomOutLabel}
-                  onClick=${() => setZoom(zoom() / 1.1)}>${props.zoomOutLabel}</button>`}
+                  aria-label=${() => zoomOutText()}
+                  onClick=${() => setZoom(zoom() / 1.1)}>${() => zoomOutText()}</button>`}
             ${props.resetLabel === undefined
               ? null
               : html`<button type="button" class="lg-button"
-                  aria-label=${props.resetLabel}
+                  aria-label=${() => resetText()}
                   onClick=${() => {
                     setZoom(1)
                     setPanX(0)
                     setPanY(0)
-                  }}>${props.resetLabel}</button>`}
+                  }}>${() => resetText()}</button>`}
           </div>`}
   </div>`
 }

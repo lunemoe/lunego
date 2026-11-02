@@ -3,6 +3,7 @@ import type { GameFrame, WorldSnapshot } from '@lunego/core'
 import {
   BrowserSaveError,
   bindBrowserKeys,
+  createBrowserProfileStorage,
   createBrowserSaveStore,
   createBrowserSettingsStore,
   createViewLoop,
@@ -152,6 +153,34 @@ describe('browser adapters', () => {
     expect(store.load()).toBeNull()
     expect(() => store.export()).toThrow(/no save/)
     expect(() => createBrowserSaveStore('', storage)).toThrow(/key/)
+  })
+
+  it('adapts web storage to the profile store with key enumeration', () => {
+    const values = new Map<string, string>()
+    const storage: StorageLike = {
+      get length() {
+        return values.size
+      },
+      key: (index) => [...values.keys()][index] ?? null,
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value),
+      removeItem: (key) => values.delete(key),
+    }
+    const profileStorage = createBrowserProfileStorage(storage)
+    profileStorage.write('a', '1')
+    profileStorage.write('b', '2')
+    expect(profileStorage.read('a')).toBe('1')
+    expect(profileStorage.keys()).toEqual(['a', 'b'])
+    profileStorage.remove('a')
+    expect(profileStorage.keys()).toEqual(['b'])
+    const noKeys = createBrowserProfileStorage({
+      getItem: () => null,
+      setItem: () => undefined,
+      removeItem: () => undefined,
+    })
+    expect(() => noKeys.keys()).toThrow(
+      expect.objectContaining({ code: 'storage_keys' }),
+    )
   })
 
   it('diagnoses write failures without corrupting the previous save', () => {

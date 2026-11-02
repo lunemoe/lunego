@@ -34,6 +34,19 @@ export interface UiTheme {
   readonly scale?: string
   readonly cooldownOverlay?: string
   readonly fxShadow?: string
+  /** Color-vision mode palette; all neutral until a game overrides them. */
+  readonly colorblindAccent?: string
+  readonly colorblindDanger?: string
+  readonly colorblindInfo?: string
+  readonly colorblindPrimary?: string
+  readonly colorblindSecondary?: string
+  readonly colorblindTertiary?: string
+  /** High-contrast mode palette. */
+  readonly contrastBackground?: string
+  readonly contrastSurface?: string
+  readonly contrastText?: string
+  readonly contrastMuted?: string
+  readonly contrastBorder?: string
   /** Escape hatch for any framework token, including spacing/size tokens. */
   readonly tokens?: Readonly<Record<string, string>>
 }
@@ -72,6 +85,17 @@ export function themeVariables(theme: UiTheme = {}): Record<string, string> {
     '--lg-ui-scale': theme.scale ?? '1',
     '--lg-cooldown-overlay': theme.cooldownOverlay ?? 'rgba(0,0,0,.68)',
     '--lg-fx-shadow': theme.fxShadow ?? '0 0 6px rgba(0,0,0,.6)',
+    '--lg-colorblind-accent': theme.colorblindAccent ?? theme.accent ?? '#58c8ff',
+    '--lg-colorblind-danger': theme.colorblindDanger ?? theme.danger ?? '#ff6b6b',
+    '--lg-colorblind-info': theme.colorblindInfo ?? theme.accent ?? '#58c8ff',
+    '--lg-colorblind-primary': theme.colorblindPrimary ?? theme.barPrimaryTo ?? '#ff5b6e',
+    '--lg-colorblind-secondary': theme.colorblindSecondary ?? theme.barSecondaryTo ?? '#58a8ff',
+    '--lg-colorblind-tertiary': theme.colorblindTertiary ?? theme.barTertiaryTo ?? '#ffd36b',
+    '--lg-contrast-bg': theme.contrastBackground ?? '#000000',
+    '--lg-contrast-surface': theme.contrastSurface ?? '#000000',
+    '--lg-contrast-text': theme.contrastText ?? '#ffffff',
+    '--lg-contrast-muted': theme.contrastMuted ?? '#ffffff',
+    '--lg-contrast-border': theme.contrastBorder ?? '#ffffff',
     ...(theme.tokens ?? {}),
   }
 }
@@ -126,12 +150,49 @@ export const UI_STYLES = `
   --lg-space-sm: 3px;
   --lg-space-md: 6px;
   --lg-space-xl: 12px;
+  --lg-contrast-bg: #000000;
+  --lg-contrast-surface: #000000;
+  --lg-contrast-text: #ffffff;
+  --lg-contrast-muted: #ffffff;
+  --lg-contrast-border: #ffffff;
+  --lg-colorblind-accent: var(--lg-accent);
+  --lg-colorblind-danger: var(--lg-danger);
+  --lg-colorblind-info: var(--lg-accent);
+  --lg-colorblind-primary: var(--lg-bar-primary-to);
+  --lg-colorblind-secondary: var(--lg-bar-secondary-to);
+  --lg-colorblind-tertiary: var(--lg-bar-tertiary-to);
   color: var(--lg-text);
   font-size: calc(var(--lg-font-size) * var(--lg-ui-scale));
   font-family: var(--lg-font);
   box-sizing: border-box;
 }
 .lg-ui *, .lg-ui *::before, .lg-ui *::after { box-sizing: inherit; }
+.lg-ui :focus-visible { outline: 2px solid var(--lg-accent); outline-offset: 1px; }
+.lg-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.lg-ui[data-colorblind]:not([data-colorblind="false"]) {
+  --lg-accent: var(--lg-colorblind-accent);
+  --lg-danger: var(--lg-colorblind-danger);
+  --lg-bar-primary-from: var(--lg-colorblind-primary);
+  --lg-bar-primary-to: var(--lg-colorblind-primary);
+  --lg-bar-secondary-from: var(--lg-colorblind-secondary);
+  --lg-bar-secondary-to: var(--lg-colorblind-secondary);
+  --lg-bar-tertiary-from: var(--lg-colorblind-tertiary);
+  --lg-bar-tertiary-to: var(--lg-colorblind-tertiary);
+}
+.lg-ui[data-contrast]:not([data-contrast="false"]) {
+  --lg-bg: var(--lg-contrast-bg);
+  --lg-surface: var(--lg-contrast-surface);
+  --lg-surface-raised: var(--lg-contrast-surface);
+  --lg-text: var(--lg-contrast-text);
+  --lg-muted: var(--lg-contrast-muted);
+  --lg-border: var(--lg-contrast-border);
+  --lg-text-shadow: none;
+  --lg-panel-shadow: none;
+}
+.lg-ui[data-contrast]:not([data-contrast="false"]) .lg-button,
+.lg-ui[data-contrast]:not([data-contrast="false"]) .lg-tab,
+.lg-ui[data-contrast]:not([data-contrast="false"]) .lg-slot,
+.lg-ui[data-contrast]:not([data-contrast="false"]) .lg-equipment__slot { border-width: 2px; }
 .lg-panel {
   position: relative;
   background: var(--lg-surface);

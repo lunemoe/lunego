@@ -1,5 +1,6 @@
 import type { InputMap } from './actions.js'
 import type { KeyEventLike, KeyboardTarget } from './input.js'
+import type { GamepadBindings } from './gamepad.js'
 
 export type SettingsScope = 'profile'
 
@@ -99,9 +100,12 @@ export interface KeybindSettingsData {
   readonly bindings: InputMap
   readonly uiScale: number
   readonly reducedMotion: boolean
+  readonly gamepad?: GamepadBindings
 }
 
-export const KEYBIND_SETTINGS_VERSION = 1
+export const KEYBIND_SETTINGS_VERSION = 2
+
+const EMPTY_GAMEPAD: GamepadBindings = { buttons: [], axes: [] }
 
 export function keybindSettingsSchema(
   defaults: InputMap,
@@ -113,12 +117,17 @@ export function keybindSettingsSchema(
       bindings: cloneMap(defaults),
       uiScale: 1,
       reducedMotion: false,
+      gamepad: EMPTY_GAMEPAD,
     },
-    migrate: () => ({
-      bindings: cloneMap(defaults),
-      uiScale: 1,
-      reducedMotion: false,
-    }),
+    migrate: (_from, old) => {
+      const value = old as Partial<KeybindSettingsData>
+      return {
+        bindings: value.bindings ?? cloneMap(defaults),
+        uiScale: value.uiScale ?? 1,
+        reducedMotion: value.reducedMotion ?? false,
+        gamepad: value.gamepad ?? EMPTY_GAMEPAD,
+      }
+    },
   })
 }
 

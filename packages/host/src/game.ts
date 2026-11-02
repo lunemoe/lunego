@@ -10,6 +10,7 @@ import {
   type FeatureDef,
   type ModelDef,
   type QueryDef,
+  type RestoreOptions,
   type SendOptions,
   type WorldSnapshot,
 } from '@lunego/core'
@@ -18,19 +19,25 @@ import type {
   CrashReport,
   GameFrame,
   GameOptions,
+  GameSave,
   HostMode,
   ReplayCheckpoint,
   ReplayData,
   ReplayHash,
   ReplayReport,
   RenderSource,
-  TimeGapDecision,
   TimeMode,
 } from './types.js'
-import { exportGameReplay, replayGame } from './game-replay.js'
+import {
+  exportSession,
+  replaySession,
+  restoreGameSave,
+  restoreWorldSnapshot,
+  snapshotGame,
+} from './game-save.js'
 import { collectFeatures, interpolatedComponents, uniqueModels } from './features.js'
-import { buildGameFrame, toCrashReport } from './frame.js'
-import { createRenderSource } from './view-source.js'
+import { buildGameFrame, resolveTimeGap, toCrashReport } from './frame.js'
+import { capturePreviousValues, createRenderSource } from './view-source.js'
 
 export class Game {
   readonly mode: HostMode
@@ -99,7 +106,7 @@ export class Game {
     }
     this.modelDefs = uniqueModels(this.features)
     this.interpolated = interpolatedComponents(this.features)
-    this.worldValue = new World(this.worldOptions())
+    this.worldValue = new World(this.restoreOptions())
     this.initialSnapshot = this.worldValue.snapshot()
     const initialHash = this.worldValue.hash()
     this.hashLog.push({ tick: 0, hash: initialHash })
@@ -212,7 +219,12 @@ export class Game {
     }
     let pending = deltaSeconds * this.speedValue
     if (this.timeMode === 'realtime' && pending > this.maxCatchUp) {
-      const decision = this.decideGap(pending)
+      const decision = resolveTimeGap(
+        pending,
+        this.maxCatchUp,
+        this.worldValue.tick,
+        this.onTimeGap,
+      )
       if (decision === 'pause') {
         this.pausedValue = true
         return 0
@@ -250,32 +262,38 @@ export class Game {
     return this.frameValue
   }
 
-  save(): WorldSnapshot {
-    return this.worldValue.snapshot()
+  save(): WorldSnapshot { return this.worldValue.snapshot() }
+
+  /** Snapshots world and profile scopes at the same tick. */
+  saveGame(): GameSave {
+    return snapshotGame(this.worldValue)
   }
 
   load(snapshot: WorldSnapshot): void {
     if (this.destroyedValue) {
       throw new LuneGoError('game_destroyed', 'game is destroyed')
     }
-    let next: World
-    try {
-      next = World.fromSnapshot(snapshot, {
-        features: this.features,
-        schemaVersion: this.schemaVersion,
-        dt: this.dt,
-        dev: this.dev,
-        ...(this.content === undefined ? {} : { content: this.content }),
-        ...(this.onDiagnostic === undefined ? {} : { onDiagnostic: this.onDiagnostic }),
-      })
-    } catch (error) {
-      throw new LuneGoError('load_failed', 'failed to load snapshot', { cause: error })
+    this.installWorld(restoreWorldSnapshot(snapshot, this.restoreOptions()), snapshot)
+  }
+
+  /**
+   * Loads a paired world/profile save. Both snapshots must be from the same
+   * tick and content; a failure leaves the running world untouched.
+   */
+  loadGame(save: GameSave): void {
+    if (this.destroyedValue) {
+      throw new LuneGoError('game_destroyed', 'game is destroyed')
     }
+    const loaded = restoreGameSave(save, this.restoreOptions())
+    this.installWorld(loaded.world, loaded.initialSnapshot)
+  }
+
+  private installWorld(next: World, initialSnapshot: WorldSnapshot): void {
     worldInternals(this.worldValue).rejectPending(
       new LuneGoError('game_loaded', 'game was loaded before the command ran'),
     )
     this.worldValue = next
-    this.initialSnapshot = snapshot
+    this.initialSnapshot = initialSnapshot
     this.hashLog.length = 0
     this.checkpoints.length = 0
     const hash = this.worldValue.hash()
@@ -303,17 +321,17 @@ export class Game {
   }
 
   exportReplay(): ReplayData {
-    return exportGameReplay({
-      world: this.worldValue,
-      initialSnapshot: this.initialSnapshot,
-      schemaVersion: this.schemaVersion,
-      hashes: this.hashLog,
-      checkpoints: this.checkpoints,
-    })
+    return exportSession(
+      this.worldValue,
+      this.initialSnapshot,
+      this.schemaVersion,
+      this.hashLog,
+      this.checkpoints,
+    )
   }
 
   replay(data: ReplayData): ReplayReport {
-    return replayGame(data, {
+    return replaySession(data, {
       features: this.features,
       dt: this.dt,
       dev: this.dev,
@@ -330,7 +348,7 @@ export class Game {
       new LuneGoError('game_destroyed', 'game was destroyed before the command ran'),
     )
   }
-  private worldOptions(): ConstructorParameters<typeof World>[0] {
+  private restoreOptions(): RestoreOptions {
     return {
       features: this.features,
       schemaVersion: this.schemaVersion,
@@ -340,14 +358,8 @@ export class Game {
       ...(this.onDiagnostic === undefined ? {} : { onDiagnostic: this.onDiagnostic }),
     }
   }
-  private decideGap(gap: number): TimeGapDecision {
-    if (this.onTimeGap === undefined) {
-      return 'skip'
-    }
-    return this.onTimeGap({ gap, maxCatchUp: this.maxCatchUp, tick: this.worldValue.tick })
-  }
   private stepInternal(render: boolean): GameFrame | null {
-    this.capturePrevious()
+    capturePreviousValues(this.worldValue, this.interpolated, this.previousValues)
     try {
       const coreFrame = this.worldValue.step()
       const frame = buildGameFrame(
@@ -378,15 +390,6 @@ export class Game {
       this.crashValue = toCrashReport(normalized, this.worldValue, this.hashLog)
       this.onError?.(this.crashValue)
       return null
-    }
-  }
-  private capturePrevious(): void {
-    for (const component of this.interpolated) {
-      const values = new Map<Entity, unknown>()
-      for (const entity of this.worldValue.query(component)) {
-        values.set(entity, this.worldValue.get(entity, component))
-      }
-      this.previousValues.set(component.name, values)
     }
   }
 }

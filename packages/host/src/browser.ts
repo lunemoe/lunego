@@ -1,9 +1,13 @@
 import type { WorldSnapshot } from '@lunego/core'
+import type { ProfileStorage } from './profile-store.js'
 
 export interface StorageLike {
   getItem(key: string): string | null
   setItem(key: string, value: string): void
   removeItem(key: string): void
+  /** Standard localStorage enumeration, needed by profile stores. */
+  readonly length?: number
+  key?(index: number): string | null
 }
 
 export interface BrowserSaveStore {
@@ -123,6 +127,44 @@ export function createBrowserSaveStore(
   }
 }
 
+
+/**
+ * Adapts Web Storage to the DOM-free profile store. Enumeration requires the
+ * standard `length`/`key(index)` members; other key/value backends can inject
+ * their own `ProfileStorage` instead.
+ */
+export function createBrowserProfileStorage(
+  storage: StorageLike | undefined = (globalThis as StorageGlobal).localStorage,
+): ProfileStorage {
+  if (storage === undefined) {
+    throw new Error('localStorage is unavailable; inject a StorageLike')
+  }
+  return {
+    read: (key) => storage.getItem(key),
+    write: (key, value) => {
+      storage.setItem(key, value)
+    },
+    remove: (key) => {
+      storage.removeItem(key)
+    },
+    keys: () => {
+      if (storage.key === undefined || storage.length === undefined) {
+        throw new BrowserSaveError(
+          'storage_keys',
+          'storage does not support key enumeration; inject a ProfileStorage',
+        )
+      }
+      const result: string[] = []
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index)
+        if (key !== null) {
+          result.push(key)
+        }
+      }
+      return result
+    },
+  }
+}
 
 export interface SettingsSchemaLike<T> {
   readonly version: number

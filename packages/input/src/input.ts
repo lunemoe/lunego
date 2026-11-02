@@ -1,5 +1,6 @@
 import { InputActions, type ActionState, type CommandRequest, type InputMap } from './actions.js'
 import { ActionContext } from './context.js'
+import { applyGamepadActions, type GamepadBindings, type GamepadSource } from './gamepad.js'
 import { PointerState, type PointerEventLike, type PointerTarget } from './pointer.js'
 
 export interface KeyEventLike {
@@ -13,12 +14,17 @@ export interface KeyboardTarget {
   removeEventListener(type: 'keydown' | 'keyup', listener: (event: KeyEventLike) => void): void
 }
 
+export type InputDevice = 'keyboard' | 'gamepad' | 'pointer'
+
 export interface InputOptions {
   readonly map: InputMap
   readonly toCommands: (actions: ActionState, pointer: PointerState) => readonly CommandRequest[]
   readonly target?: KeyboardTarget
   readonly pointerTarget?: PointerTarget
   readonly context?: ActionContext
+  readonly gamepad?: GamepadSource
+  readonly gamepadBindings?: GamepadBindings
+  readonly onDeviceChange?: (device: InputDevice) => void
   readonly preventDefault?: boolean
 }
 
@@ -34,7 +40,12 @@ export class Input {
   private readonly preventDefault: boolean
   private target: KeyboardTarget | null = null
   private pointerTarget: PointerTarget | null = null
+  readonly gamepad: GamepadSource | undefined
+  private gamepadBindings: GamepadBindings | undefined
+  private readonly onDeviceChange: ((device: InputDevice) => void) | undefined
+  private deviceValue: InputDevice = 'keyboard'
   private readonly onKeyDown = (event: KeyEventLike): void => {
+    this.markDevice('keyboard')
     if (this.actions.handleKeyDown(event.code) && this.preventDefault) {
       event.preventDefault?.()
     }
@@ -47,6 +58,7 @@ export class Input {
   }
 
   private readonly onPointerDown = (event: PointerEventLike): void => {
+    this.markDevice('pointer')
     this.pointer.handleDown(event)
     if (this.preventDefault) {
       event.preventDefault?.()
@@ -74,6 +86,9 @@ export class Input {
   constructor(actions: InputActions, options: Omit<InputOptions, 'map'>) {
     this.actions = actions
     this.context = options.context ?? new ActionContext()
+    this.gamepad = options.gamepad
+    this.gamepadBindings = options.gamepadBindings
+    this.onDeviceChange = options.onDeviceChange
     this.toCommands = options.toCommands
     this.preventDefault = options.preventDefault ?? true
     if (options.target !== undefined) {
@@ -122,13 +137,42 @@ export class Input {
     this.pointerTarget = null
   }
 
+  get device(): InputDevice {
+    return this.deviceValue
+  }
+
+  get bindings(): GamepadBindings | undefined {
+    return this.gamepadBindings
+  }
+
+  setGamepadBindings(bindings: GamepadBindings | undefined): void {
+    this.gamepadBindings = bindings
+  }
+
   poll(): readonly CommandRequest[] {
+    if (this.gamepad !== undefined) {
+      const poll = this.gamepad.poll()
+      if (poll.active) {
+        this.markDevice('gamepad')
+      }
+      if (this.gamepadBindings !== undefined) {
+        applyGamepadActions(this.actions, poll, this.gamepadBindings)
+      }
+    }
     const commands = this.context.isGameplay
       ? this.toCommands(this.actions, this.pointer)
       : []
     this.actions.endFrame()
     this.pointer.endFrame()
     return commands
+  }
+
+  private markDevice(device: InputDevice): void {
+    if (this.deviceValue === device) {
+      return
+    }
+    this.deviceValue = device
+    this.onDeviceChange?.(device)
   }
 
   releaseAll(): void {
@@ -144,8 +188,9 @@ export class Input {
     this.actions.loadMap(map)
   }
 
-  applySettings(settings: { readonly bindings: InputMap }): void {
+  applySettings(settings: { readonly bindings: InputMap; readonly gamepad?: GamepadBindings }): void {
     this.actions.loadMap(settings.bindings)
+    this.gamepadBindings = settings.gamepad
   }
 }
 

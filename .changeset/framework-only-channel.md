@@ -12,6 +12,14 @@
 "@lunego/kit-ai": minor
 "@lunego/kit-status": minor
 "@lunego/kit-combat": minor
+"@lunego/kit-items": minor
+"@lunego/kit-progression": minor
+"@lunego/kit-quest": minor
+"@lunego/kit-dialogue": minor
+"@lunego/kit-commerce": minor
+"@lunego/kit-encounter": minor
+"@lunego/kit-zone": minor
+"@lunego/i18n": minor
 ---
 
 Add LG016: game/template code may only use @lunego/* and its own
@@ -58,3 +66,13 @@ grid with diagonal rules), kit-ai provides threat tables and decision scoring,
 kit-status tracks stacked timed modifiers on top of kit-stats, and kit-combat
 resolves damage packets, mitigation and status application. UI adds drag/sort,
 virtual list, equipment, tree, graph, dialog, shop and minimap controls.
+Game systems: kit-items (stacking, rarity, affixes), kit-progression (levels, XP
+curves, unlock gates), kit-quest (objectives, stages, rewards), kit-dialogue
+(branching nodes, conditions), kit-commerce (pricing, stock, transactions),
+kit-encounter (spawn tables, wave pacing) and kit-zone (region grids, portals);
+all depend only on core, kit-stats and kit-ability. New @lunego/i18n package with
+typed message catalogs, plural/interpolation and locale fallback; UI gains
+localized text and accessibility helpers. CLI ships the asset pipeline (Aseprite,
+LDtk, atlas, PNG, manifest schema and validation, `lunego assets`); render-pixi
+consumes asset frames; input adds a gamepad adapter; host adds profile store,
+saveGame/loadGame, clocks and a deterministic local leaderboard.

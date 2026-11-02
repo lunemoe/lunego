@@ -1,12 +1,14 @@
 import { createEffect, createSignal, on } from 'solid-js'
 import html from 'solid-js/html'
+import { activateOnKey } from './a11y.js'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiChild, type UiNode, type UiValue } from './ui-types.js'
 
 export interface ChoiceItem {
   readonly id: string
   /** Localized choice text supplied by the caller. */
-  readonly label: string
-  readonly description?: string
+  readonly label: TextValue
+  readonly description?: TextValue
   readonly disabled?: boolean
 }
 
@@ -15,8 +17,9 @@ export interface ChoiceListProps {
   /** Fires at most once per choice set. */
   readonly onChoose: (id: string) => void
   readonly active?: UiValue<string | null>
-  readonly label?: string
-  readonly emptyLabel?: string
+  readonly label?: TextValue
+  readonly emptyLabel?: TextValue
+  readonly describedBy?: string
 }
 
 /**
@@ -78,11 +81,13 @@ export function ChoiceList(props: ChoiceListProps): UiNode {
     }
   }
 
-  return html`<div class="lg-choices" role="listbox" aria-label=${() => props.label ?? ''}>
+  return html`<div class="lg-choices" role="listbox"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}>
     ${() => {
       const list = choices()
       if (list.length === 0) {
-        return html`<div class="lg-choices__empty">${props.emptyLabel ?? ''}</div>`
+        return html`<div class="lg-choices__empty">${props.emptyLabel === undefined ? '' : resolveText(props.emptyLabel)}</div>`
       }
       return list.map((choice, index) => {
         const disabled = () => choice.disabled === true || chosen() !== null
@@ -109,10 +114,10 @@ export function ChoiceList(props: ChoiceListProps): UiNode {
           }}
           onClick=${() => choose(choice)}
           onKeyDown=${(event: KeyboardEvent) => onKeyDown(index, event)}>
-          <span class="lg-choices__label">${choice.label}</span>
+          <span class="lg-choices__label">${() => resolveText(choice.label)}</span>
           ${choice.description === undefined
             ? null
-            : html`<span class="lg-choices__description">${choice.description}</span>`}
+            : html`<span class="lg-choices__description">${() => resolveText(choice.description as TextValue)}</span>`}
         </div>`
       })
     }}
@@ -121,38 +126,53 @@ export function ChoiceList(props: ChoiceListProps): UiNode {
 
 export interface DialogProps {
   /** Localized speaker name supplied by the caller. */
-  readonly speaker?: UiValue<string | undefined>
-  readonly text: UiValue<string>
+  readonly speaker?: UiValue<TextValue | undefined>
+  readonly text: UiValue<TextValue>
   readonly portrait?: UiValue<string | null | undefined>
   readonly choices?: UiValue<readonly ChoiceItem[]>
   readonly onChoose?: (id: string) => void
   readonly onAdvance?: () => void
   /** Required with `onAdvance`; never defaulted by the framework. */
-  readonly advanceLabel?: string
-  readonly label?: string
+  readonly advanceLabel?: TextValue
+  readonly label?: TextValue
+  readonly describedBy?: string
   readonly children?: UiChild | (() => UiChild)
 }
 
 /** Dialogue panel: speaker, text, portrait and caller-provided choices. */
 export function Dialog(props: DialogProps): UiNode {
+  const label = (): string => {
+    const explicit = props.label === undefined ? undefined : readValue(props.label)
+    if (explicit !== undefined) {
+      return resolveText(explicit)
+    }
+    const speaker = props.speaker === undefined ? undefined : readValue(props.speaker)
+    return speaker === undefined ? '' : resolveText(speaker)
+  }
+  const speaker = (): string => {
+    const value = props.speaker === undefined ? undefined : readValue(props.speaker)
+    return value === undefined ? '' : resolveText(value)
+  }
+  const advance = (): void => props.onAdvance?.()
   return html`<section class="lg-dialog" role="dialog"
-    aria-label=${() => props.label ?? readValue(props.speaker ?? '') ?? ''}>
+    aria-label=${label}
+    aria-describedby=${() => props.describedBy}>
     <div class="lg-dialog__head">
       ${() => {
         const portrait = props.portrait === undefined ? null : readValue(props.portrait)
         return portrait === null || portrait === undefined
           ? null
           : html`<img class="lg-dialog__portrait" src=${portrait}
-              alt=${readValue(props.speaker ?? '') ?? ''} draggable="false" />`
+              alt=${() => speaker()} draggable="false" />`
       }}
       ${() => {
-        const speaker = readValue(props.speaker ?? '')
-        return speaker === undefined || speaker.length === 0
+        const text = speaker()
+        return text.length === 0
           ? null
-          : html`<span class="lg-dialog__speaker">${speaker}</span>`
+          : html`<span class="lg-dialog__speaker">${() => speaker()}</span>`
       }}
     </div>
-    <p class="lg-dialog__text" aria-live="polite">${() => readValue(props.text)}</p>
+    <p class="lg-dialog__text" aria-live="polite">${() => resolveText(readValue(props.text))}</p>
     ${props.children ?? null}
     ${() => {
       const choices = props.choices === undefined ? [] : readValue(props.choices)
@@ -161,25 +181,27 @@ export function Dialog(props: DialogProps): UiNode {
           choices: props.choices ?? [],
           onChoose: (id) => props.onChoose?.(id),
           label: props.label ?? '',
+          describedBy: props.describedBy ?? '',
         })
       }
       if (props.onAdvance === undefined || props.advanceLabel === undefined) {
         return null
       }
       return html`<button type="button" class="lg-button lg-dialog__advance"
-        onClick=${() => props.onAdvance?.()}>${props.advanceLabel}</button>`
+        onClick=${advance} onKeyDown=${activateOnKey(advance)}>${() => resolveText(props.advanceLabel as TextValue)}</button>`
     }}
   </section>`
 }
 
 export interface PagedTextProps {
-  readonly pages: UiValue<readonly string[]>
+  readonly pages: UiValue<readonly TextValue[]>
   readonly page?: UiValue<number>
   readonly onPageChange?: (index: number) => void
-  readonly prevLabel?: string
-  readonly nextLabel?: string
-  readonly label?: string
-  readonly emptyLabel?: string
+  readonly prevLabel?: TextValue
+  readonly nextLabel?: TextValue
+  readonly label?: TextValue
+  readonly emptyLabel?: TextValue
+  readonly describedBy?: string
 }
 
 /** Paginated text reader with caller-provided navigation labels. */
@@ -208,15 +230,21 @@ export function PagedText(props: PagedTextProps): UiNode {
     }
     props.onPageChange?.(target)
   }
-  return html`<div class="lg-paged" role="group" aria-label=${() => props.label ?? ''}
+  const prevText = () => (props.prevLabel === undefined ? '' : resolveText(props.prevLabel))
+  const nextText = () => (props.nextLabel === undefined ? '' : resolveText(props.nextLabel))
+  const previous = (): void => go(index() - 1)
+  const next = (): void => go(index() + 1)
+  return html`<div class="lg-paged" role="group"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}
     tabIndex="0"
     onKeyDown=${(event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft') {
         event.preventDefault()
-        go(index() - 1)
+        previous()
       } else if (event.key === 'ArrowRight') {
         event.preventDefault()
-        go(index() + 1)
+        next()
       } else if (event.key === 'Home') {
         event.preventDefault()
         go(0)
@@ -225,18 +253,24 @@ export function PagedText(props: PagedTextProps): UiNode {
         go(pageCount() - 1)
       }
     }}>
-    <p class="lg-paged__text" aria-live="polite">${() =>
-      readValue(props.pages)[index()] ?? props.emptyLabel ?? ''}</p>
+    <p class="lg-paged__text" aria-live="polite">${() => {
+      const page = readValue(props.pages)[index()]
+      return page === undefined
+        ? (props.emptyLabel === undefined ? '' : resolveText(props.emptyLabel))
+        : resolveText(page)
+    }}</p>
     <div class="lg-paged__nav">
       <button type="button" class="lg-button lg-paged__prev"
-        aria-label=${() => props.prevLabel ?? ''}
+        aria-label=${() => prevText()}
         disabled=${() => index() <= 0}
-        onClick=${() => go(index() - 1)}>${() => props.prevLabel ?? ''}</button>
+        onClick=${previous}
+        onKeyDown=${activateOnKey(previous)}>${() => prevText()}</button>
       <span class="lg-paged__count">${() => `${index() + 1}/${pageCount()}`}</span>
       <button type="button" class="lg-button lg-paged__next"
-        aria-label=${() => props.nextLabel ?? ''}
+        aria-label=${() => nextText()}
         disabled=${() => pageCount() === 0 || index() >= pageCount() - 1}
-        onClick=${() => go(index() + 1)}>${() => props.nextLabel ?? ''}</button>
+        onClick=${next}
+        onKeyDown=${activateOnKey(next)}>${() => nextText()}</button>
     </div>
   </div>`
 }

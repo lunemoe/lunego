@@ -1,6 +1,7 @@
 import { createEffect, createSignal, createUniqueId, onCleanup } from 'solid-js'
 import html from 'solid-js/html'
 import { render } from 'solid-js/web'
+import { resolveChild, type TextValue } from './text.js'
 import type { UiChild, UiNode } from './ui-types.js'
 
 export type TooltipPlacement = 'top' | 'bottom'
@@ -46,7 +47,7 @@ export function placeTooltip(input: TooltipPlacementInput): TooltipPlacementResu
 }
 
 export interface TooltipProps {
-  readonly content: UiChild | null | (() => UiChild | null | undefined)
+  readonly content: UiChild | TextValue | null | (() => UiChild | TextValue | null | undefined)
   readonly children: UiNode
   readonly placement?: TooltipPlacement
   /** Render into document.body (default) to avoid clipping/stacking contexts. */
@@ -64,7 +65,7 @@ export function Tooltip(props: TooltipProps): UiNode {
   let disposeContent: (() => void) | null = null
   let longPress: ReturnType<typeof setTimeout> | null = null
 
-  const readContent = (): UiChild | null | undefined =>
+  const readContent = (): UiChild | TextValue | null | undefined =>
     typeof props.content === 'function' ? props.content() : props.content
 
   const show = (): void => { setOpen(true) }
@@ -101,7 +102,7 @@ export function Tooltip(props: TooltipProps): UiNode {
       node.setAttribute('role', 'tooltip')
       root.appendChild(node)
       content = node
-      disposeContent = render(() => html`<span>${readContent() ?? ''}</span>` as Node, node)
+      disposeContent = render(() => html`<span>${() => resolveChild(readContent(), '')}</span>` as Node, node)
       onCleanup(() => {
         disposeContent?.()
         root.remove()
@@ -162,6 +163,6 @@ export function Tooltip(props: TooltipProps): UiNode {
     ${portal
       ? null
       : html`<span class="lg-tooltip__content" id=${id} role="tooltip"
-          style=${() => ({ display: open() ? 'block' : 'none' })}>${readContent() ?? ''}</span>`}
+          style=${() => ({ display: open() ? 'block' : 'none' })}>${() => resolveChild(readContent(), '')}</span>`}
   </span>`
 }

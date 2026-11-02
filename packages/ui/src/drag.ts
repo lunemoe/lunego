@@ -1,5 +1,6 @@
 import { createSignal } from 'solid-js'
 import html from 'solid-js/html'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiChild, type UiNode, type UiValue } from './ui-types.js'
 
 /** Minimal payload produced at drag start; no item rules are evaluated here. */
@@ -62,7 +63,8 @@ export interface DragSourceProps {
   readonly from: string
   readonly disabled?: UiValue<boolean>
   /** Localized accessible label supplied by the caller. */
-  readonly label?: string
+  readonly label?: TextValue
+  readonly describedBy?: string
   /** Optional preview rendered while this source is being dragged. */
   readonly preview?: UiValue<UiChild>
   readonly onDragStart?: (item: DragItemRef) => void
@@ -100,7 +102,8 @@ export function DragSource(props: DragSourceProps): UiNode {
     tabIndex=${() => (disabled() ? -1 : 0)}
     aria-disabled=${() => String(disabled())}
     aria-grabbed=${() => String(active())}
-    aria-label=${() => props.label ?? ''}
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}
     draggable=${() => String(!disabled())}
     onDragStart=${(event: Event) => {
       const transfer = dragDataTransfer(event)
@@ -153,7 +156,8 @@ export interface DropTargetProps {
   readonly disabled?: UiValue<boolean>
   /** Make the target focusable so Enter/Space can commit a keyboard drag. */
   readonly focusable?: boolean
-  readonly label?: string
+  readonly label?: TextValue
+  readonly describedBy?: string
   readonly children: UiChild | (() => UiChild)
 }
 
@@ -175,7 +179,8 @@ export function DropTarget(props: DropTargetProps): UiNode {
     role=${() => (props.focusable === true ? 'button' : undefined)}
     tabIndex=${() => (props.focusable === true && !disabled() ? 0 : undefined)}
     aria-disabled=${() => (props.focusable === true ? String(disabled()) : undefined)}
-    aria-label=${() => props.label ?? ''}
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}
     data-drag-over=${() => String(over())}
     onDragOver=${(event: Event) => {
       if (canDrop()) {

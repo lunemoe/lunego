@@ -105,6 +105,19 @@ export class InputActions implements ActionState {
     this.released.clear()
   }
 
+  /** Sets an action from a non-keyboard device while preserving edge sets. */
+  setAction(action: string, pressed: boolean): void {
+    if (pressed) {
+      if (!this.down.has(action)) {
+        this.down.add(action)
+        this.pressed.add(action)
+      }
+    } else if (this.down.has(action)) {
+      this.down.delete(action)
+      this.released.add(action)
+    }
+  }
+
   /** Releases every held action, e.g. on window blur or lost keyup. */
   releaseAll(): void {
     for (const action of this.down) {

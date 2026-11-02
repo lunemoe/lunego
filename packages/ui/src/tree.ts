@@ -1,11 +1,12 @@
 import { createMemo, createSignal } from 'solid-js'
 import html from 'solid-js/html'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiNode, type UiValue } from './ui-types.js'
 
 export interface TreeItemData {
   readonly id: string
   /** Localized label supplied by the caller. */
-  readonly label: string
+  readonly label: TextValue
   readonly children?: readonly TreeItemData[]
   readonly disabled?: boolean
   readonly icon?: string | null
@@ -42,8 +43,10 @@ export interface TreeViewProps {
   readonly expanded?: UiValue<readonly string[]>
   readonly onSelect?: (id: string) => void
   readonly onToggle?: (id: string, expanded: boolean) => void
-  readonly label?: string
-  readonly emptyLabel?: string
+  readonly label?: TextValue
+  readonly emptyLabel?: TextValue
+  /** Caller-owned description element id for `aria-describedby`. */
+  readonly describedBy?: string
 }
 
 /** Accessible tree with roving focus and Arrow/Home/End/Enter navigation. */
@@ -143,10 +146,12 @@ export function TreeView(props: TreeViewProps): UiNode {
     }
   }
 
-  return html`<ul class="lg-tree" role="tree" aria-label=${() => props.label ?? ''}>
+  return html`<ul class="lg-tree" role="tree"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}>
     ${() => {
       if (visible().length === 0) {
-        return html`<li class="lg-tree__empty">${props.emptyLabel ?? ''}</li>`
+        return html`<li class="lg-tree__empty">${props.emptyLabel === undefined ? '' : resolveText(props.emptyLabel)}</li>`
       }
       return visible().map((entry) => {
         const { node, depth } = entry
@@ -187,7 +192,7 @@ export function TreeView(props: TreeViewProps): UiNode {
           ${node.icon !== undefined && node.icon !== null
             ? html`<img class="lg-tree__icon" src=${node.icon} alt="" draggable="false" />`
             : null}
-          <span class="lg-tree__label">${node.label}</span>
+          <span class="lg-tree__label">${() => resolveText(node.label)}</span>
         </li>`
       })
     }}

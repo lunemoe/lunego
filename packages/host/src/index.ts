@@ -11,6 +11,7 @@ export type {
 export {
   BrowserSaveError,
   bindBrowserKeys,
+  createBrowserProfileStorage,
   createBrowserSaveStore,
   createBrowserSettingsStore,
   exposeBrowserDebug,
@@ -25,12 +26,36 @@ export type {
   SettingsSchemaLike,
   StorageLike,
 } from './browser.js'
+export { ProfileStore, createMemoryProfileStorage } from './profile-store.js'
+export type {
+  ImportProfileOptions,
+  ProfileBundleSummary,
+  ProfileLoadOptions,
+  ProfileSlotInfo,
+  ProfileSlotStatus,
+  ProfileStorage,
+  ProfileStoreOptions,
+} from './profile-store.js'
+export { SeasonClock, WorldClock } from './clock.js'
+export type { WorldClockOptions } from './clock.js'
+export {
+  LocalLeaderboard,
+  profileLeaderboardStorage,
+} from './leaderboard.js'
+export type {
+  LeaderboardEntry,
+  LeaderboardQuery,
+  LeaderboardState,
+  LeaderboardStorage,
+  LocalLeaderboardOptions,
+} from './leaderboard.js'
 export { verifyReplay } from './replay.js'
 export type { ReplayOptions } from './replay.js'
 export type {
   CrashReport,
   GameFrame,
   GameOptions,
+  GameSave,
   HostMode,
   ReplayCheckpoint,
   ReplayData,

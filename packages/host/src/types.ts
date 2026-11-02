@@ -25,6 +25,12 @@ export type HostMode = 'main' | 'worker'
 export type TimeMode = 'realtime' | 'onDemand' | 'fastForward'
 export type TimeGapDecision = 'catchUp' | 'skip' | 'pause'
 
+/** A world save and the profile save taken at the same tick. */
+export interface GameSave {
+  readonly world: WorldSnapshot
+  readonly profile: WorldSnapshot
+}
+
 export interface TimeGap {
   readonly gap: number
   readonly maxCatchUp: number

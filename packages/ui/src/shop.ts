@@ -1,22 +1,25 @@
 import html from 'solid-js/html'
+import { activateOnKey } from './a11y.js'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiNode, type UiValue } from './ui-types.js'
 
 export interface ShopRowProps {
   /** Localized name supplied by the caller. */
-  readonly name: UiValue<string>
+  readonly name: UiValue<TextValue>
   readonly icon?: UiValue<string | null>
   /** Pre-formatted price (including any currency label) supplied by the caller. */
   readonly price: UiValue<string | number>
   /** Pre-formatted quantity supplied by the caller; omitted when undefined. */
   readonly quantity?: UiValue<string | number>
-  readonly description?: UiValue<string | undefined>
-  readonly buyLabel: string
-  readonly sellLabel: string
+  readonly description?: UiValue<TextValue | undefined>
+  readonly buyLabel: TextValue
+  readonly sellLabel: TextValue
   readonly onBuy?: () => void
   readonly onSell?: () => void
   readonly buyDisabled?: UiValue<boolean>
   readonly sellDisabled?: UiValue<boolean>
-  readonly label?: string
+  readonly label?: TextValue
+  readonly describedBy?: string
 }
 
 /**
@@ -24,7 +27,11 @@ export interface ShopRowProps {
  * Stock, affordability and price math stay in the caller.
  */
 export function ShopRow(props: ShopRowProps): UiNode {
-  return html`<div class="lg-shop-row" role="group" aria-label=${() => props.label ?? ''}>
+  const buy = (): void => props.onBuy?.()
+  const sell = (): void => props.onSell?.()
+  return html`<div class="lg-shop-row" role="group"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}>
     ${() => {
       const icon = props.icon === undefined ? null : readValue(props.icon)
       return icon === null || icon === undefined
@@ -32,12 +39,12 @@ export function ShopRow(props: ShopRowProps): UiNode {
         : html`<img class="lg-shop-row__icon" src=${icon} alt="" draggable="false" />`
     }}
     <div class="lg-shop-row__info">
-      <span class="lg-shop-row__name">${() => readValue(props.name)}</span>
+      <span class="lg-shop-row__name">${() => resolveText(readValue(props.name))}</span>
       ${() => {
         const description = props.description === undefined ? undefined : readValue(props.description)
-        return description === undefined || description.length === 0
+        return description === undefined
           ? null
-          : html`<span class="lg-shop-row__description">${description}</span>`
+          : html`<span class="lg-shop-row__description">${() => resolveText(description)}</span>`
       }}
     </div>
     <span class="lg-shop-row__price">${() => readValue(props.price)}</span>
@@ -49,13 +56,15 @@ export function ShopRow(props: ShopRowProps): UiNode {
     }}
     <div class="lg-shop-row__actions">
       <button type="button" class="lg-button lg-shop-row__buy"
-        aria-label=${props.buyLabel}
+        aria-label=${() => resolveText(props.buyLabel)}
         disabled=${() => props.onBuy === undefined || readValue(props.buyDisabled ?? false)}
-        onClick=${() => props.onBuy?.()}>${props.buyLabel}</button>
+        onClick=${buy}
+        onKeyDown=${activateOnKey(buy)}>${() => resolveText(props.buyLabel)}</button>
       <button type="button" class="lg-button lg-shop-row__sell"
-        aria-label=${props.sellLabel}
+        aria-label=${() => resolveText(props.sellLabel)}
         disabled=${() => props.onSell === undefined || readValue(props.sellDisabled ?? false)}
-        onClick=${() => props.onSell?.()}>${props.sellLabel}</button>
+        onClick=${sell}
+        onKeyDown=${activateOnKey(sell)}>${() => resolveText(props.sellLabel)}</button>
     </div>
   </div>`
 }

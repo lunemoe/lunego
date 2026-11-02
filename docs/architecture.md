@@ -476,6 +476,9 @@ export const combatCues = defineCueMap({
 - **读档透明**："连续跑 N 个 tick"与"跑 N/2 个 tick、存档、读档、再跑 N/2 个 tick"必须得到相同的哈希。
 - **迁移**：持久化 schema 带版本号和迁移函数。`schema.lock.json` 记录结构哈希，结构变了却没升版本，check 就会失败。这项从第一次对外测试开始启用，在此之前开发存档可以直接丢弃。
 - **可靠性**：原子写入、保留最近几份备份；Web 平台申请持久化存储（`navigator.storage.persist()`），并支持导出存档文件。
+- **多角色本地档**：host 的 `ProfileStore` 以账号 → 角色槽组织 profile 快照，单槽校验 scope/tick/schemaVersion/contentHash；空槽、损坏槽与正常槽在 `list`/`load` 中可区分。支持 create/save/load/select/delete 与账号包 export/import（可换账号导入，冲突需显式 overwrite），存储通过注入的 `ProfileStorage`，浏览器适配为 `createBrowserProfileStorage`。
+- **成对读写**：`Game.saveGame()` 同时产出 world/profile 两份快照；`Game.loadGame({ world, profile })` 经 `World.fromSnapshots` 校验同 tick/同实体表/同内容后重建 viewSource，失败保留旧世界；成功读档会拒绝旧世界遗留的 pending 命令。回放使用合并后的 combined 快照，与单档 `Game.replay` 一致。
+- **本地元系统**：`WorldClock`/`SeasonClock` 只由 tick 推导 day/week/season/year 与 daily/weekly reset 边界（不读 `Date`）；`LocalLeaderboard` 按 score 降序、tick 升序、角色 id 升序给出全序，单角色只保留最佳成绩，序列化数据随 profile 存放。跨账号云存档、拍卖、邮件等仍属联机范围。
 
 ---
 

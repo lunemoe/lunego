@@ -1,5 +1,6 @@
 import { createMemo, createSignal } from 'solid-js'
 import html from 'solid-js/html'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiChild, type UiNode, type UiValue } from './ui-types.js'
 
 export interface VirtualRangeInput {
@@ -44,15 +45,17 @@ export interface VirtualListProps<T> {
   readonly height: number
   readonly overscan?: number
   readonly renderRow: (item: T, index: number) => UiChild
-  readonly rowLabel?: (item: T, index: number) => string
+  readonly rowLabel?: (item: T, index: number) => TextValue
   readonly onScroll?: (scrollTop: number) => void
-  readonly label?: string
-  readonly emptyLabel?: string
+  readonly label?: TextValue
+  readonly emptyLabel?: TextValue
+  readonly describedBy?: string
 }
 
 /** Fixed-height virtual list; only the visible window (plus overscan) is in the DOM. */
 export function VirtualList<T>(props: VirtualListProps<T>): UiNode {
   const [scrollTop, setScrollTop] = createSignal(0)
+  let viewport: HTMLElement | undefined
   const range = createMemo(() =>
     virtualRange({
       count: readValue(props.items).length,
@@ -62,6 +65,36 @@ export function VirtualList<T>(props: VirtualListProps<T>): UiNode {
       overscan: props.overscan ?? 1,
     }),
   )
+  const scrollTo = (next: number): void => {
+    const max = Math.max(0, range().totalHeight - props.height)
+    const target = Math.max(0, Math.min(next, max))
+    if (viewport !== undefined) {
+      viewport.scrollTop = target
+    }
+    setScrollTop(target)
+    props.onScroll?.(target)
+  }
+  const onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      scrollTo(scrollTop() + props.rowHeight)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      scrollTo(scrollTop() - props.rowHeight)
+    } else if (event.key === 'PageDown') {
+      event.preventDefault()
+      scrollTo(scrollTop() + props.height)
+    } else if (event.key === 'PageUp') {
+      event.preventDefault()
+      scrollTo(scrollTop() - props.height)
+    } else if (event.key === 'Home') {
+      event.preventDefault()
+      scrollTo(0)
+    } else if (event.key === 'End') {
+      event.preventDefault()
+      scrollTo(range().totalHeight)
+    }
+  }
   const rows = createMemo(() => {
     const items = readValue(props.items)
     const current = range()
@@ -75,13 +108,23 @@ export function VirtualList<T>(props: VirtualListProps<T>): UiNode {
         html`<div class="lg-vlist__row" role="listitem"
           aria-posinset=${index + 1}
           aria-setsize=${items.length}
-          aria-label=${() => props.rowLabel?.(item, index) ?? ''}
+          aria-label=${() => {
+            const label = props.rowLabel?.(item, index)
+            return label === undefined ? '' : resolveText(label)
+          }}
           style=${{ height: `${props.rowHeight}px` }}>${props.renderRow(item, index)}</div>`,
       )
     }
     return nodes
   })
-  return html`<div class="lg-vlist" role="list" aria-label=${() => props.label ?? ''}
+  return html`<div class="lg-vlist" role="list"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}
+    tabIndex="0"
+    ref=${(node: HTMLElement) => {
+      viewport = node
+    }}
+    onKeyDown=${onKeyDown}
     style=${{ height: `${props.height}px` }}
     onScroll=${(event: Event) => {
       const target = event.currentTarget as HTMLElement
@@ -92,7 +135,7 @@ export function VirtualList<T>(props: VirtualListProps<T>): UiNode {
       <div class="lg-vlist__window" style=${() => ({ transform: `translateY(${range().offset}px)` })}>
         ${() => {
           if (readValue(props.items).length === 0) {
-            return html`<div class="lg-vlist__empty">${props.emptyLabel ?? ''}</div>`
+            return html`<div class="lg-vlist__empty">${props.emptyLabel === undefined ? '' : resolveText(props.emptyLabel)}</div>`
           }
           return rows()
         }}

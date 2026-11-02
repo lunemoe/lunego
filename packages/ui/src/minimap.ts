@@ -1,5 +1,6 @@
 import { createMemo } from 'solid-js'
 import html from 'solid-js/html'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiNode, type UiValue } from './ui-types.js'
 
 export interface MinimapMapSize {
@@ -75,7 +76,7 @@ export function projectMinimapPoint(
 export interface MinimapMarker extends MinimapPoint {
   readonly id: string
   /** Localized accessible label / tooltip supplied by the caller. */
-  readonly label?: string
+  readonly label?: TextValue
   readonly icon?: string | null
   /** Any CSS color or caller theme token such as `var(--lg-accent)`. */
   readonly color?: string
@@ -96,7 +97,8 @@ export interface MinimapViewProps {
   /** Hard render cap; markers beyond it are not mounted. Defaults to 64. */
   readonly maxMarkers?: number
   readonly onMarkerClick?: (id: string) => void
-  readonly label?: string
+  readonly label?: TextValue
+  readonly describedBy?: string
 }
 
 /** DOM minimap: projection, marker cap, optional player arrow and marker clicks. */
@@ -123,7 +125,9 @@ export function MinimapView(props: MinimapViewProps): UiNode {
       padding: padding(),
       viewport: props.viewport === undefined ? null : readValue(props.viewport),
     })
-  return html`<div class="lg-minimap" role="group" aria-label=${() => props.label ?? ''}
+  return html`<div class="lg-minimap" role="group"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}
     style=${{
       width: `${size()}px`,
       height: `${size()}px`,
@@ -134,8 +138,8 @@ export function MinimapView(props: MinimapViewProps): UiNode {
         return html`<button type="button" class="lg-minimap__marker"
           data-marker-id=${marker.id}
           data-visible=${String(point.visible)}
-          aria-label=${marker.label ?? ''}
-          title=${marker.label ?? ''}
+          aria-label=${() => (marker.label === undefined ? '' : resolveText(marker.label))}
+          title=${() => (marker.label === undefined ? '' : resolveText(marker.label))}
           style=${{
             left: `${point.x}px`,
             top: `${point.y}px`,

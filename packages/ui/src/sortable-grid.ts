@@ -8,6 +8,7 @@ import {
   type DragDropEvent,
   type DragItemRef,
 } from './drag.js'
+import { resolveText, type TextValue } from './text.js'
 import { readValue, type UiChild, type UiNode, type UiValue } from './ui-types.js'
 
 export interface SortableGridProps<T> {
@@ -20,9 +21,10 @@ export interface SortableGridProps<T> {
   readonly onDragStart?: (item: DragItemRef) => void
   readonly onDragEnd?: () => void
   readonly renderItem?: (item: T, index: number) => UiChild
-  readonly itemLabel?: (item: T, index: number) => string
-  readonly label?: string
-  readonly emptyLabel?: string
+  readonly itemLabel?: (item: T, index: number) => TextValue
+  readonly label?: TextValue
+  readonly emptyLabel?: TextValue
+  readonly describedBy?: string
 }
 
 /**
@@ -160,7 +162,10 @@ export function SortableGrid<T>(props: SortableGridProps<T>): UiNode {
       }}
         role="listitem"
         tabIndex=${() => (focusIndex() === index ? 0 : -1)}
-        aria-label=${() => props.itemLabel?.(item, index) ?? ''}
+        aria-label=${() => {
+          const label = props.itemLabel?.(item, index)
+          return label === undefined ? '' : resolveText(label)
+        }}
         aria-grabbed=${() => String(grabbing())}
         data-index=${index}
         draggable="true"
@@ -202,12 +207,14 @@ export function SortableGrid<T>(props: SortableGridProps<T>): UiNode {
       </div>`
     })
 
-  return html`<div class="lg-sortable" role="list" aria-label=${() => props.label ?? ''}
+  return html`<div class="lg-sortable" role="list"
+    aria-label=${() => (props.label === undefined ? '' : resolveText(props.label))}
+    aria-describedby=${() => props.describedBy}
     style=${() => ({ gridTemplateColumns: `repeat(${columns()}, minmax(0, 1fr))` })}>
     ${() => {
       const list = items()
       if (list.length === 0) {
-        return html`<div class="lg-sortable__empty">${props.emptyLabel ?? ''}</div>`
+        return html`<div class="lg-sortable__empty">${props.emptyLabel === undefined ? '' : resolveText(props.emptyLabel)}</div>`
       }
       return cells()
     }}

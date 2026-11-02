@@ -16,6 +16,20 @@ export interface RenderSourceInput {
   readonly alpha: () => number
 }
 
+export function capturePreviousValues(
+  world: World,
+  components: readonly ComponentDef[],
+  previousValues: Map<string, ReadonlyMap<Entity, unknown>>,
+): void {
+  for (const component of components) {
+    const values = new Map<Entity, unknown>()
+    for (const entity of world.query(component)) {
+      values.set(entity, world.get(entity, component))
+    }
+    previousValues.set(component.name, values)
+  }
+}
+
 export function createRenderSource(input: RenderSourceInput): RenderSource {
   return {
     get alpha() {

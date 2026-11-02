@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
+import { PNG } from 'pngjs'
 import { templatesRoot } from '../new.js'
 
 const run = promisify(execFile)
@@ -102,7 +103,9 @@ describe('lunego cli', () => {
     expect((await invoke(['new', 'game', 'assets'], root)).code).toBe(0)
     const game = join(root, 'games', 'assets')
     await mkdir(join(game, 'assets', 'sprites'), { recursive: true })
-    await writeFile(join(game, 'assets', 'sprites', 'a.png'), 'pixel')
+    const sheet = new PNG({ width: 32, height: 16 })
+    sheet.data.fill(0)
+    await writeFile(join(game, 'assets', 'sprites', 'a.png'), PNG.sync.write(sheet))
     await writeFile(
       join(game, 'assets', 'manifest.json'),
       JSON.stringify({
