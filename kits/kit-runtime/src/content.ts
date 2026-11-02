@@ -50,6 +50,7 @@ export interface RuntimeAiProfile {
   readonly memoryTicks: number
   readonly leashRadius: number
   readonly attackRange: number
+  readonly attackCooldownTicks?: number
   readonly speed: number
   readonly ability?: string
 }

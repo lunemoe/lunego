@@ -155,7 +155,9 @@ export class Input {
       if (poll.active) {
         this.markDevice('gamepad')
       }
-      if (this.gamepadBindings !== undefined) {
+      // A disconnected pad must not release keyboard-held actions: its axes
+      // read as zero, which would otherwise cancel every mapped movement action.
+      if (this.gamepadBindings !== undefined && (poll.connected || poll.active)) {
         applyGamepadActions(this.actions, poll, this.gamepadBindings)
       }
     }

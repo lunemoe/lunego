@@ -16,6 +16,7 @@ import { Perception } from '@lunego/kit-ai'
 import {
   ActorControllable,
   ActorFacing,
+  ActorSpawned,
   ActorMoveSpeed,
   ActorPosition,
   ActorVelocity,
@@ -27,6 +28,7 @@ import {
   AcceptQuest,
   ApplyStatus,
   AttackTarget,
+  BuyItem,
   ContentTag,
   DamageRequested,
   Damaged,
@@ -52,6 +54,7 @@ import {
   QuestChanged,
   QuestLogSnapshot,
   StatusPeriodic,
+  SpawnActor,
   StatusState,
   TurnInQuest,
   UsePortal,
@@ -62,7 +65,7 @@ import {
 
 export function createRuntimeFeature(options: RuntimeFeatureOptions): FeatureDef {
   const { content, hooks = {} } = options
-  const { move, attack, pickup, equip, acceptQuest, turnInQuest, dialogueStart, dialogueChoose, applyStatus, encounterStart, usePortal } = createHandlers(content, hooks)
+  const { spawn, move, attack, buy, pickup, equip, acceptQuest, turnInQuest, dialogueStart, dialogueChoose, applyStatus, encounterStart, usePortal } = createHandlers(content, hooks)
   const components: readonly ComponentDef[] = [
     ActorPosition, ActorVelocity, ActorFacing, ActorMoveSpeed,
     CombatTeam, CombatHealth, CombatDefenses,
@@ -185,6 +188,8 @@ export function createRuntimeFeature(options: RuntimeFeatureOptions): FeatureDef
         } else {
           velocity.x[entity] = 0
           velocity.y[entity] = 0
+          const cooldown = profile.attackCooldownTicks ?? 0
+          if (ctx.tick - (state.lastAttackTick[entity] ?? 0) < cooldown) continue
           const ability = profile.ability ?? ''
           const damage = hooks.attackDamage?.(ctx, entity, nearest, ability) ??
             content.abilities.get(ability)?.damage
@@ -195,6 +200,7 @@ export function createRuntimeFeature(options: RuntimeFeatureOptions): FeatureDef
               amount: damage.amount,
               damageType: damage.type,
             })
+            aiView.lastAttackTick[entity] = ctx.tick
           }
         }
       }
@@ -348,13 +354,15 @@ export function createRuntimeFeature(options: RuntimeFeatureOptions): FeatureDef
       components,
       tags: [CombatDead, ActorControllable],
       models: [EncounterStateModel, ZoneStateModel, ItemIdentityModel, FogStateModel],
-      events: [DamageRequested, Damaged, Died, StatusPeriodic, QuestChanged, ItemPicked, ItemDropped, ZoneChanged, DialogueChanged],
-      commands: [MoveIntent, AttackTarget, PickupItem, EquipItem, AcceptQuest, TurnInQuest, DialogueStart, DialogueChoose, ApplyStatus, EncounterStart, UsePortal],
+      events: [DamageRequested, Damaged, Died, StatusPeriodic, QuestChanged, ItemPicked, ItemDropped, ZoneChanged, DialogueChanged, ActorSpawned],
+      commands: [SpawnActor, MoveIntent, AttackTarget, BuyItem, PickupItem, EquipItem, AcceptQuest, TurnInQuest, DialogueStart, DialogueChoose, ApplyStatus, EncounterStart, UsePortal],
     },
     systems: [aiThink, statusTick, integrate, combatResolve, lootDrop, questRecord],
     handlers: [
+      defineHandler(SpawnActor, { writes: [...components, ActorControllable], emits: [ActorSpawned], run: spawn.run }),
       defineHandler(MoveIntent, { reads: [ActorControllable], writes: [ActorVelocity, ActorFacing], run: move.run }),
       defineHandler(AttackTarget, { reads: [InventoryState, CombatTeam, CombatHealth, CombatDead], writes: [CombatDead], emits: [DamageRequested], run: attack.run }),
+      defineHandler(BuyItem, { reads: [InventoryState, WalletState], writes: [InventoryState, WalletState], run: buy.run }),
       defineHandler(PickupItem, { reads: [GroundItem, InventoryState], writes: [GroundItem, InventoryState], emits: [ItemPicked], run: pickup.run }),
       defineHandler(EquipItem, { reads: [InventoryState, EquipmentState], writes: [InventoryState, EquipmentState], run: equip.run }),
       defineHandler(AcceptQuest, { reads: [InventoryState], writes: [QuestLogSnapshot], emits: [QuestChanged], run: acceptQuest.run }),
@@ -362,7 +370,7 @@ export function createRuntimeFeature(options: RuntimeFeatureOptions): FeatureDef
       defineHandler(DialogueStart, { reads: [InventoryState], writes: [DialogueSnapshot], emits: [DialogueChanged], run: dialogueStart.run }),
       defineHandler(DialogueChoose, { reads: [InventoryState], writes: [DialogueSnapshot], emits: [DialogueChanged], run: dialogueChoose.run }),
       defineHandler(ApplyStatus, { reads: [StatusState], writes: [StatusState], run: applyStatus.run }),
-      defineHandler(EncounterStart, { reads: [EncounterStateModel], writes: [ActorPosition, ActorVelocity, ActorFacing, ActorMoveSpeed, CombatTeam, CombatHealth, CombatDefenses, ContentTag, EncounterStateModel, EncounterMember], run: encounterStart.run }),
+      defineHandler(EncounterStart, { reads: [EncounterStateModel], writes: [ActorPosition, ActorVelocity, ActorFacing, ActorMoveSpeed, CombatTeam, CombatHealth, CombatDefenses, ContentTag, AiState, EncounterStateModel, EncounterMember], emits: [ActorSpawned], run: encounterStart.run }),
       defineHandler(UsePortal, { reads: [ZoneStateModel], writes: [ZoneStateModel], emits: [ZoneChanged], run: usePortal.run }),
     ],
     queries: [

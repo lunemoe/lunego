@@ -4,7 +4,7 @@ test('renders the reactive UI panel and modal over the game', async ({ page }, t
   await page.goto('/')
   await page.waitForFunction(() => (window.__luneGame?.game.frame.tick ?? 0) >= 2)
   await expect(page.locator('.lg-panel__title')).toHaveText('Status')
-  await expect(page.locator('.lg-bar__label')).toHaveText('100/100')
+  await expect(page.locator('.lg-bar__label')).toHaveText('40/40')
   await testInfo.attach('ui-panel.png', {
     body: await page.screenshot(),
     contentType: 'image/png',

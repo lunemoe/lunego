@@ -1,21 +1,21 @@
 # motion
 
-意图：让一个方块响应方向输入移动，并作为俯视角模板的最小逻辑 feature。
+意图：俯视角模板的表现与装配壳。玩法运行时来自 `@lunego/kit-runtime`，本 feature 只提供游戏自己的渲染组件、角色档案和出生装配，不复制移动/AI/战斗机制。
 
 ## 公共接口
 
-- 组件：`Position`、`Velocity`、`Renderable`
-- Tag：`Player`
-- 命令：`motion.start`、`motion.moveIntent`
-- Cue：`motion.moveDust`（脚下落脚尘，表现层映射为 pixelfx 特效）
-- System：`motion.integrate`
+- 组件：`Renderable`
+- Model：`CharacterProfile`（profile scope）
+- 命令：`demo.start`
+- 查询：`HudQuery`（只读 UI DTO）
+- 内容：`demo.*` 中性模板内容与 `RuntimeHooks` 示例策略
 
 ## 不变量
 
-- 只有 `Player` 实体响应 `motion.moveIntent`。
-- 位置只由 `motion.integrate` 在每个 tick 积分一次。
-- 所有持久化状态使用 `persist: 'world'`。
+- 移动、AI、战斗、掉落、任务全部通过 `@lunego/kit-runtime` 的 System/Handler。
+- UI 只读查询结果并发送 runtime 命令；不直接写组件。
+- 所有快照字段都经过 runtime 的 typed bridge。
 
 ## 依赖
 
-`@lunego/core`。
+`@lunego/core`、`@lunego/kit-runtime`。

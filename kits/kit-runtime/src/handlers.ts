@@ -18,8 +18,9 @@ import {
   writeInventory,
 } from './state-bridge.js'
 import {
-  ActorFacing,
   ActorControllable,
+  ActorFacing,
+  ActorSpawned,
   ActorVelocity,
   CombatDead,
   CombatHealth,
@@ -32,6 +33,7 @@ import {
   GroundItem,
   ItemPicked,
   StatusState,
+  WalletState,
   QuestChanged,
   QuestLogSnapshot,
   ZoneChanged,
@@ -40,6 +42,16 @@ import {
 import type { RuntimeHooks } from './types.js'
 
 export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
+  const spawn = {
+    run(ctx: HandlerContext, payload: { readonly prefab: string; readonly controllable: boolean | undefined }) {
+      const prefab = content.prefabs.get(payload.prefab)
+      if (prefab === undefined) return reject('unknown_prefab')
+      const entity = ctx.spawn(prefab)
+      if (payload.controllable === true) ctx.add(entity, ActorControllable)
+      ctx.emit(ActorSpawned, { entity, prefab: payload.prefab })
+      return ok()
+    },
+  }
   const move = {
     run(ctx: HandlerContext, payload: { readonly x: number; readonly y: number }) {
       const velocity = ctx.write(ActorVelocity)
@@ -81,6 +93,52 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
         amount: damage.amount,
         damageType: damage.type,
       })
+      return ok()
+    },
+  }
+  const buy = {
+    run(ctx: HandlerContext, payload: { readonly vendor: string; readonly slot: number }) {
+      const vendor = content.vendors.get(payload.vendor)
+      if (vendor === undefined) return reject('unknown_vendor')
+      const offer = vendor.stock[payload.slot]
+      if (offer === undefined) return reject('missing_offer')
+      const player = playerEntity(ctx)
+      if (player === undefined) return reject('missing_inventory')
+      const price = vendor.buy[offer.contentId]
+      if (price === undefined || !Number.isInteger(price) || price < 0) return reject('invalid_price')
+      const wallet = ctx.write(WalletState)
+      const gold = wallet.gold[player] ?? 0
+      if (gold < price) return reject('insufficient_gold')
+      const def = content.items.get(offer.contentId)
+      if (def === undefined) return reject('unknown_item')
+      const max = def.maxStack ?? 1
+      const inventory = readInventory(ctx, player)
+      const slots = [...inventory.slots]
+      let remaining = offer.quantity
+      for (let index = 0; index < slots.length && remaining > 0; index += 1) {
+        const existing = slots[index]
+        if (existing === null || existing.contentId !== offer.contentId) continue
+        const room = max - existing.quantity
+        if (room > 0) {
+          const moved = Math.min(room, remaining)
+          slots[index] = { ...existing, quantity: existing.quantity + moved }
+          remaining -= moved
+        }
+      }
+      while (remaining > 0) {
+        const empty = slots.findIndex((slot) => slot === null)
+        if (empty < 0) return reject('inventory_full')
+        const moved = Math.min(remaining, max)
+        slots[empty] = {
+          id: `${offer.contentId}#buy.${ctx.tick}.${payload.slot}.${empty}`,
+          contentId: offer.contentId,
+          quantity: moved,
+          affixes: [],
+        }
+        remaining -= moved
+      }
+      writeInventory(ctx, player, { slots })
+      wallet.gold[player] = gold - price
       return ok()
     },
   }
@@ -235,6 +293,7 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
           wave: spawned.wave,
           spawnKey: spawned.entity,
         })
+        ctx.emit(ActorSpawned, { entity, prefab: spawned.contentId })
       }
       ctx.mutModel(EncounterStateModel).snapshot = JSON.stringify({
         encounter: payload.encounter,
@@ -256,5 +315,5 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
       return ok()
     },
   }
-  return { move, attack, pickup, equip, acceptQuest, turnInQuest, dialogueStart, dialogueChoose, applyStatus, encounterStart, usePortal }
+  return { spawn, move, attack, buy, pickup, equip, acceptQuest, turnInQuest, dialogueStart, dialogueChoose, applyStatus, encounterStart, usePortal }
 }

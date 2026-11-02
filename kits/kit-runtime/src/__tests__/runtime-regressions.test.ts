@@ -7,6 +7,7 @@ import {
   AcceptQuest,
   ApplyStatus,
   AttackTarget,
+  BuyItem,
   CombatDead,
   CombatHealth,
   DamageRequested,
@@ -16,9 +17,11 @@ import {
   ItemDefContent,
   ItemDropped,
   ItemPicked,
+  InventoryState,
   MoveIntent,
   PickupItem,
   QuestLogSnapshot,
+  WalletState,
   StatusState,
   UsePortal,
   ZoneStateModel,
@@ -55,6 +58,16 @@ describe('runtime correctness regressions', () => {
     expect(await pending).toEqual({ status: 'ok' })
     expect(world.get(player, ActorVelocity)).toEqual({ x: 3, y: -1 })
     expect(world.get(staticEntity, ActorVelocity)).toEqual({ x: 9, y: 9 })
+  })
+
+  it('buys vendor stock atomically through the command path', async () => {
+    const { world, player } = makeWorld()
+    const buy = world.send(BuyItem.type, { vendor: 'fixture.vendor', slot: 0 })
+    world.step()
+    expect(await buy).toEqual({ status: 'ok' })
+    expect(world.world.get(player, WalletState)?.gold).toBe(45)
+    const inventory = JSON.parse(world.world.get(player, InventoryState)?.snapshot ?? '{}')
+    expect(inventory.slots[0]?.contentId).toBe('fixture.sword')
   })
 
   it('emits ItemDropped before ItemPicked and does not count collect on drop', async () => {
@@ -174,7 +187,7 @@ describe('runtime correctness regressions', () => {
     const blind = makeWorld()
     blind.world.remove(blind.enemy, AiState)
     blind.world.add(blind.enemy, AiState, {
-      profile: 'fixture.blind', phase: 'chase', target: blind.player, lastSeenTick: 0,
+      profile: 'fixture.blind', phase: 'chase', target: blind.player, lastSeenTick: 0, lastAttackTick: 0,
       blacklist: [], threats: [], memory: [],
     })
     blind.world.step()
@@ -185,7 +198,7 @@ describe('runtime correctness regressions', () => {
     deadTarget.world.add(dummy, CombatDead)
     deadTarget.world.remove(deadTarget.enemy, AiState)
     deadTarget.world.add(deadTarget.enemy, AiState, {
-      profile: 'fixture.melee', phase: 'chase', target: dummy, lastSeenTick: 0,
+      profile: 'fixture.melee', phase: 'chase', target: dummy, lastSeenTick: 0, lastAttackTick: 0,
       blacklist: [], threats: [], memory: [],
     })
     deadTarget.world.step()

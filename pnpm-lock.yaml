@@ -663,9 +663,15 @@ importers:
       '@lunego/host':
         specifier: workspace:*
         version: link:../../packages/host
+      '@lunego/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@lunego/input':
         specifier: workspace:*
         version: link:../../packages/input
+      '@lunego/kit-runtime':
+        specifier: workspace:*
+        version: link:../../kits/kit-runtime
       '@lunego/render-pixi':
         specifier: workspace:*
         version: link:../../packages/render-pixi

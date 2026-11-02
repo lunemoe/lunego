@@ -19,7 +19,9 @@
     "@lunego/audio": "workspace:*",
     "solid-js": "^1.9.18",
     "@lunego/vfx": "workspace:*",
-    "lunego": "workspace:*"
+    "lunego": "workspace:*",
+    "@lunego/kit-runtime": "workspace:*",
+    "@lunego/i18n": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

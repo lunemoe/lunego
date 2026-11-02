@@ -11,7 +11,7 @@ declare global {
     }
     __luneGame?: {
       readonly game: {
-        readonly frame: { readonly tick: number }
+        readonly frame: { readonly tick: number; readonly hash: string }
         send(type: string, payload: unknown): Promise<unknown>
       }
       readonly vfx: { readonly effectCount: number }
@@ -45,6 +45,19 @@ declare global {
         readonly musicMuted: boolean
         readonly musicStopped: boolean
       }
+      readonly gamepad: {
+        readonly connected: boolean
+      }
+      readonly hud: () => {
+        readonly player: number
+        readonly hp: number
+        readonly maxHp: number
+        readonly gold: number
+        readonly inventory: readonly { readonly slot: number; readonly contentId: string; readonly quantity: number }[]
+        readonly quests: readonly { readonly id: string; readonly status: string; readonly progress: number }[]
+        readonly enemy: number
+        readonly ground: number
+      } | null
       readonly input: {
         readonly pointer: {
           readonly screenPosition: { readonly x: number; readonly y: number }

@@ -12,6 +12,7 @@ import {
   type ContentTypeDef,
   type EventDef,
   type ModelDef,
+  type OptionalType,
   type RefType,
   type ScalarType,
   type StructType,
@@ -124,6 +125,10 @@ export const ItemDropped: EventDef<{ readonly entity: EntityType; readonly item:
   'runtime.items.dropped',
   { entity: t.entity, item: t.str },
 )
+export const ActorSpawned: EventDef<{ readonly entity: EntityType; readonly prefab: StringType }> = defineEvent(
+  'runtime.actor.spawned',
+  { entity: t.entity, prefab: t.str },
+)
 export const CombatDead: TagDef = defineTag('runtime.combat.dead', { persist: 'world' })
 export const StatusState: ComponentDef<{ readonly snapshot: StringType }> = defineComponent(
   'runtime.status.state',
@@ -142,6 +147,7 @@ export const AiState: ComponentDef<{
   readonly phase: StringType
   readonly target: EntityType
   readonly lastSeenTick: U32
+  readonly lastAttackTick: U32
   readonly blacklist: ArrayType<EntityType>
   readonly threats: ArrayType<StructType<AiThreat>>
   readonly memory: ArrayType<StructType<AiMemory>>
@@ -152,6 +158,7 @@ export const AiState: ComponentDef<{
     phase: t.str,
     target: t.entity,
     lastSeenTick: t.u32,
+    lastAttackTick: t.u32,
     blacklist: t.array(t.entity),
     threats: t.array(t.struct({ entity: t.entity, threat: t.f32 })),
     memory: t.array(t.struct({ entity: t.entity, x: t.f32, y: t.f32, lastSeenTick: t.u32 })),
@@ -293,6 +300,14 @@ export const ApplyStatus: CommandDef<{
   source: t.str,
   stacks: t.i32,
 })
+type SpawnShape = {
+  readonly prefab: StringType
+  readonly controllable: OptionalType<ScalarType<boolean, 'bool'>>
+}
+export const SpawnActor: CommandDef<SpawnShape> = defineCommand('runtime.actor.spawn', {
+  prefab: t.str,
+  controllable: t.optional(t.bool),
+})
 export const MoveIntent: CommandDef<MoveShape> = defineCommand('runtime.actor.move', {
   x: t.f32,
   y: t.f32,
@@ -306,6 +321,10 @@ export const AttackTarget = defineCommand('runtime.combat.attack', {
 export const PickupItem: CommandDef<{ readonly ground: EntityType }> = defineCommand(
   'runtime.items.pickup',
   { ground: t.entity },
+)
+export const BuyItem: CommandDef<{ readonly vendor: RefType<'runtime.VendorDef'>; readonly slot: I32 }> = defineCommand(
+  'runtime.commerce.buy',
+  { vendor: t.ref(VendorDefContent), slot: t.i32 },
 )
 export const EquipItem: CommandDef<{ readonly slot: I32 }> = defineCommand(
   'runtime.items.equip',

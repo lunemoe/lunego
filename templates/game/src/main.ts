@@ -2,96 +2,109 @@ import { ContentRegistry } from '@lunego/core'
 import type { Game } from '@lunego/host'
 import {
   bindBrowserKeys,
+  createBrowserProfileStorage,
   createBrowserSaveStore,
   createGame,
   createViewLoop,
   exposeBrowserDebug,
+  ProfileStore,
 } from '@lunego/host'
+import { UiMenuStack, createUiBridge } from '@lunego/ui'
 import {
-  Bar,
-  Button,
-  KeyHint,
-  Modal,
-  Panel,
-  UiRoot,
-  UiMenuStack,
-  createUiBridge,
-  createUiSignal,
-  mountUi,
-} from '@lunego/ui'
-import { ActionContext, attachBrowserInput, createInput } from '@lunego/input'
-import {
-  CameraController,
-  RenderSystem,
-  backgroundSpec,
-  createPixiRenderer,
-  createRuntimeCanvas,
-  defineRenderBinding,
-  rectSpec,
-  spriteSpec,
-} from '@lunego/render-pixi'
+  ActionContext,
+  GamepadSource,
+  attachBrowserGamepad,
+  attachBrowserInput,
+  createInput,
+} from '@lunego/input'
 import {
   Effects,
   VfxSystem,
-  defineCueMap,
-  mountCanvasEffectSurface,
 } from '@lunego/vfx'
 import type { VfxSystem as VfxSystemType } from '@lunego/vfx'
 import {
-  MoveDust,
+  AcceptQuest,
+  ActorPosition,
+  AttackTarget,
+  EncounterStart,
   MoveIntent,
-  Player,
-  Position,
-  Renderable,
-  Start,
-} from '../features/motion/schema.js'
+  PickupItem,
+  SpawnActor,
+} from '@lunego/kit-runtime'
+import { HudQuery, Start, type HudView } from '../features/motion/schema.js'
 import { MotionFeature } from '../features/motion/logic/index.js'
-import { DemoContent, DemoText } from '../features/motion/content/demo.js'
-import { ContentIds } from '../features/_generated/ids.js'
+import { DemoTextContent, createDemoRuntime, registerDemoContent } from '../features/motion/content/demo.js'
+import { createDemoView } from './view/render.js'
+import { mountDemoUi } from './view/ui.js'
 
 const SAVE_KEY = '__GAME_NAME__-save'
+const PROFILE_ACCOUNT = 'template'
+const PROFILE_SLOT = 'demo'
 
 declare global {
   interface Window {
     __luneGame?: {
       readonly game: Game
       readonly vfx: VfxSystemType
-      readonly renderer: Awaited<ReturnType<typeof createPixiRenderer>>
+      readonly renderer: Awaited<ReturnType<typeof createDemoView>>['renderer']
       readonly input: ReturnType<typeof createInput>
+      readonly gamepad: GamepadSource
       readonly save: () => void
       readonly load: () => void
+      readonly hud: () => HudView | null
+      readonly position: () => { readonly x: number; readonly y: number } | null
     }
   }
 }
 
 async function boot(): Promise<void> {
   const content = new ContentRegistry()
-  content.addPack(DemoContent)
-  const demoTitle = content.get(DemoText, ContentIds.DemoText.title).text
+  content.addPack(DemoTextContent)
+  const runtimeContent = registerDemoContent(content)
+  const runtimeFeature = createDemoRuntime(runtimeContent)
   const vfx = new VfxSystem({ width: 480, height: 270, maxEffects: 64 })
-  const cueMap = defineCueMap({
-    [MoveDust.name]: (cue) => {
-      const { at } = cue.payload as { at: { x: number; y: number } }
-      return [
-        {
-          effect: Effects.poof,
-          x: at.x,
-          y: at.y,
-          layer: 'ground',
-          scale: 0.55,
-        },
-      ]
-    },
-  })
   const game = createGame({
-    features: [MotionFeature],
+    features: [runtimeFeature, MotionFeature],
     content,
+    seed: 7,
     dt: 1 / 60,
-    schemaVersion: 5,
+    schemaVersion: 8,
     timeMode: 'realtime',
     onFrame: (frame) => {
-      if (frame.render) {
-        vfx.consume(frame, cueMap)
+      if (!frame.render) return
+      for (const event of frame.events) {
+        const payload = event.payload as { readonly target?: number; readonly entity?: number }
+        const entity = payload.target ?? payload.entity
+        const position = entity === undefined ? undefined : game.view.get(entity, ActorPosition)
+        if (position === undefined) continue
+        if (event.type === 'runtime.combat.damaged') {
+          vfx.play({
+            effect: Effects.impactSpark,
+            x: position.x,
+            y: position.y,
+            layer: 'front',
+            scale: 0.7,
+            seed: frame.tick * 31 + 1,
+          })
+        } else if (event.type === 'runtime.combat.died') {
+          vfx.play({
+            effect: Effects.explosionSmall,
+            x: position.x,
+            y: position.y,
+            layer: 'ground',
+            scale: 0.8,
+            seed: frame.tick * 31 + 2,
+          })
+        } else if (event.type === 'runtime.items.dropped') {
+          vfx.play({
+            effect: Effects.coinSpin,
+            x: position.x,
+            y: position.y,
+            layer: 'ground',
+            scale: 0.6,
+            seed: frame.tick * 31 + 3,
+          })
+        }
       }
     },
   })
@@ -109,188 +122,56 @@ async function boot(): Promise<void> {
       inputContext.pop('menu')
     }
   })
-  const [helpOpen, setHelpOpen] = createUiSignal(false)
-  const [settingsOpen, setSettingsOpen] = createUiSignal(false)
-  const [uiScale, setUiScale] = createUiSignal(1)
-  const [reducedMotion, setReducedMotion] = createUiSignal(false)
-  const openMenu = (open: (value: boolean) => void): void => {
-    open(true)
-  }
-  const closeMenu = (open: (value: boolean) => void): void => {
-    open(false)
-  }
-  {
-    mountUi('#ui', bridge, (ui) => {
-      const vitals = () => ui.models()['Vitals'] as { hp: number; maxHp: number } | undefined
-      return UiRoot({
-        theme: { accent: '#58c8ff', accentText: '#08121c' },
-        uiScale,
-        reducedMotion,
-        children: [
-          Panel({
-            title: demoTitle,
-            children: [
-              Bar({
-                kind: 'hp',
-                value: () => vitals()?.hp ?? 0,
-                max: () => vitals()?.maxHp ?? 100,
-              }),
-              Button({
-                children: 'Move right',
-                onClick: () => void ui.send(MoveIntent.type, { x: 1, y: 0 }),
-              }),
-              Button({
-                children: 'Help',
-                onClick: () => openMenu(setHelpOpen),
-              }),
-              Button({
-                children: 'Settings',
-                onClick: () => openMenu(setSettingsOpen),
-              }),
-            ],
-          }),
-          Modal({
-            open: helpOpen,
-            title: 'Controls',
-            menuStack,
-            onClose: () => closeMenu(setHelpOpen),
-            children: [
-              KeyHint({ keys: ['W', 'A', 'S', 'D'] }),
-              Button({ children: 'Close', onClick: () => closeMenu(setHelpOpen) }),
-            ],
-          }),
-          Modal({
-            open: settingsOpen,
-            title: 'Settings',
-            menuStack,
-            onClose: () => closeMenu(setSettingsOpen),
-            children: [
-              Button({
-                children: `UI scale ${uiScale().toFixed(2)}`,
-                onClick: () => setUiScale(uiScale() >= 1.5 ? 1 : uiScale() + 0.25),
-              }),
-              Button({
-                children: `Reduced motion ${reducedMotion() ? 'on' : 'off'}`,
-                onClick: () => setReducedMotion(!reducedMotion()),
-              }),
-              Button({ children: 'Close', onClick: () => closeMenu(setSettingsOpen) }),
-            ],
-          }),
-        ],
-      })
-    })
-  }
 
-  const renderer = await createPixiRenderer({
-    width: 480,
-    height: 270,
-    background: 0x0b1018,
-    container: '#game',
-  })
-  const surface = mountCanvasEffectSurface(vfx, '#game', {
-    className: 'vfx-layer',
-    alignTo: renderer.element,
-  })
-
-  const crate = createRuntimeCanvas(16, 16)
-  const crateContext = crate.getContext('2d')
-  if (crateContext !== null) {
-    crateContext.fillStyle = '#d88a4a'
-    crateContext.fillRect(0, 0, 16, 16)
-    crateContext.fillStyle = '#a86232'
-    crateContext.fillRect(0, 0, 16, 2)
-    crateContext.fillRect(0, 14, 16, 2)
-    crateContext.fillRect(0, 0, 2, 16)
-    crateContext.fillRect(14, 0, 2, 16)
-    crateContext.fillStyle = '#ffc27a'
-    crateContext.fillRect(4, 4, 8, 2)
-    crateContext.fillRect(4, 10, 8, 2)
-    crateContext.fillStyle = '#7a3f1e'
-    crateContext.fillRect(7, 6, 2, 4)
-  }
-  await renderer.textures.registerSource('runtime-crate', crate, { width: 16, height: 16 })
-
-  const backdrop = createRuntimeCanvas(480, 270)
-  const backdropContext = backdrop.getContext('2d')
-  if (backdropContext !== null) {
-    backdropContext.fillStyle = '#0b1018'
-    backdropContext.fillRect(0, 0, 480, 270)
-    backdropContext.fillStyle = '#0d141e'
-    for (let y = 0; y < 270; y += 16) {
-      for (let x = 0; x < 480; x += 16) {
-        if ((x / 16 + y / 16) % 2 === 0) {
-          backdropContext.fillRect(x, y, 16, 16)
-        }
+  const saves = createBrowserSaveStore(SAVE_KEY)
+  const profiles = new ProfileStore({ storage: createBrowserProfileStorage() })
+  const save = (): void => {
+    try {
+      const pair = game.saveGame()
+      saves.save(pair.world)
+      if (profiles.has(PROFILE_ACCOUNT, PROFILE_SLOT)) {
+        profiles.save(PROFILE_ACCOUNT, PROFILE_SLOT, pair.profile)
+      } else {
+        profiles.create(PROFILE_ACCOUNT, PROFILE_SLOT, pair.profile)
       }
+    } catch (error) {
+      console.error('save failed', error)
     }
   }
-  await renderer.textures.registerSource('runtime-backdrop', backdrop, { width: 480, height: 270 })
-  renderer.setBackground(backgroundSpec({ color: 0x0b1018, texture: 'runtime-backdrop' }))
-
-  const tileset = createRuntimeCanvas(32, 16)
-  const tilesetContext = tileset.getContext('2d')
-  if (tilesetContext !== null) {
-    tilesetContext.fillStyle = '#1a2433'
-    tilesetContext.fillRect(0, 0, 16, 16)
-    tilesetContext.fillStyle = '#243a2a'
-    tilesetContext.fillRect(16, 0, 16, 16)
-    tilesetContext.fillStyle = '#31465a'
-    tilesetContext.fillRect(2, 2, 12, 1)
-    tilesetContext.fillRect(2, 13, 12, 1)
+  const load = (): void => {
+    try {
+      const world = saves.load()
+      if (world === null) return
+      const profile = profiles.load(PROFILE_ACCOUNT, PROFILE_SLOT, {
+        tick: world.tick,
+        schemaVersion: world.schemaVersion,
+      })
+      game.loadGame({ world, profile })
+    } catch (error) {
+      console.error('load failed', error)
+    }
   }
-  await renderer.textures.registerSource('runtime-tiles', tileset, { width: 32, height: 16 })
-  renderer.setTilemap({
-    tileset: { texture: 'runtime-tiles', tileWidth: 16, tileHeight: 16, columns: 2 },
-    layers: [
-      {
-        name: 'floor',
-        width: 30,
-        height: 20,
-        tiles: Array.from({ length: 30 * 20 }, (_, index) => (index % 2 === 0 ? 0 : 1)),
-      },
+  const hud = (): HudView | null => game.query<unknown, HudView | null>(HudQuery, {})
+
+  const uiHandle = mountDemoUi({ bridge, menuStack, hud, save, load })
+  const { renderer, surface, renderSystem, camera } = await createDemoView(vfx)
+
+  const gamepad = new GamepadSource()
+  attachBrowserGamepad(gamepad)
+  const gamepadBindings = {
+    buttons: [
+      { action: 'attack', button: 0 },
+      { action: 'interact', button: 1 },
+      { action: 'inventory', button: 2 },
+      { action: 'quests', button: 3 },
     ],
-  })
-
-  const renderSystem = new RenderSystem(renderer)
-  const camera = new CameraController({ width: 480, height: 270 })
-  renderSystem.add(
-    defineRenderBinding({
-      query: [Position, Renderable],
-      create: (view) => {
-        const renderable = view.get(Renderable)
-        if (renderable?.texture !== undefined) {
-          return spriteSpec(renderable.texture, {
-            width: renderable.width,
-            height: renderable.height,
-          })
-        }
-        return rectSpec(
-          renderable?.width ?? 8,
-          renderable?.height ?? 8,
-          renderable?.color ?? 0xffffff,
-        )
-      },
-      update: (object, view) => {
-        const position = view.lerp(Position)
-        const renderable = view.get(Renderable)
-        object.x = position.x
-        object.y = position.y
-        if (object.kind !== 'rect') {
-          if (renderable?.width !== undefined) {
-            object.width = renderable.width
-          }
-          if (renderable?.height !== undefined) {
-            object.height = renderable.height
-          }
-          return
-        }
-        object.width = renderable?.width ?? object.width
-        object.height = renderable?.height ?? object.height
-        object.color = renderable?.color ?? object.color
-      },
-    }),
-  )
-
+    axes: [
+      { action: 'left', axis: 0, direction: -1 as const },
+      { action: 'right', axis: 0, direction: 1 as const },
+      { action: 'up', axis: 1, direction: -1 as const },
+      { action: 'down', axis: 1, direction: 1 as const },
+    ],
+  }
   let lastX = 0
   let lastY = 0
   const input = createInput({
@@ -300,37 +181,45 @@ async function boot(): Promise<void> {
       right: ['ArrowRight', 'KeyD'],
       up: ['ArrowUp', 'KeyW'],
       down: ['ArrowDown', 'KeyS'],
+      attack: ['KeyF'],
+      interact: ['KeyE'],
+      inventory: ['KeyI'],
+      quests: ['KeyQ'],
+      save: ['KeyK'],
+      load: ['KeyJ'],
     },
+    gamepad,
+    gamepadBindings,
+    onDeviceChange: () => uiHandle.setGamepadConnected(gamepad.connected),
     toCommands: (actions) => {
+      const commands: { type: string; payload: unknown }[] = []
       const x = actions.axis('left', 'right')
       const y = actions.axis('up', 'down')
-      if (x === lastX && y === lastY) {
-        return []
+      if (x !== lastX || y !== lastY) {
+        lastX = x
+        lastY = y
+        commands.push({ type: MoveIntent.type, payload: { x: x * 90, y: y * 90 } })
       }
-      lastX = x
-      lastY = y
-      return [{ type: MoveIntent.type, payload: { x, y } }]
+      const view = hud()
+      if (actions.wasPressed('attack') && view !== null && view.enemy > 0) {
+        commands.push({ type: AttackTarget.type, payload: { target: view.enemy, ability: 'demo.strike' } })
+      }
+      if (actions.wasPressed('interact') && view !== null && view.ground > 0) {
+        commands.push({ type: PickupItem.type, payload: { ground: view.ground } })
+      }
+      if (actions.wasPressed('save')) save()
+      if (actions.wasPressed('load')) load()
+      return commands
     },
   })
   attachBrowserInput(input)
-
-  const saves = createBrowserSaveStore(SAVE_KEY)
-  const save = (): void => {
-    saves.save(game.save())
-  }
-  const load = (): void => {
-    try {
-      const snapshot = saves.load()
-      if (snapshot !== null) {
-        game.load(snapshot)
-      }
-    } catch (error) {
-      console.error('load failed', error)
-    }
-  }
   bindBrowserKeys({ KeyK: save, KeyJ: load })
 
   void game.send(Start, {})
+  void game.send(SpawnActor.type, { prefab: 'demo.player', controllable: true })
+  void game.send(SpawnActor.type, { prefab: 'demo.crate', controllable: false })
+  void game.send(EncounterStart.type, { encounter: 'demo.encounter' })
+  void game.send(AcceptQuest.type, { quest: 'demo.quest' })
 
   createViewLoop({
     game,
@@ -338,12 +227,12 @@ async function boot(): Promise<void> {
       for (const command of input.poll()) {
         void game.send(command.type, command.payload)
       }
-      const player = game.view.entities(Player)[0]
-      if (player !== undefined) {
-        const position = game.view.get(player, Position)
+      const player = hud()?.player ?? 0
+      if (player > 0) {
+        const position = game.view.get(player, ActorPosition)
         if (position !== undefined) {
           camera.setZoom(renderer.zoom)
-          const point = camera.follow(position)
+          const point = camera.follow({ x: position.x, y: position.y })
           renderSystem.setCamera(point.x, point.y)
         }
       }
@@ -356,7 +245,16 @@ async function boot(): Promise<void> {
       }
     },
   })
-  exposeBrowserDebug('__luneGame', { game, vfx, renderer, input, save, load })
+  const position = (): { readonly x: number; readonly y: number } | null => {
+    const player = hud()?.player ?? 0
+    if (player <= 0) return null
+    const value = game.view.get(player, ActorPosition)
+    return value === undefined ? null : { x: value.x, y: value.y }
+  }
+  exposeBrowserDebug('__luneGame', { game, vfx, renderer, input, gamepad, save, load, hud, position })
 }
 
 await boot()
+export default {
+  schemaVersion: 8,
+}

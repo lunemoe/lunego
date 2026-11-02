@@ -132,6 +132,26 @@ describe('gamepad input', () => {
     expect(input.context.current).toBe('gameplay')
   })
 
+  it('does not clear keyboard movement when no gamepad is connected', () => {
+    const source = new GamepadSource({ provider: () => [] })
+    const input = createInput({
+      map,
+      gamepad: source,
+      gamepadBindings: {
+        buttons: [],
+        axes: [
+          { action: 'left', axis: 0, direction: -1, threshold: 0.5 },
+          { action: 'right', axis: 0, direction: 1, threshold: 0.5 },
+        ],
+      },
+      toCommands: (actions) => [{ type: 'move', payload: actions.isDown('right') }],
+    })
+    const keys = new FakeTarget()
+    input.attach(keys)
+    keys.dispatch('keydown', { code: 'ArrowRight' })
+    expect(input.poll()).toEqual([{ type: 'move', payload: true }])
+  })
+
   it('records keyboard/pointer device switches and exposes them for UI glyphs', () => {
     const devices: string[] = []
     const input = createInput({

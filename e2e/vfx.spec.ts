@@ -4,7 +4,8 @@ test('cues produce visible top-down effects and retire them', async ({ page }, t
   await page.goto('/')
   await page.waitForFunction(() => (window.__luneGame?.game.frame.tick ?? 0) >= 3)
   await page.evaluate(async () => {
-    await window.__luneGame?.game.send('motion.moveIntent', { x: 1, y: 0 })
+    const target = window.__luneGame?.hud()?.enemy ?? 0
+    await window.__luneGame?.game.send('runtime.combat.attack', { target, ability: 'demo.strike' })
   })
   await page.waitForFunction(() => (window.__luneGame?.vfx.effectCount ?? 0) > 0, null, {
     timeout: 10_000,

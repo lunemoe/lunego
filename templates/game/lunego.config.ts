@@ -1,3 +1,3 @@
 export default {
-  schemaVersion: 5,
+  schemaVersion: 8,
 }

@@ -22,7 +22,8 @@
 
 ## 行为约束
 
-- `MoveIntent` 只修改带 `ActorControllable` 标签的实体。
+- `SpawnActor` 按 prefab id 生成实体，可标记 `ActorControllable`，并发出 `ActorSpawned` 供表现层挂接自己的渲染组件。
+- `MoveIntent` 只修改带 `ActorControllable` 标签的实体；`BuyItem` 校验 vendor/库存格子/金币后在同一个 handler 内写回背包与钱包。
 - AI 每 tick 按 `CombatTeam` 过滤敌对，用 `Perception`（sight/cone/memory）+ 可选 `hasLineOfSight` 选最近可见目标；目标死亡/记忆过期/无可见目标时清空并待机。
 - `AttackTarget` 的 source 优先用显式 payload，否则用持有 `InventoryState` 的玩家实体；source 0、自身、同队、死亡目标均拒绝。
 - `Died` 只产生 `ItemDropped`；`PickupItem` 成功写入背包后才产生 `ItemPicked`。任务 `collect` 只监听 `ItemPicked`，不会在掉落时计数。

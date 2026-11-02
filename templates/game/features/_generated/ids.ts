@@ -2,7 +2,7 @@
 import type { ContentId } from '@lunego/core'
 
 export const CueIds = {
-  "motion.moveDust": "motion.moveDust",
+
 } as const
 export type CueId = (typeof CueIds)[keyof typeof CueIds]
 
