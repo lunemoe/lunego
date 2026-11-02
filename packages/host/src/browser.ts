@@ -123,6 +123,109 @@ export function createBrowserSaveStore(
   }
 }
 
+
+export interface SettingsSchemaLike<T> {
+  readonly version: number
+  readonly scope: 'profile'
+  readonly defaults: T
+  readonly migrate?: (fromVersion: number, value: unknown) => T
+}
+
+export interface BrowserSettingsStore<T> {
+  save(value: T): void
+  load(): T | null
+  reset(): T
+  serialize(value: T): string
+  deserialize(serialized: string): T
+  clear(): void
+}
+
+export function createBrowserSettingsStore<T>(
+  key: string,
+  schema: SettingsSchemaLike<T>,
+  storage: StorageLike | undefined = (globalThis as StorageGlobal).localStorage,
+): BrowserSettingsStore<T> {
+  if (key.length === 0) {
+    throw new Error('settings key must not be empty')
+  }
+  if (storage === undefined) {
+    throw new Error('localStorage is unavailable; inject a StorageLike')
+  }
+  const backupKey = `${key}.bak`
+  const serialize = (value: T): string => JSON.stringify({
+    version: schema.version,
+    scope: schema.scope,
+    value,
+  })
+  const deserialize = (serialized: string): T => {
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(serialized)
+    } catch (error) {
+      throw new BrowserSaveError('settings_corrupt', `${key} is not valid JSON`, error)
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      throw new BrowserSaveError('settings_corrupt', `${key} is not a settings object`)
+    }
+    const envelope = parsed as { version?: unknown; scope?: unknown; value?: unknown }
+    if (envelope.scope !== 'profile' || typeof envelope.version !== 'number') {
+      throw new BrowserSaveError('settings_corrupt', `${key} has no profile/version`)
+    }
+    if (envelope.version === schema.version) {
+      return envelope.value as T
+    }
+    if (schema.migrate === undefined) {
+      throw new BrowserSaveError(
+        'settings_version',
+        `${key} version ${envelope.version} cannot migrate to ${schema.version}`,
+      )
+    }
+    return schema.migrate(envelope.version, envelope.value)
+  }
+  const load = (): T | null => {
+    const primary = storage.getItem(key)
+    if (primary !== null) {
+      try {
+        return deserialize(primary)
+      } catch (error) {
+        const backup = storage.getItem(backupKey)
+        if (backup !== null) {
+          try {
+            return deserialize(backup)
+          } catch {
+            throw error
+          }
+        }
+        throw error
+      }
+    }
+    const backup = storage.getItem(backupKey)
+    return backup === null ? null : deserialize(backup)
+  }
+  return {
+    save: (value) => {
+      const serialized = serialize(value)
+      try {
+        storage.setItem(key, serialized)
+        storage.setItem(backupKey, serialized)
+      } catch (error) {
+        throw new BrowserSaveError('settings_save_failed', `failed to write settings ${key}`, error)
+      }
+    },
+    load,
+    reset: () => {
+      const value = JSON.parse(JSON.stringify(schema.defaults)) as T
+      return value
+    },
+    serialize,
+    deserialize,
+    clear: () => {
+      storage.removeItem(key)
+      storage.removeItem(backupKey)
+    },
+  }
+}
+
 export interface BrowserKeyEvent {
   readonly code: string
   readonly repeat?: boolean

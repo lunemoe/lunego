@@ -36,3 +36,9 @@ browser saves with backup, export/import and persistence requests. UI now
 documents behavior/a11y ownership, exposes theme tokens for all neutral
 colors/spacing and removes hardcoded game copy; `lunego new` creates an
 external workspace mirror so empty-directory installs and checks are real.
+
+Batch 1 UI/input foundations: UiMenuStack/FocusScope with nested Modal focus
+trap/restore, ToastQueue/ToastHost, LoadingOverlay, portal/flip Tooltip,
+ActionContext and input release/multi-pointer handling, profile-scoped
+settings/keybinds with KeybindCapture and browser settings store, plus
+UI scale/reduced-motion and reduced shake/flash.

@@ -22,6 +22,14 @@ Panel({
 })
 ```
 
+## 菜单、反馈与无障碍
+
+- `UiMenuStack`：push/pop/replace/current；仅栈顶接收 Escape，`FocusScope` 负责 Tab trap、初始焦点和关闭恢复；`Modal({ menuStack })` 可直接接入。
+- `ToastQueue`/`ToastHost`：限时队列、`aria-live`、可关闭；`LoadingOverlay`：进度/错误/取消/`aria-busy`。文案由调用方或本地化 key 传入。
+- `Tooltip`：portal 到 body、viewport 翻转、`aria-describedby`、键盘聚焦与 Escape；`placeTooltip` 可用于自定义定位。
+- `UiRoot({ uiScale, reducedMotion })`：写入 `--lg-ui-scale`/`data-reduced-motion`；`EffectOverlay` 的 shake/flash 在 reduced motion 下跳过。
+- `Panel` 九宫格由调用方传 `borderImage/borderSlice/borderWidth`；组件不引用游戏资产。
+
 ## 待办
 
 - 组件默认 aria/empty 文案（`emptyLabel`/`closeLabel`/`label` 已可由游戏传入）仍需迁移到游戏的本地化 key。

@@ -421,7 +421,11 @@ export const spriteBinding = defineRenderBinding({
 ### 8.2 UI **[已定]**
 
 - **DOM 叠加层 + Solid**：`@lunego/ui` 用 `solid-js` + `solid-js/html`，不需要额外 JSX 构建链。游戏只能从 `@lunego/ui` 取受限原语 `createSignal/createMemo/createEffect/createRoot/onCleanup/html/createComponent`，不能直接 import solid-js。`createUiBridge(game)` 持有只读 `frame`/`models` signal，通过 host 的 `subscribeFrames` 更新；UI 只调用 `send`/`query`。
-- **组件**：`UiRoot`/theme tokens、`Panel`（九宫格 border-image，无图退回 CSS）、`Bar`（hp/mp/xp/neutral）、`Button`、`Tabs`、`InventoryGrid`/`ItemSlot`、`Tooltip`、`SkillBar`（CD 遮罩）、`KeyHint`、`Modal`（Escape/backdrop 关闭）、`List`；全部只做展示与回调。
+- **组件**：`UiRoot`/theme tokens、`Panel`（九宫格 border-image，无图退回 CSS）、`Bar`（hp/mp/xp/neutral）、`Button`、`Tabs`、`InventoryGrid`/`ItemSlot`、`Tooltip`、`SkillBar`（CD 遮罩）、`KeyHint`、`Modal`、`List`；全部只做展示与回调。
+- **菜单栈/焦点**：`UiMenuStack` 管理 push/pop/replace/current；只有栈顶 Modal 响应 Escape，`FocusScope` 负责 Tab trap、initialFocus 与关闭后焦点恢复；嵌套 Modal 不互相关闭。
+- **反馈**：`ToastQueue`/`ToastHost` 提供限时队列、`aria-live`/可关闭条目；`LoadingOverlay` 支持进度、错误态、取消与 `aria-busy`。两者文案全部由游戏传入。
+- **Tooltip**：默认 portal 到 body，`placeTooltip` 按 viewport 翻转/夹取；`aria-describedby`、键盘聚焦显示、Escape 关闭、指针长按显示；无框架色值/资产路径。
+- **无障碍与 scale**：`UiRoot` 提供 `uiScale` 与 `reducedMotion`，CSS 变量 `--lg-ui-scale` 与 `prefers-reduced-motion`/`data-reduced-motion` 生效；`EffectOverlay` 在 reduced motion 下不执行 shake/flash。
 - **资源无关**：九宫格/图标由游戏传入 URL；缺少资源时用纯 CSS/文字退化，不造假数据。`Panel.borderImage/borderSlice/borderWidth`、`ItemSlot.icon`、`SkillSlot.icon` 是资源注入点；框架不引用游戏资产路径。`mountUi(root, bridge, view)` 负责挂载、样式安装与销毁。
 - **行为与可访问性归框架，美学归游戏**：框架规定组件行为、焦点/菜单栈、键盘与指针交互、数据绑定、主题 token 名称，以及焦点可见、`prefers-reduced-motion`、UI scale、最低对比度和资源注入点；调色板、字体、九宫格图、图标集、间距/密度、动效、装饰和文案由游戏通过 `UiTheme`/props 提供。框架不内置游戏美术、玩法名词或强制像素风；像素对齐/最近邻只是能力，不是风格要求。
 - **主题与约束**：组件颜色、间距、字体只能通过 CSS 变量、props 或 `UiTheme`（框架拥有 token 名称，游戏全量覆盖）；`theme.ts` 只保留可被覆盖的中性 fallback。不得硬编码游戏资产路径，不得硬编码界面文案（本地化 key 由游戏提供；当前组件默认 aria/empty 文案仍是 i18n 待办）。
@@ -455,6 +459,9 @@ export const combatCues = defineCueMap({
 
 - **音频**：`@lunego/audio` 提供 Web Audio 总线（master/sfx/music/ui）、Cue 映射、种子化音高/音量抖动、并发上限、手势解锁与 `destroy()`；`MusicController` 用单个循环 buffer voice 管理 music 总线的播放/淡入淡出/stop/mute/volume，游戏不再使用 HTMLAudio。
 - **输入**：设备 → 动作映射 → 游戏定义的 `toCommands(actions, pointer)` → Command。键盘支持改键；`PointerState.setViewport` 直接接受 render-pixi 的 `renderer.viewport`（cssScale/offset/camera/zoom/worldToScreen/screenToWorld），按下/释放边沿与按钮集合只存在于表现层。
+- **上下文**：`ActionContext` 栈（gameplay/menu/dialogue/cutscene）决定 `Input.poll()` 是否产生游戏命令；与 `UiMenuStack` 深度订阅组合，菜单打开时游戏输入被阻断。
+- **生命周期**：`releaseAll()` 在窗口失焦/`visibilitychange` 时释放所有键与指针；多 pointerId 独立跟踪，同一按钮不会被另一个指针覆盖；keyup 丢失不留下卡键。
+- **设置**：`defineSettingsSchema`/`SettingsProfile` 提供 profile scope、版本、默认值、JSON 序列化/反序列化、迁移与 reset；`keybindConflicts`/`bindingConflict` 检测冲突；`KeybindCapture` 通过注入的键盘 target 捕获单个物理键，游戏不直接监听 DOM。host 的 `createBrowserSettingsStore` 负责持久化（主档 + `.bak`）。
 
 ---
 

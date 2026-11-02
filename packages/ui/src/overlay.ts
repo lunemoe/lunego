@@ -34,6 +34,8 @@ export interface ProjectileOverlayOptions {
 export interface EffectOverlayOptions {
   readonly maxNodes?: number
   readonly zIndex?: number
+  /** Skip shake/flash and animation when true. */
+  readonly reduceMotion?: boolean
 }
 
 interface ActiveOverlay {
@@ -73,6 +75,7 @@ function clientPoint(viewport: OverlayViewport, worldX: number, worldY: number):
 export class EffectOverlay {
   private readonly root: Element
   private readonly maxNodes: number
+  private reduceMotionValue: boolean
   private readonly active: ActiveOverlay[] = []
   private now = 0
   private destroyed = false
@@ -80,6 +83,7 @@ export class EffectOverlay {
   constructor(root: Element | string, options: EffectOverlayOptions = {}) {
     this.root = resolveRoot(root)
     this.maxNodes = options.maxNodes ?? 128
+    this.reduceMotionValue = options.reduceMotion ?? false
     if (!Number.isInteger(this.maxNodes) || this.maxNodes < 1) {
       throw new Error('EffectOverlay maxNodes must be a positive integer')
     }
@@ -89,6 +93,14 @@ export class EffectOverlay {
     style.overflow = 'hidden'
     style.pointerEvents = 'none'
     style.zIndex = String(options.zIndex ?? UI_LAYERS.overlay)
+  }
+
+  get reduceMotion(): boolean {
+    return this.reduceMotionValue
+  }
+
+  setReducedMotion(value: boolean): void {
+    this.reduceMotionValue = value
   }
 
   get nodeCount(): number {
@@ -159,6 +171,9 @@ export class EffectOverlay {
   flash(color = 'var(--lg-text)', durationSeconds = 0.15): HTMLElement {
     const element = this.createElement('div', 'lg-fx-flash')
     element.style.background = color
+    if (this.reduceMotionValue) {
+      return element
+    }
     const started = this.now
     this.addActive({
       element,
@@ -174,6 +189,9 @@ export class EffectOverlay {
   }
 
   shake(target: Element | string, durationSeconds = 0.16): void {
+    if (this.reduceMotionValue) {
+      return
+    }
     const element = typeof target === 'string'
       ? (typeof document === 'undefined' ? null : document.querySelector(target))
       : target

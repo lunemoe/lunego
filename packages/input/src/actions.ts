@@ -105,6 +105,15 @@ export class InputActions implements ActionState {
     this.released.clear()
   }
 
+  /** Releases every held action, e.g. on window blur or lost keyup. */
+  releaseAll(): void {
+    for (const action of this.down) {
+      this.released.add(action)
+    }
+    this.down.clear()
+    this.pressed.clear()
+  }
+
   private rebuildLookup(): void {
     this.downByCode.clear()
     for (const action of Object.keys(this.bindings)) {

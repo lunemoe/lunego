@@ -171,6 +171,8 @@ export const UI_STYLES = `
 .lg-tooltip { position: relative; display: inline-flex; }
 .lg-tooltip__content { position: absolute; left: 50%; bottom: calc(100% + var(--lg-tooltip-offset)); transform: translateX(-50%); z-index: var(--lg-ui-z); min-width: var(--lg-tooltip-min-width); max-width: var(--lg-tooltip-max-width); padding: var(--lg-space-md) var(--lg-space-lg); background: var(--lg-bg); border: 1px solid var(--lg-border); border-radius: var(--lg-radius); font-size: var(--lg-font-size-small); white-space: pre-wrap; pointer-events: none; opacity: 0; }
 .lg-tooltip:hover .lg-tooltip__content, .lg-tooltip:focus-within .lg-tooltip__content { opacity: 1; }
+.lg-tooltip__portal { position: fixed; inset: 0; pointer-events: none; z-index: var(--lg-ui-z); }
+.lg-tooltip__portal .lg-tooltip__content { position: fixed; left: 0; top: 0; opacity: 1; }
 .lg-skillbar { display: flex; gap: var(--lg-space); }
 .lg-skill { position: relative; width: var(--lg-slot-size); height: var(--lg-slot-size); background: var(--lg-slot-bg); border: 1px solid var(--lg-border); border-radius: 4px; overflow: hidden; padding: 0; cursor: pointer; }
 .lg-skill img { width: 100%; height: 100%; image-rendering: pixelated; }
@@ -191,10 +193,18 @@ export const UI_STYLES = `
 .lg-fx-projectile { position: absolute; image-rendering: pixelated; object-fit: contain; transform: translate(-50%, -50%); }
 .lg-fx-flash { position: absolute; inset: 0; pointer-events: none; }
 .lg-fx-shake { animation: lg-shake 0.16s linear; }
+.lg-ui[data-reduced-motion="true"] *, .lg-ui[data-reduced-motion="true"] *::before, .lg-ui[data-reduced-motion="true"] *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .lg-ui *, .lg-ui *::before, .lg-ui *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }
 @keyframes lg-shake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-2px,1px); } 40% { transform: translate(2px,-1px); } 60% { transform: translate(-1px,-2px); } 80% { transform: translate(1px,2px); } }
+.lg-toasts { position: fixed; right: var(--lg-space-xl); bottom: var(--lg-space-xl); display: grid; gap: var(--lg-space); z-index: var(--lg-ui-z); max-width: var(--lg-tooltip-max-width); }
+.lg-toast { display: flex; gap: var(--lg-space); align-items: center; padding: var(--lg-space-md) var(--lg-space-lg); background: var(--lg-surface-raised); color: var(--lg-text); border: 1px solid var(--lg-border); border-radius: var(--lg-radius); }
+.lg-toast__message { flex: 1; }
+.lg-toast__close { background: transparent; color: var(--lg-text); border: 0; cursor: pointer; }
+.lg-loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--lg-modal-backdrop); z-index: var(--lg-modal-z); }
+.lg-loading__panel { display: grid; gap: var(--lg-space-lg); min-width: var(--lg-modal-min-width); }
+.lg-loading__error { color: var(--lg-danger); }
 .lg-ui input, .lg-ui select { background: var(--lg-slot-bg); color: var(--lg-text); border: 1px solid var(--lg-border); border-radius: 3px; font: inherit; padding: var(--lg-space) var(--lg-space-md); }
 `
 

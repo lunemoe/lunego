@@ -4,6 +4,7 @@ import {
   BrowserSaveError,
   bindBrowserKeys,
   createBrowserSaveStore,
+  createBrowserSettingsStore,
   createViewLoop,
   exposeBrowserDebug,
   type BrowserKeyEvent,
@@ -197,6 +198,31 @@ describe('browser adapters', () => {
       storage: { persist: () => Promise.reject(new Error('denied')) },
     })
     await expect(failing.persist()).rejects.toThrow(/persistence request failed/)
+  })
+
+  it('persists profile-scoped settings with version migration and reset', () => {
+    const values = new Map<string, string>()
+    const storage: StorageLike = {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value),
+      removeItem: (key) => values.delete(key),
+    }
+    const store = createBrowserSettingsStore('settings', {
+      version: 2,
+      scope: 'profile',
+      defaults: { volume: 0.8, scale: 1 },
+      migrate: (_from, old) => {
+        const value = old as { volume: number }
+        return { volume: value.volume, scale: 1 }
+      },
+    }, storage)
+    store.save({ volume: 0.4, scale: 1.25 })
+    expect(store.load()).toEqual({ volume: 0.4, scale: 1.25 })
+    values.set('settings', '{"version":1,"scope":"profile","value":{"volume":0.2}}')
+    expect(store.load()).toEqual({ volume: 0.2, scale: 1 })
+    expect(store.reset()).toEqual({ volume: 0.8, scale: 1 })
+    store.clear()
+    expect(store.load()).toBeNull()
   })
 
   it('binds keys and exposes/removes debug handles', () => {

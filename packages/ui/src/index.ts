@@ -9,7 +9,10 @@ export {
 } from 'solid-js'
 export { createComponent } from 'solid-js/web'
 export { default as html } from 'solid-js/html'
+export type { UiChild, UiNode, UiValue } from './ui-types.js'
 export { createUiBridge } from './bridge.js'
+export { FocusScope, UiMenuStack, defaultMenuStack } from './menu.js'
+export type { FocusScopeOptions, MenuLayer } from './menu.js'
 export type { UiBridge, UiFrame, UiGame } from './bridge.js'
 export {
   Bar,
@@ -22,10 +25,11 @@ export {
   Panel,
   SkillBar,
   Tabs,
-  Tooltip,
   UiRoot,
   createUiSignal,
 } from './components.js'
+export { Tooltip, placeTooltip } from './tooltip.js'
+export type { TooltipPlacement, TooltipPlacementInput, TooltipPlacementResult, TooltipProps } from './tooltip.js'
 export type {
   BarKind,
   BarProps,
@@ -41,12 +45,10 @@ export type {
   SkillSlotData,
   TabItem,
   TabsProps,
-  TooltipProps,
-  UiChild,
-  UiNode,
   UiRootProps,
-  UiValue,
 } from './components.js'
+export { LoadingOverlay, ToastHost, ToastQueue } from './feedback.js'
+export type { LoadingOverlayProps, ToastHostProps, ToastItem, ToastQueueOptions } from './feedback.js'
 export { EffectOverlay } from './overlay.js'
 export type {
   EffectOverlayOptions,

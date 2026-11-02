@@ -55,6 +55,7 @@ export class PointerState {
   private readonly down = new Set<number>()
   private readonly pressed = new Set<number>()
   private readonly released = new Set<number>()
+  private readonly pointers = new Map<number, Set<number>>()
 
   get screenPosition(): PointerPosition {
     return this.screen
@@ -106,7 +107,11 @@ export class PointerState {
 
   handleDown(event: PointerEventLike): boolean {
     const button = event.button ?? 0
+    const pointer = event.pointerId ?? 0
     this.moveTo(event)
+    const buttons = this.pointers.get(pointer) ?? new Set<number>()
+    buttons.add(button)
+    this.pointers.set(pointer, buttons)
     if (!this.down.has(button)) {
       this.down.add(button)
       this.pressed.add(button)
@@ -115,12 +120,20 @@ export class PointerState {
   }
 
   handleMove(event: PointerEventLike): boolean {
+    const pointer = event.pointerId ?? 0
     this.moveTo(event)
-    if (event.buttons !== undefined) {
-      for (const button of [...this.down]) {
-        if ((event.buttons & (1 << button)) === 0) {
-          this.down.delete(button)
-          this.released.add(button)
+    if (event.buttons === undefined) {
+      return true
+    }
+    const buttons = this.pointers.get(pointer)
+    if (buttons === undefined) {
+      return true
+    }
+    for (const button of [...buttons]) {
+      if ((event.buttons & (1 << button)) === 0) {
+        buttons.delete(button)
+        if (!this.heldByOther(button, pointer)) {
+          this.releaseButton(button)
         }
       }
     }
@@ -129,21 +142,58 @@ export class PointerState {
 
   handleUp(event: PointerEventLike): boolean {
     const button = event.button ?? 0
+    const pointer = event.pointerId ?? 0
     this.moveTo(event)
-    if (this.down.has(button)) {
-      this.down.delete(button)
-      this.released.add(button)
+    const buttons = this.pointers.get(pointer)
+    buttons?.delete(button)
+    if (buttons !== undefined && buttons.size === 0) {
+      this.pointers.delete(pointer)
+    }
+    if (!this.heldByOther(button, pointer)) {
+      this.releaseButton(button)
     }
     return true
   }
 
   handleCancel(event: PointerEventLike): boolean {
+    const pointer = event.pointerId ?? 0
     this.moveTo(event)
-    for (const button of [...this.down]) {
+    const buttons = this.pointers.get(pointer)
+    if (buttons !== undefined) {
+      for (const button of [...buttons]) {
+        if (!this.heldByOther(button, pointer)) {
+          this.releaseButton(button)
+        }
+      }
+      this.pointers.delete(pointer)
+    }
+    return true
+  }
+
+  /** Clear all pointers and buttons, preserving release edges for this frame. */
+  releaseAll(): void {
+    for (const button of this.down) {
       this.released.add(button)
     }
     this.down.clear()
-    return true
+    this.pressed.clear()
+    this.pointers.clear()
+  }
+
+  private releaseButton(button: number): void {
+    if (this.down.has(button)) {
+      this.down.delete(button)
+      this.released.add(button)
+    }
+  }
+
+  private heldByOther(button: number, pointer: number): boolean {
+    for (const [id, buttons] of this.pointers) {
+      if (id !== pointer && buttons.has(button)) {
+        return true
+      }
+    }
+    return false
   }
 
   endFrame(): void {

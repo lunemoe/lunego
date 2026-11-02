@@ -53,6 +53,20 @@ describe('effect overlay', () => {
     expect(overlay.nodeCount).toBe(0)
   })
 
+  it('skips shake/flash when reduced motion is enabled', () => {
+    const overlay = new EffectOverlay('#fx', { reduceMotion: true })
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const flash = overlay.flash('#fff', 1)
+    overlay.shake(target, 1)
+    expect(target.classList.contains('lg-fx-shake')).toBe(false)
+    expect(overlay.nodeCount).toBe(0)
+    expect(flash.isConnected).toBe(false)
+    overlay.setReducedMotion(false)
+    overlay.shake(target, 1)
+    expect(target.classList.contains('lg-fx-shake')).toBe(true)
+  })
+
   it('caps nodes and destroys cleanly', () => {
     const overlay = new EffectOverlay('#fx', { maxNodes: 2 })
     overlay.floatingText({ x: 0, y: 0, text: 'a' }, viewport)

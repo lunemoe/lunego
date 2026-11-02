@@ -1,18 +1,14 @@
 import { createEffect, createMemo, createSignal, onCleanup, type Accessor } from 'solid-js'
 import html from 'solid-js/html'
 import { themeVariables, type UiTheme } from './theme.js'
+import { readValue, type UiChild, type UiNode, type UiValue } from './ui-types.js'
+import { defaultMenuStack, type MenuLayer, type UiMenuStack } from './menu.js'
+import { Tooltip } from './tooltip.js'
 
-export type UiNode = Node | Node[]
-export type UiChild = Node | string | number | readonly UiChild[]
 
 export function createUiSignal<T>(initial: T): [Accessor<T>, (next: T) => void] {
   const [get, set] = createSignal(initial)
   return [get, (next: T) => set(() => next)]
-}
-export type UiValue<T> = T | Accessor<T>
-
-function read<T>(value: UiValue<T>): T {
-  return typeof value === 'function' ? (value as Accessor<T>)() : value
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -21,12 +17,18 @@ function clamp(value: number, min: number, max: number): number {
 
 export interface UiRootProps {
   readonly theme?: UiTheme
+  readonly uiScale?: UiValue<number>
+  readonly reducedMotion?: UiValue<boolean>
   readonly children: UiChild | (() => UiChild)
 }
 
 export function UiRoot(props: UiRootProps): UiNode {
-  const style = () => themeVariables(props.theme)
-  return html`<div class="lg-ui" style=${style}>${props.children}</div>`
+  const style = () => ({
+    ...themeVariables(props.theme),
+    ...(props.uiScale === undefined ? {} : { '--lg-ui-scale': String(readValue(props.uiScale)) }),
+  })
+  return html`<div class="lg-ui" style=${style}
+    data-reduced-motion=${() => String(props.reducedMotion === undefined ? false : readValue(props.reducedMotion))}>${props.children}</div>`
 }
 
 export interface PanelProps {
@@ -39,11 +41,11 @@ export interface PanelProps {
 
 export function Panel(props: PanelProps): UiNode {
   const hasImage = () => {
-    const image = read(props.borderImage)
+    const image = readValue(props.borderImage)
     return image !== undefined && image.length > 0
   }
   const style = () => {
-    const image = read(props.borderImage)
+    const image = readValue(props.borderImage)
     return image === undefined || image.length === 0
       ? {}
       : {
@@ -54,7 +56,7 @@ export function Panel(props: PanelProps): UiNode {
   }
   return html`<section class=${() => (hasImage() ? 'lg-panel has-image' : 'lg-panel')} style=${style}>
     ${() => {
-      const title = read(props.title)
+      const title = readValue(props.title)
       return title === undefined ? null : html`<h2 class="lg-panel__title">${title}</h2>`
     }}
     ${props.children}
@@ -72,15 +74,15 @@ export interface BarProps {
 
 export function Bar(props: BarProps): UiNode {
   const percent = () => {
-    const max = read(props.max)
-    return max <= 0 ? 0 : clamp(read(props.value) / max, 0, 1) * 100
+    const max = readValue(props.max)
+    return max <= 0 ? 0 : clamp(readValue(props.value) / max, 0, 1) * 100
   }
   const label = () => {
-    const text = read(props.label)
-    return text ?? `${Math.ceil(read(props.value))}/${Math.ceil(read(props.max))}`
+    const text = readValue(props.label)
+    return text ?? `${Math.ceil(readValue(props.value))}/${Math.ceil(readValue(props.max))}`
   }
   return html`<div class=${() => `lg-bar lg-bar--${props.kind ?? 'neutral'}`} role="progressbar"
-    aria-valuemin="0" aria-valuemax=${() => read(props.max)} aria-valuenow=${() => read(props.value)}>
+    aria-valuemin="0" aria-valuemax=${() => readValue(props.max)} aria-valuenow=${() => readValue(props.value)}>
     <div class="lg-bar__fill" style=${() => ({ width: `${percent()}%` })}></div>
     <span class="lg-bar__label">${label}</span>
   </div>`
@@ -95,7 +97,7 @@ export interface ButtonProps {
 
 export function Button(props: ButtonProps): UiNode {
   return html`<button class=${() => (props.variant === 'primary' ? 'lg-button lg-button--primary' : 'lg-button')}
-    disabled=${() => read(props.disabled ?? false)}
+    disabled=${() => readValue(props.disabled ?? false)}
     onClick=${() => props.onClick?.()}>${props.children}</button>`
 }
 
@@ -112,13 +114,13 @@ export interface TabsProps {
 }
 
 export function Tabs(props: TabsProps): UiNode {
-  const list = () => read(props.tabs)
+  const list = () => readValue(props.tabs)
   const move = (direction: number): void => {
     const enabled = list().filter((tab) => tab.disabled !== true)
     if (enabled.length === 0) {
       return
     }
-    const current = enabled.findIndex((tab) => tab.id === read(props.active))
+    const current = enabled.findIndex((tab) => tab.id === readValue(props.active))
     const next = (current + direction + enabled.length) % enabled.length
     const target = enabled[next]
     if (target !== undefined) {
@@ -127,8 +129,8 @@ export function Tabs(props: TabsProps): UiNode {
   }
   const items = createMemo(() =>
     list().map((tab) =>
-      html`<button class=${() => (tab.id === read(props.active) ? 'lg-tab active' : 'lg-tab')}
-        role="tab" aria-selected=${() => String(tab.id === read(props.active))}
+      html`<button class=${() => (tab.id === readValue(props.active) ? 'lg-tab active' : 'lg-tab')}
+        role="tab" aria-selected=${() => String(tab.id === readValue(props.active))}
         disabled=${tab.disabled === true}
         onClick=${() => props.onSelect(tab.id)}>${tab.label}</button>`,
     ),
@@ -143,20 +145,6 @@ export function Tabs(props: TabsProps): UiNode {
         move(-1)
       }
     }}>${items}</div>`
-}
-
-export interface TooltipProps {
-  readonly content: UiValue<UiChild | null | undefined>
-  readonly children: UiNode
-}
-
-export function Tooltip(props: TooltipProps): UiNode {
-  return html`<span class="lg-tooltip">${props.children}
-    ${() => {
-      const content = read(props.content)
-      return html`<span class="lg-tooltip__content" role="tooltip">${content ?? ''}</span>`
-    }}
-  </span>`
 }
 
 export interface ItemData {
@@ -178,7 +166,7 @@ export interface ItemSlotProps {
 
 export function ItemSlot(props: ItemSlotProps): UiNode {
   const item = () => props.item ?? null
-  const button = html`<button class=${() => (read(props.selected ?? false) ? 'lg-slot selected' : 'lg-slot')}
+  const button = html`<button class=${() => (readValue(props.selected ?? false) ? 'lg-slot selected' : 'lg-slot')}
     aria-label=${() => item()?.label ?? props.label ?? props.emptyLabel ?? ''}
     disabled=${() => item()?.disabled === true || item() === null}
     onClick=${() => props.onClick?.()}>
@@ -213,7 +201,7 @@ export interface InventoryGridProps {
 
 export function InventoryGrid(props: InventoryGridProps): UiNode {
   const slots = createMemo(() => {
-    const items = read(props.items)
+    const items = readValue(props.items)
     const total = Math.max(items.length, props.minSlots ?? items.length)
     const nodes: UiNode[] = []
     for (let index = 0; index < total; index += 1) {
@@ -221,7 +209,7 @@ export function InventoryGrid(props: InventoryGridProps): UiNode {
       nodes.push(
         ItemSlot({
           item,
-          selected: () => item !== null && read(props.selected ?? null) === item.id,
+          selected: () => item !== null && readValue(props.selected ?? null) === item.id,
           onClick: () => props.onSelect?.(item),
         }),
       )
@@ -250,7 +238,7 @@ export interface SkillBarProps {
 
 export function SkillBar(props: SkillBarProps): UiNode {
   const nodes = createMemo(() =>
-    read(props.slots).map((slot) =>
+    readValue(props.slots).map((slot) =>
       html`<button class="lg-skill" aria-label=${slot.label} disabled=${slot.disabled === true}
         onClick=${() => props.onActivate?.(slot.id)}>
         ${slot.icon !== undefined && slot.icon !== null
@@ -269,7 +257,7 @@ export interface KeyHintProps {
 }
 
 export function KeyHint(props: KeyHintProps): UiNode {
-  const nodes = createMemo(() => read(props.keys).map((key) => html`<kbd>${key}</kbd>`))
+  const nodes = createMemo(() => readValue(props.keys).map((key) => html`<kbd>${key}</kbd>`))
   return html`<span class="lg-keyhint">${nodes}</span>`
 }
 
@@ -280,31 +268,43 @@ export interface ModalProps {
   readonly closeOnBackdrop?: boolean
   /** Localized accessible label supplied by the game. */
   readonly closeLabel?: string
+  readonly menuStack?: UiMenuStack
   readonly children: UiChild | (() => UiChild)
 }
 
 export function Modal(props: ModalProps): UiNode {
+  const stack = props.menuStack ?? defaultMenuStack
+  let dialog: HTMLElement | undefined
+  let layer: MenuLayer | null = null
   createEffect(() => {
-    if (!read(props.open)) {
-      return
-    }
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        props.onClose?.()
+    const open = readValue(props.open)
+    if (open && layer === null) {
+      const nextLayer: MenuLayer = {
+        element: () => dialog,
+        onClose: () => props.onClose?.(),
       }
+      layer = nextLayer
+      stack.push(nextLayer)
+    } else if (!open && layer !== null) {
+      stack.pop(layer)
+      layer = null
     }
-    document.addEventListener('keydown', onKey)
-    onCleanup(() => document.removeEventListener('keydown', onKey))
   })
-  return html`<div class="lg-modal__backdrop" style=${() => ({ display: read(props.open) ? 'grid' : 'none' })}
+  onCleanup(() => {
+    if (layer !== null) {
+      stack.pop(layer)
+      layer = null
+    }
+  })
+  return html`<div class="lg-modal__backdrop" style=${() => ({ display: readValue(props.open) ? 'grid' : 'none' })}
     onClick=${(event: MouseEvent) => {
       if ((props.closeOnBackdrop ?? true) && event.target === event.currentTarget) {
         props.onClose?.()
       }
     }}>
-    <section class="lg-panel lg-modal" role="dialog" aria-modal="true" aria-hidden=${() => String(!read(props.open))}>
+    <section ref=${(node: HTMLElement) => { dialog = node }} class="lg-panel lg-modal" role="dialog" aria-modal="true" aria-hidden=${() => String(!readValue(props.open))}>
       <div class="lg-modal__head">
-        <h2 class="lg-modal__title">${() => read(props.title ?? '')}</h2>
+        <h2 class="lg-modal__title">${() => readValue(props.title ?? '')}</h2>
         <button class="lg-button" aria-label=${() => props.closeLabel ?? ''} onClick=${() => props.onClose?.()}>×</button>
       </div>
       ${props.children}
@@ -322,12 +322,12 @@ export interface ListProps<T> {
 
 export function List<T>(props: ListProps<T>): UiNode {
   const nodes = createMemo(() => {
-    const items = read(props.items)
+    const items = readValue(props.items)
     if (items.length === 0) {
       return html`<li class="lg-list__empty">${props.empty ?? ''}</li>`
     }
     return items.map((item, index) =>
-      html`<li class=${() => (read(props.selected ?? null) === index ? 'lg-list__item selected' : 'lg-list__item')}
+      html`<li class=${() => (readValue(props.selected ?? null) === index ? 'lg-list__item selected' : 'lg-list__item')}
         onClick=${() => props.onSelect?.(item, index)}>${props.renderItem(item, index)}</li>`,
     )
   })

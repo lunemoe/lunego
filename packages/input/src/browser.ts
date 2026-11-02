@@ -53,9 +53,20 @@ export function attachBrowserInput(
   }
   input.attach(keyboardTarget(resolved))
   input.attachPointer(pointerTarget(resolved))
+  const onBlur = (): void => input.releaseAll()
+  const onVisibility = (): void => {
+    const doc = (globalThis as { readonly document?: { readonly hidden: boolean } }).document
+    if (doc === undefined || doc.hidden) {
+      input.releaseAll()
+    }
+  }
+  resolved.addEventListener('blur', onBlur as (event: never) => void)
+  resolved.addEventListener('visibilitychange', onVisibility as (event: never) => void)
   return () => {
     input.detach()
     input.detachPointer()
+    resolved.removeEventListener('blur', onBlur as (event: never) => void)
+    resolved.removeEventListener('visibilitychange', onVisibility as (event: never) => void)
   }
 }
 

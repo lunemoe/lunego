@@ -1,4 +1,5 @@
 import { InputActions, type ActionState, type CommandRequest, type InputMap } from './actions.js'
+import { ActionContext } from './context.js'
 import { PointerState, type PointerEventLike, type PointerTarget } from './pointer.js'
 
 export interface KeyEventLike {
@@ -17,6 +18,7 @@ export interface InputOptions {
   readonly toCommands: (actions: ActionState, pointer: PointerState) => readonly CommandRequest[]
   readonly target?: KeyboardTarget
   readonly pointerTarget?: PointerTarget
+  readonly context?: ActionContext
   readonly preventDefault?: boolean
 }
 
@@ -27,6 +29,7 @@ export interface InputOptions {
 export class Input {
   readonly actions: InputActions
   readonly pointer = new PointerState()
+  readonly context: ActionContext
   private readonly toCommands: InputOptions['toCommands']
   private readonly preventDefault: boolean
   private target: KeyboardTarget | null = null
@@ -70,6 +73,7 @@ export class Input {
 
   constructor(actions: InputActions, options: Omit<InputOptions, 'map'>) {
     this.actions = actions
+    this.context = options.context ?? new ActionContext()
     this.toCommands = options.toCommands
     this.preventDefault = options.preventDefault ?? true
     if (options.target !== undefined) {
@@ -119,10 +123,17 @@ export class Input {
   }
 
   poll(): readonly CommandRequest[] {
-    const commands = this.toCommands(this.actions, this.pointer)
+    const commands = this.context.isGameplay
+      ? this.toCommands(this.actions, this.pointer)
+      : []
     this.actions.endFrame()
     this.pointer.endFrame()
     return commands
+  }
+
+  releaseAll(): void {
+    this.actions.releaseAll()
+    this.pointer.releaseAll()
   }
 
   rebind(action: string, codes: readonly string[]): void {
@@ -131,6 +142,10 @@ export class Input {
 
   loadMap(map: InputMap): void {
     this.actions.loadMap(map)
+  }
+
+  applySettings(settings: { readonly bindings: InputMap }): void {
+    this.actions.loadMap(settings.bindings)
   }
 }
 

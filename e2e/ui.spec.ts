@@ -11,10 +11,11 @@ test('renders the reactive UI panel and modal over the game', async ({ page }, t
   })
 
   await page.getByRole('button', { name: 'Help' }).click()
-  await expect(page.locator('.lg-modal__backdrop')).toHaveCSS('display', 'grid')
-  await expect(page.locator('.lg-modal__title')).toHaveText('Controls')
+  const controls = page.locator('.lg-modal__backdrop').filter({ hasText: 'Controls' })
+  await expect(controls).toHaveCSS('display', 'grid')
+  await expect(controls.locator('.lg-modal__title')).toHaveText('Controls')
   await page.keyboard.press('Escape')
-  await expect(page.locator('.lg-modal__backdrop')).toHaveCSS('display', 'none')
+  await expect(controls).toHaveCSS('display', 'none')
 
   const before = await page.evaluate(() => window.__luneGame?.game.frame.tick ?? 0)
   await page.getByRole('button', { name: 'Move right' }).click()

@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ActionContext,
   InputActions,
+  KeybindCapture,
   PointerState,
+  attachBrowserInput,
+  SettingsProfile,
+  bindingConflict,
   createInput,
+  createKeybindSettings,
+  defineSettingsSchema,
+  keybindConflicts,
   type KeyEventLike,
   type KeyboardTarget,
   type PointerEventLike,
@@ -152,6 +160,137 @@ class FakePointerTarget implements PointerTarget {
     }
   }
 }
+
+describe('input contexts and lifecycle', () => {
+  it('blocks game commands while menu/dialogue contexts own input', () => {
+    const context = new ActionContext()
+    const input = createInput({
+      map,
+      context,
+      toCommands: (actions) => [{ type: 'move', payload: actions.axis('left', 'right') }],
+    })
+    const target = new FakeTarget()
+    input.attach(target)
+    target.dispatch('keydown', { code: 'ArrowRight' })
+    expect(input.poll()).toEqual([{ type: 'move', payload: 1 }])
+    const pop = context.push('menu')
+    target.dispatch('keydown', { code: 'ArrowRight' })
+    expect(input.poll()).toEqual([])
+    expect(context.current).toBe('menu')
+    pop()
+    target.dispatch('keydown', { code: 'ArrowRight' })
+    expect(input.poll()).toEqual([{ type: 'move', payload: 1 }])
+  })
+
+  it('releases held keys/buttons on blur and can preserve edges', () => {
+    const actions = new InputActions(map)
+    actions.handleKeyDown('KeyA')
+    expect(actions.isDown('left')).toBe(true)
+    actions.releaseAll()
+    expect(actions.isDown('left')).toBe(false)
+    expect(actions.wasReleased('left')).toBe(true)
+
+    const pointer = new PointerState()
+    pointer.handleDown({ clientX: 0, clientY: 0, button: 0, pointerId: 1, buttons: 1 })
+    pointer.handleDown({ clientX: 1, clientY: 1, button: 0, pointerId: 2, buttons: 1 })
+    expect(pointer.isDown()).toBe(true)
+    pointer.handleUp({ clientX: 0, clientY: 0, button: 0, pointerId: 1 })
+    expect(pointer.isDown()).toBe(true)
+    pointer.handleUp({ clientX: 1, clientY: 1, button: 0, pointerId: 2 })
+    expect(pointer.isDown()).toBe(false)
+    expect(pointer.wasReleased()).toBe(true)
+  })
+})
+
+describe('browser input lifecycle', () => {
+  it('releases held actions on window blur and visibility change', () => {
+    class BrowserTarget {
+      readonly listeners = new Map<string, Array<(event: never) => void>>()
+      addEventListener(type: string, listener: (event: never) => void): void {
+        const list = this.listeners.get(type) ?? []
+        list.push(listener)
+        this.listeners.set(type, list)
+      }
+      removeEventListener(type: string, listener: (event: never) => void): void {
+        this.listeners.set(type, (this.listeners.get(type) ?? []).filter((item) => item !== listener))
+      }
+      dispatch(type: string, event: never): void {
+        for (const listener of this.listeners.get(type) ?? []) {
+          listener(event)
+        }
+      }
+    }
+    const input = createInput({
+      map,
+      toCommands: (actions) => [{ type: 'move', payload: actions.isDown('left') }],
+    })
+    const target = new BrowserTarget()
+    const dispose = attachBrowserInput(input, target)
+    target.dispatch('keydown', { code: 'KeyA', preventDefault: () => undefined } as never)
+    expect(input.actions.isDown('left')).toBe(true)
+    target.dispatch('blur', undefined as never)
+    expect(input.actions.isDown('left')).toBe(false)
+    target.dispatch('keydown', { code: 'KeyA', preventDefault: () => undefined } as never)
+    target.dispatch('visibilitychange', undefined as never)
+    expect(input.actions.isDown('left')).toBe(false)
+    dispose()
+  })
+})
+
+describe('settings and keybinds', () => {
+  it('serializes profile settings, resets, migrates and detects conflicts', () => {
+    const profile = createKeybindSettings(map)
+    expect(profile.schema.scope).toBe('profile')
+    expect(profile.value.bindings.left).toEqual(['ArrowLeft', 'KeyA'])
+    profile.set({ bindings: { left: ['KeyH'] }, uiScale: 1.5, reducedMotion: true })
+    const serialized = profile.serialize()
+    const restored = SettingsProfile.fromSerialized(profile.schema, serialized)
+    expect(restored.value.bindings.left).toEqual(['KeyH'])
+    expect(restored.value.reducedMotion).toBe(true)
+    restored.reset()
+    expect(restored.value.bindings.left).toEqual(['ArrowLeft', 'KeyA'])
+
+    const schema = defineSettingsSchema({
+      version: 2,
+      scope: 'profile',
+      defaults: { value: 2 },
+      migrate: (_from, old) => ({ value: (old as { value: number }).value + 1 }),
+    })
+    const migrated = SettingsProfile.fromSerialized(schema, '{"version":1,"scope":"profile","value":{"value":9}}')
+    expect(migrated.value).toEqual({ value: 10 })
+    expect(() => SettingsProfile.fromSerialized(
+      defineSettingsSchema({ version: 2, scope: 'profile', defaults: { value: 2 } }),
+      '{"version":1,"scope":"profile","value":{"value":9}}',
+    )).toThrow(/cannot migrate/)
+
+    expect(keybindConflicts({ left: ['KeyA'], right: ['KeyA'] })).toEqual([
+      { code: 'KeyA', actions: ['left', 'right'] },
+    ])
+    expect(bindingConflict({ left: ['KeyA'] }, 'right', ['KeyA'])).toEqual({
+      code: 'KeyA',
+      actions: ['left', 'right'],
+    })
+  })
+
+  it('captures one key through an injected target without DOM listeners', () => {
+    const target = new FakeTarget()
+    const codes: string[] = []
+    let cancelled = 0
+    const capture = new KeybindCapture({
+      target,
+      onCapture: (code) => codes.push(code),
+      onCancel: () => { cancelled += 1 },
+    })
+    capture.start()
+    target.dispatch('keydown', { code: 'Escape' })
+    expect(cancelled).toBe(1)
+    expect(codes).toEqual([])
+    capture.start()
+    target.dispatch('keydown', { code: 'KeyK' })
+    expect(codes).toEqual(['KeyK'])
+    expect(capture.isActive).toBe(false)
+  })
+})
 
 describe('pointer input', () => {
   it('tracks buttons and edges, then clears them per poll', () => {

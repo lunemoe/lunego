@@ -13,11 +13,12 @@ import {
   Modal,
   Panel,
   UiRoot,
+  UiMenuStack,
   createUiBridge,
   createUiSignal,
   mountUi,
 } from '@lunego/ui'
-import { attachBrowserInput, createInput } from '@lunego/input'
+import { ActionContext, attachBrowserInput, createInput } from '@lunego/input'
 import {
   CameraController,
   RenderSystem,
@@ -89,12 +90,35 @@ async function boot(): Promise<void> {
   })
 
   const bridge = createUiBridge(game)
+  const inputContext = new ActionContext()
+  const menuStack = new UiMenuStack()
+  let menuActive = false
+  menuStack.subscribe(() => {
+    if (menuStack.depth > 0 && !menuActive) {
+      menuActive = true
+      inputContext.push('menu')
+    } else if (menuStack.depth === 0 && menuActive) {
+      menuActive = false
+      inputContext.pop('menu')
+    }
+  })
   const [helpOpen, setHelpOpen] = createUiSignal(false)
+  const [settingsOpen, setSettingsOpen] = createUiSignal(false)
+  const [uiScale, setUiScale] = createUiSignal(1)
+  const [reducedMotion, setReducedMotion] = createUiSignal(false)
+  const openMenu = (open: (value: boolean) => void): void => {
+    open(true)
+  }
+  const closeMenu = (open: (value: boolean) => void): void => {
+    open(false)
+  }
   {
     mountUi('#ui', bridge, (ui) => {
       const vitals = () => ui.models()['Vitals'] as { hp: number; maxHp: number } | undefined
       return UiRoot({
         theme: { accent: '#58c8ff', accentText: '#08121c' },
+        uiScale,
+        reducedMotion,
         children: [
           Panel({
             title: 'Status',
@@ -110,17 +134,39 @@ async function boot(): Promise<void> {
               }),
               Button({
                 children: 'Help',
-                onClick: () => setHelpOpen(true),
+                onClick: () => openMenu(setHelpOpen),
+              }),
+              Button({
+                children: 'Settings',
+                onClick: () => openMenu(setSettingsOpen),
               }),
             ],
           }),
           Modal({
             open: helpOpen,
             title: 'Controls',
-            onClose: () => setHelpOpen(false),
+            menuStack,
+            onClose: () => closeMenu(setHelpOpen),
             children: [
               KeyHint({ keys: ['W', 'A', 'S', 'D'] }),
-              Button({ children: 'Close', onClick: () => setHelpOpen(false) }),
+              Button({ children: 'Close', onClick: () => closeMenu(setHelpOpen) }),
+            ],
+          }),
+          Modal({
+            open: settingsOpen,
+            title: 'Settings',
+            menuStack,
+            onClose: () => closeMenu(setSettingsOpen),
+            children: [
+              Button({
+                children: `UI scale ${uiScale().toFixed(2)}`,
+                onClick: () => setUiScale(uiScale() >= 1.5 ? 1 : uiScale() + 0.25),
+              }),
+              Button({
+                children: `Reduced motion ${reducedMotion() ? 'on' : 'off'}`,
+                onClick: () => setReducedMotion(!reducedMotion()),
+              }),
+              Button({ children: 'Close', onClick: () => closeMenu(setSettingsOpen) }),
             ],
           }),
         ],
@@ -241,6 +287,7 @@ async function boot(): Promise<void> {
   let lastX = 0
   let lastY = 0
   const input = createInput({
+    context: inputContext,
     map: {
       left: ['ArrowLeft', 'KeyA'],
       right: ['ArrowRight', 'KeyD'],

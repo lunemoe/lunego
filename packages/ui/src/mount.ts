@@ -1,6 +1,6 @@
 import { render } from 'solid-js/web'
 import type { UiBridge } from './bridge.js'
-import type { UiNode } from './components.js'
+import type { UiNode } from './ui-types.js'
 import { installUiStyles } from './theme.js'
 
 export type UiView = (bridge: UiBridge) => UiNode

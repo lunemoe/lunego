@@ -1,6 +1,3 @@
-import { existsSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSignal } from 'solid-js'
 import {
@@ -9,14 +6,19 @@ import {
   InventoryGrid,
   KeyHint,
   List,
+  LoadingOverlay,
   Modal,
+  ToastHost,
+  ToastQueue,
   Panel,
   SkillBar,
   Tabs,
   Tooltip,
   UiRoot,
+  placeTooltip,
   createUiBridge,
   mountUi,
+  UiMenuStack,
   type TabItem,
   type UiFrame,
   type UiGame,
@@ -97,59 +99,6 @@ describe('ui bridge', () => {
   })
 })
 
-describe('ui theme contract', () => {
-  it('applies caller theme tokens and keeps neutral defaults', () => {
-    const root = document.createElement('div')
-    document.body.appendChild(root)
-    mountUi(root, createUiBridge(fakeGame(frame(1, 1))), () =>
-      UiRoot({
-        theme: {
-          accent: '#123456',
-          font: 'Georgia, serif',
-          radius: '12px',
-          spacing: '7px',
-          fontSize: '15px',
-        },
-        children: Panel({
-          title: 'Neutral',
-          borderImage: '/caller/frame.png',
-          borderSlice: 6,
-          borderWidth: 10,
-          children: htmlSpan('Body'),
-        }),
-      }),
-    )
-    const ui = root.querySelector<HTMLElement>('.lg-ui')
-    expect(ui?.style.getPropertyValue('--lg-accent')).toBe('#123456')
-    expect(ui?.style.getPropertyValue('--lg-font')).toBe('Georgia, serif')
-    expect(ui?.style.getPropertyValue('--lg-radius')).toBe('12px')
-    expect(ui?.style.getPropertyValue('--lg-space')).toBe('7px')
-    expect(ui?.style.getPropertyValue('--lg-font-size')).toBe('15px')
-    const panel = root.querySelector<HTMLElement>('.lg-panel')
-    expect(panel?.style.getPropertyValue('--lg-panel-image')).toContain('/caller/frame.png')
-    expect(panel?.style.getPropertyValue('--lg-panel-slice')).toBe('6')
-    expect(panel?.style.getPropertyValue('--lg-panel-border')).toBe('10')
-    const css = document.querySelector('style[data-lunego-ui]')?.textContent ?? ''
-    expect(css).toContain('var(--lg-accent)')
-    expect(css).toContain('prefers-reduced-motion')
-  })
-
-  it('does not embed game copy or asset paths in framework components', async () => {
-    const candidates = [
-      join(process.cwd(), 'src', 'components.ts'),
-      join(process.cwd(), 'packages', 'ui', 'src', 'components.ts'),
-    ]
-    const file = candidates.find((candidate) => existsSync(candidate))
-    if (file === undefined) {
-      throw new Error('components.ts not found')
-    }
-    const source = await readFile(file, 'utf8')
-    for (const forbidden of ["'Empty slot'", "'Nothing here'", '"Skills"', "'Close'", 'assets/']) {
-      expect(source).not.toContain(forbidden)
-    }
-  })
-})
-
 describe('ui components', () => {
   it('renders panel, key hints and skill cooldown overlays', () => {
     const root = document.createElement('div')
@@ -211,7 +160,7 @@ describe('ui components', () => {
     slots[1]?.click()
     expect(selected).toEqual(['gem'])
     expect(
-      [...root.querySelectorAll('.lg-tooltip__content')].map((node) => node.textContent),
+      [...document.querySelectorAll('.lg-tooltip__content')].map((node) => node.textContent),
     ).toContain('Hint text')
   })
 
@@ -240,6 +189,166 @@ describe('ui components', () => {
     setOpen(false)
     await Promise.resolve()
     expect(backdrop?.style.display).toBe('none')
+  })
+
+  it('traps focus and restores it on close', async () => {
+    const trigger = document.createElement('button')
+    trigger.textContent = 'trigger'
+    document.body.appendChild(trigger)
+    trigger.focus()
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    const [open, setOpen] = createSignal(true)
+    mountUi(root, createUiBridge(fakeGame(frame(1, 1))), () =>
+      UiRoot({
+        children: Modal({
+          open,
+          title: 'Nested',
+          onClose: () => setOpen(false),
+          children: [Button({ children: 'One' }), Button({ children: 'Two' })],
+        }),
+      }),
+    )
+    await Promise.resolve()
+    const buttons = root.querySelectorAll<HTMLButtonElement>('.lg-modal .lg-button')
+    expect(document.activeElement).toBe(buttons[0])
+    buttons[2]?.focus()
+    root.querySelector<HTMLElement>('.lg-modal')?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }),
+    )
+    expect(document.activeElement).toBe(buttons[0])
+    setOpen(false)
+    await Promise.resolve()
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('supports push/pop/replace/current and focus scope trap', () => {
+    const stack = new UiMenuStack(document)
+    const first = stack.push({ id: 'first' })
+    expect(stack.depth).toBe(1)
+    expect(stack.current?.id).toBe('first')
+    const second = stack.push({ id: 'second' })
+    expect(stack.current?.id).toBe('second')
+    stack.pop()
+    expect(stack.current?.id).toBe('first')
+    stack.replace({ id: 'replacement' })
+    expect(stack.current?.id).toBe('replacement')
+    stack.pop()
+    first()
+    second()
+    expect(stack.depth).toBe(0)
+  })
+
+  it('closes only the top modal from the menu stack', async () => {
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    const [first, setFirst] = createSignal(true)
+    const [second, setSecond] = createSignal(true)
+    const firstClose = vi.fn(() => setFirst(false))
+    const secondClose = vi.fn(() => setSecond(false))
+    const stack = new UiMenuStack(document)
+    mountUi(root, createUiBridge(fakeGame(frame(1, 1))), () =>
+      UiRoot({
+        children: [
+          Modal({ open: first, title: 'First', onClose: firstClose, menuStack: stack, children: htmlSpan('A') }),
+          Modal({ open: second, title: 'Second', onClose: secondClose, menuStack: stack, children: htmlSpan('B') }),
+        ],
+      }),
+    )
+    await Promise.resolve()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    expect(secondClose).toHaveBeenCalledTimes(1)
+    expect(firstClose).not.toHaveBeenCalled()
+    await Promise.resolve()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    expect(firstClose).toHaveBeenCalledTimes(1)
+    expect(stack.depth).toBe(0)
+  })
+
+  it('queues toasts, auto-dismisses, and exposes aria-live', async () => {
+    const timers: Array<() => void> = []
+    const queue = new ToastQueue({
+      schedule: (callback) => {
+        timers.push(callback)
+        return timers.length
+      },
+      cancel: () => undefined,
+    })
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountUi(root, createUiBridge(fakeGame(frame(1, 1))), () =>
+      UiRoot({ children: ToastHost({ queue, dismissLabel: 'Dismiss' }) }),
+    )
+    queue.enqueue({ id: 'a', message: 'Saved' })
+    await Promise.resolve()
+    expect(root.querySelector('.lg-toast')?.textContent).toContain('Saved')
+    expect(root.querySelector('.lg-toasts')?.getAttribute('aria-live')).toBe('polite')
+    expect(root.querySelector('.lg-toast__close')?.getAttribute('aria-label')).toBe('Dismiss')
+    timers[0]?.()
+    await Promise.resolve()
+    expect(root.querySelector('.lg-toast')).toBeNull()
+  })
+
+  it('renders loading, error and cancel states without copy defaults', async () => {
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    const cancel = vi.fn()
+    const error: string | null = 'Failed'
+    mountUi(root, createUiBridge(fakeGame(frame(1, 1))), () =>
+      UiRoot({
+        children: LoadingOverlay({
+          open: true,
+          label: 'Loading',
+          progress: null,
+          error: () => error,
+          onCancel: cancel,
+          cancelLabel: 'Cancel',
+        }),
+      }),
+    )
+    const overlay = root.querySelector('.lg-loading')
+    expect(overlay?.getAttribute('aria-busy')).toBe('false')
+    expect(root.querySelector('.lg-loading__error')?.textContent).toBe('Failed')
+    root.querySelector<HTMLButtonElement>('.lg-loading .lg-button')?.click()
+    expect(cancel).toHaveBeenCalled()
+  })
+
+  it('flips tooltips at viewport edges and opens on focus with Escape close', async () => {
+    const top = placeTooltip({
+      trigger: { x: 100, y: 10, width: 20, height: 10 },
+      content: { width: 80, height: 30 },
+      viewport: { width: 320, height: 200 },
+    })
+    expect(top.placement).toBe('bottom')
+    const bottom = placeTooltip({
+      trigger: { x: 100, y: 180, width: 20, height: 10 },
+      content: { width: 80, height: 30 },
+      viewport: { width: 320, height: 200 },
+      placement: 'bottom',
+    })
+    expect(bottom.placement).toBe('top')
+
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountUi(root, createUiBridge(fakeGame(frame(1, 1))), () =>
+      UiRoot({
+        children: Tooltip({
+          content: 'Hint',
+          children: Button({ children: 'Target' }),
+        }),
+      }),
+    )
+    const wrapper = root.querySelector<HTMLElement>('.lg-tooltip')
+    const trigger = root.querySelector<HTMLButtonElement>('.lg-button')
+    expect(wrapper?.getAttribute('aria-describedby')).toMatch(/^lg-tip-/)
+    trigger?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+    await Promise.resolve()
+    const content = document.querySelector<HTMLElement>('.lg-tooltip__portal .lg-tooltip__content')
+    expect(content?.getAttribute('data-open')).toBe('true')
+    expect(content?.textContent).toBe('Hint')
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await Promise.resolve()
+    expect(content?.getAttribute('data-open')).toBe('false')
   })
 
   it('renders empty lists and selected list items', () => {

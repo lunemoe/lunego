@@ -12,6 +12,7 @@ export {
   BrowserSaveError,
   bindBrowserKeys,
   createBrowserSaveStore,
+  createBrowserSettingsStore,
   exposeBrowserDebug,
   readBrowserParam,
   reloadBrowserPage,
@@ -20,6 +21,8 @@ export type {
   BrowserKeyEvent,
   BrowserKeyTarget,
   BrowserSaveStore,
+  BrowserSettingsStore,
+  SettingsSchemaLike,
   StorageLike,
 } from './browser.js'
 export { verifyReplay } from './replay.js'
