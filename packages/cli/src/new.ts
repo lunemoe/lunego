@@ -5,7 +5,21 @@ import { fileURLToPath } from 'node:url'
 import { generate } from './gen.js'
 import { pathExists } from './project.js'
 
-const frameworkPackages = ['core', 'host', 'input', 'render-pixi', 'ui', 'vfx', 'audio', 'cli', 'eslint-plugin'] as const
+const frameworkPackages = [
+  'core',
+  'host',
+  'input',
+  'render-pixi',
+  'ui',
+  'vfx',
+  'audio',
+  'i18n',
+  'testkit',
+  'cli',
+  'eslint-plugin',
+] as const
+
+const workspaceEntries = ['games/*', '.lunego/packages/*', '.lunego/kits/*'] as const
 
 function frameworkPackagesRoot(moduleUrl: string): string {
   return fileURLToPath(new URL('../../', moduleUrl))
@@ -25,11 +39,43 @@ async function findWorkspaceRoot(start: string): Promise<string | null> {
   }
 }
 
+async function hasPackageJson(path: string): Promise<boolean> {
+  return pathExists(join(path, 'package.json'))
+}
+
+async function hasKitDirectories(root: string, prefix?: string): Promise<boolean> {
+  try {
+    const entries = await readdir(root, { withFileTypes: true })
+    for (const entry of entries) {
+      if (
+        entry.isDirectory() &&
+        (prefix === undefined || entry.name.startsWith(prefix)) &&
+        (await hasPackageJson(join(root, entry.name)))
+      ) {
+        return true
+      }
+    }
+  } catch {
+    return false
+  }
+  return false
+}
+
 async function workspaceHasFramework(root: string): Promise<boolean> {
+  for (const path of [
+    join(root, 'packages/core/package.json'),
+    join(root, 'lunego/packages/core/package.json'),
+    join(root, '.lunego/packages/core/package.json'),
+    join(root, 'node_modules/@lunego/core/package.json'),
+  ]) {
+    if (await pathExists(path)) {
+      return true
+    }
+  }
   return (
-    (await pathExists(join(root, 'packages/core/package.json'))) ||
-    (await pathExists(join(root, 'lunego/packages/core/package.json'))) ||
-    (await pathExists(join(root, 'node_modules/@lunego/core/package.json')))
+    (await hasKitDirectories(join(root, 'kits'))) ||
+    (await hasKitDirectories(join(root, '.lunego/kits'))) ||
+    (await hasKitDirectories(join(root, 'node_modules/@lunego'), 'kit-'))
   )
 }
 
@@ -43,23 +89,95 @@ async function copyFramework(source: string, target: string): Promise<void> {
   })
 }
 
+async function findPackageSource(packagesRoot: string, name: string): Promise<string | null> {
+  const candidates = [join(packagesRoot, name), join(packagesRoot, '@lunego', name)]
+  if (name === 'cli') {
+    candidates.push(join(packagesRoot, 'lunego'))
+  }
+  for (const candidate of candidates) {
+    if (await hasPackageJson(candidate)) {
+      return candidate
+    }
+  }
+  return null
+}
+
+async function findKitsRoot(packagesRoot: string): Promise<string | null> {
+  const sibling = join(packagesRoot, '..', 'kits')
+  if (await hasKitDirectories(sibling)) {
+    return sibling
+  }
+  const scoped = join(packagesRoot, '@lunego')
+  if (await hasKitDirectories(scoped, 'kit-')) {
+    return scoped
+  }
+  return null
+}
+
+async function copyKits(sourceRoot: string, targetRoot: string): Promise<void> {
+  await mkdir(targetRoot, { recursive: true })
+  const entries = await readdir(sourceRoot, { withFileTypes: true })
+  for (const entry of entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0)) {
+    if (!entry.isDirectory()) {
+      continue
+    }
+    const source = join(sourceRoot, entry.name)
+    if (!(await hasPackageJson(source))) {
+      continue
+    }
+    await copyFramework(source, join(targetRoot, entry.name))
+  }
+}
+
+function workspaceTemplate(): string {
+  return `packages:\n${workspaceEntries.map((entry) => `  - '${entry}'`).join('\n')}\n`
+}
+
+async function ensureWorkspaceConfig(cwd: string): Promise<void> {
+  const path = join(cwd, 'pnpm-workspace.yaml')
+  if (!(await pathExists(path))) {
+    await writeFile(path, workspaceTemplate(), 'utf8')
+    return
+  }
+  const text = await readFile(path, 'utf8')
+  const missing = workspaceEntries.filter((entry) => !text.includes(entry))
+  if (missing.length === 0) {
+    return
+  }
+  const lines = text.split(/\r?\n/)
+  const packagesLine = lines.findIndex((line) => /^packages:\s*$/.test(line))
+  if (packagesLine === -1) {
+    await writeFile(path, `${workspaceTemplate()}${text}`, 'utf8')
+    return
+  }
+  lines.splice(
+    packagesLine + 1,
+    0,
+    ...missing.map((entry) => `  - '${entry}'`),
+  )
+  const next = lines.join('\n')
+  await writeFile(path, next.endsWith('\n') ? next : `${next}\n`, 'utf8')
+}
+
 async function prepareExternalWorkspace(cwd: string): Promise<void> {
   const packagesRoot = frameworkPackagesRoot(import.meta.url)
   const mirrorRoot = join(cwd, '.lunego', 'packages')
-  if (!(await pathExists(mirrorRoot))) {
-    await mkdir(mirrorRoot, { recursive: true })
-    for (const name of frameworkPackages) {
-      await copyFramework(join(packagesRoot, name), join(mirrorRoot, name))
+  const kitsRoot = join(cwd, '.lunego', 'kits')
+  await mkdir(mirrorRoot, { recursive: true })
+  await mkdir(kitsRoot, { recursive: true })
+  for (const name of frameworkPackages) {
+    const source = await findPackageSource(packagesRoot, name)
+    if (source === null) {
+      throw new Error(`framework package ${name} was not found under ${packagesRoot}`)
     }
+    await copyFramework(source, join(mirrorRoot, name))
   }
-  const workspacePath = join(cwd, 'pnpm-workspace.yaml')
-  if (!(await pathExists(workspacePath))) {
-    await writeFile(
-      workspacePath,
-      "packages:\n  - 'games/*'\n  - '.lunego/packages/*'\n",
-      'utf8',
-    )
+  const sourceKits = await findKitsRoot(packagesRoot)
+  if (sourceKits === null) {
+    throw new Error(`framework kits were not found next to ${packagesRoot}`)
   }
+  await copyKits(sourceKits, kitsRoot)
+  await ensureWorkspaceConfig(cwd)
 }
 
 export function templatesRoot(moduleUrl: string = import.meta.url): string {

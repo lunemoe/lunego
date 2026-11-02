@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -12,6 +13,7 @@ const run = promisify(execFile)
 const cli = fileURLToPath(new URL('../../dist/cli.js', import.meta.url))
 const temporary: string[] = []
 const packagesRoot = fileURLToPath(new URL('../../../../packages', import.meta.url))
+const kitsRoot = fileURLToPath(new URL('../../../../kits', import.meta.url))
 
 async function linkFramework(gameRoot: string): Promise<void> {
   const scope = join(gameRoot, 'node_modules', '@lunego')
@@ -19,6 +21,18 @@ async function linkFramework(gameRoot: string): Promise<void> {
   for (const name of ['core', 'host', 'input', 'render-pixi', 'ui', 'vfx', 'audio', 'testkit', 'eslint-plugin']) {
     try {
       await symlink(join(packagesRoot, name), join(scope, name), 'dir')
+    } catch (error) {
+      if ((error as { code?: string }).code !== 'EEXIST') {
+        throw error
+      }
+    }
+  }
+  for (const entry of await readdir(kitsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !existsSync(join(kitsRoot, entry.name, 'package.json'))) {
+      continue
+    }
+    try {
+      await symlink(join(kitsRoot, entry.name), join(scope, entry.name), 'dir')
     } catch (error) {
       if ((error as { code?: string }).code !== 'EEXIST') {
         throw error
@@ -56,7 +70,20 @@ describe('lunego cli', () => {
     const created = await invoke(['new', 'game', 'demo'], root)
     expect(created.code).toBe(0)
     const game = join(root, 'games', 'demo')
-    expect(await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8')).toContain('.lunego/packages/*')
+    const workspace = await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8')
+    expect(workspace).toContain('.lunego/packages/*')
+    expect(workspace).toContain('.lunego/kits/*')
+    expect(workspace).toContain('games/*')
+    const mirroredKits = await readdir(join(root, '.lunego', 'kits'))
+    expect(mirroredKits).toContain('kit-quest')
+    const sourceKits = (await readdir(kitsRoot, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory() && existsSync(join(kitsRoot, entry.name, 'package.json')))
+      .map((entry) => entry.name)
+      .sort()
+    expect(mirroredKits.sort()).toEqual(sourceKits)
+    for (const name of ['i18n', 'testkit', 'eslint-plugin']) {
+      expect(existsSync(join(root, '.lunego', 'packages', name, 'package.json'))).toBe(true)
+    }
     const packageJson = await readFile(join(game, 'package.json'), 'utf8')
     expect(packageJson).toContain('@lunego/game-demo')
     expect(packageJson).toContain('"lunego": "workspace:*"')
@@ -80,14 +107,28 @@ describe('lunego cli', () => {
     })
     expect(localeRun.stdout).toContain('generated')
     expect(await readFile(idsPath, 'utf8')).toBe(ids)
-    const installed = await run('pnpm', ['install', '--ignore-scripts'], {
+    const installed = await run('pnpm', ['install', '--offline', '--ignore-scripts'], {
       cwd: root,
-      timeout: 180_000,
+      timeout: 240_000,
     })
     expect(installed.stdout).toContain('Done')
     const pnpmCheck = await run('pnpm', ['check'], { cwd: game, timeout: 180_000 })
     expect(pnpmCheck.stdout).toContain('check passed')
   }, 60_000)
+
+  it('adds kits to an existing external workspace config', async () => {
+    const root = await tempDir()
+    await writeFile(
+      join(root, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'games/*'\n  - '.lunego/packages/*'\n",
+      'utf8',
+    )
+    expect((await invoke(['new', 'game', 'legacy'], root)).code).toBe(0)
+    const workspace = await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8')
+    expect(workspace).toContain('.lunego/kits/*')
+    expect(workspace).toContain('.lunego/packages/*')
+    expect(existsSync(join(root, '.lunego', 'kits', 'kit-quest', 'package.json'))).toBe(true)
+  })
 
   it('resolves templates from the package root in a node_modules layout', async () => {
     const root = await tempDir()
@@ -96,6 +137,22 @@ describe('lunego cli', () => {
     await writeFile(join(packageRoot, 'templates', 'game', 'package.json'), '{}', 'utf8')
     const moduleUrl = pathToFileURL(join(packageRoot, 'dist', 'new.js')).href
     expect(templatesRoot(moduleUrl)).toBe(join(packageRoot, 'templates'))
+  })
+
+  it('recognizes local and mirrored kits as an existing framework workspace', async () => {
+    for (const [index, kitPath] of ['kits/kit-demo', '.lunego/kits/kit-demo'].entries()) {
+      const root = await tempDir()
+      await writeFile(join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'games/*'\n", 'utf8')
+      await mkdir(join(root, kitPath), { recursive: true })
+      await writeFile(
+        join(root, kitPath, 'package.json'),
+        JSON.stringify({ name: '@lunego/kit-demo', version: '0.0.0' }),
+        'utf8',
+      )
+      const created = await invoke(['new', 'game', `kitdetect${index}`], root)
+      expect(created.code).toBe(0)
+      expect(existsSync(join(root, '.lunego', 'packages'))).toBe(false)
+    }
   })
 
   it('generates typed assets and rejects broken manifests', async () => {

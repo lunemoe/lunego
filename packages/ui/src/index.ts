@@ -20,7 +20,6 @@ export {
   InventoryGrid,
   ItemSlot,
   KeyHint,
-  List,
   Modal,
   Panel,
   SkillBar,
@@ -29,6 +28,8 @@ export {
   createUiSignal,
 } from './components.js'
 export { Tooltip, placeTooltip } from './tooltip.js'
+export { List } from './list.js'
+export type { ListProps } from './list.js'
 export type { TooltipPlacement, TooltipPlacementInput, TooltipPlacementResult, TooltipProps } from './tooltip.js'
 export type {
   BarKind,
@@ -38,7 +39,6 @@ export type {
   ItemData,
   ItemSlotProps,
   KeyHintProps,
-  ListProps,
   ModalProps,
   PanelProps,
   SkillBarProps,

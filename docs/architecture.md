@@ -105,6 +105,7 @@ LuneGo 的做法是把"形状"和"功能"分开处理：
 | `@lunego/kit-ai`        | 框架   | 感知/记忆、威胁/黑名单、utility、行为树、blackboard/group、leash/phase |
 | `@lunego/kit-status`    | 框架   | 状态实例、绝对 tick 到期、stack/refresh、DoT/HoT、控制标记 |
 | `@lunego/kit-combat`    | 框架   | 伤害管线、抗性、护甲/格挡/闪避/护盾、威胁入口 |
+| `@lunego/kit-runtime`   | 框架   | 通用 ECS/World 适配层：组件/系统/命令/查询/内容 catalog，串联各 kit 机制；不含具体内容 |
 | `@lunego/testkit`       | 工具   | testWorld、场景测试、确定性双跑、回放 |
 | `lunego`（CLI）           | 工具   | gen / new game / check / assets（check、build、pack、import） |
 | `@lunego/eslint-plugin` | 工具   | LuneGo 规则的 lint 实现，附带 dependency-cruiser 配置 |

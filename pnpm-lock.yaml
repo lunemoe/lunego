@@ -372,6 +372,64 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@24.19.2)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(yaml@2.9.1))
 
+  kits/kit-runtime:
+    dependencies:
+      '@lunego/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@lunego/kit-ability':
+        specifier: workspace:*
+        version: link:../kit-ability
+      '@lunego/kit-ai':
+        specifier: workspace:*
+        version: link:../kit-ai
+      '@lunego/kit-combat':
+        specifier: workspace:*
+        version: link:../kit-combat
+      '@lunego/kit-commerce':
+        specifier: workspace:*
+        version: link:../kit-commerce
+      '@lunego/kit-dialogue':
+        specifier: workspace:*
+        version: link:../kit-dialogue
+      '@lunego/kit-encounter':
+        specifier: workspace:*
+        version: link:../kit-encounter
+      '@lunego/kit-items':
+        specifier: workspace:*
+        version: link:../kit-items
+      '@lunego/kit-loot':
+        specifier: workspace:*
+        version: link:../kit-loot
+      '@lunego/kit-progression':
+        specifier: workspace:*
+        version: link:../kit-progression
+      '@lunego/kit-quest':
+        specifier: workspace:*
+        version: link:../kit-quest
+      '@lunego/kit-space':
+        specifier: workspace:*
+        version: link:../kit-space
+      '@lunego/kit-stats':
+        specifier: workspace:*
+        version: link:../kit-stats
+      '@lunego/kit-status':
+        specifier: workspace:*
+        version: link:../kit-status
+      '@lunego/kit-zone':
+        specifier: workspace:*
+        version: link:../kit-zone
+    devDependencies:
+      '@lunego/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@24.19.2)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(yaml@2.9.1))
+
   kits/kit-space:
     dependencies:
       '@lunego/core':

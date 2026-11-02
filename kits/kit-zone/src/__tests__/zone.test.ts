@@ -10,7 +10,7 @@ import {
 
 const zones: readonly ZoneDef[] = [
   { id: 'town', bounds: { x: 0, y: 0, width: 64, height: 64 }, chunkSize: 16, spawnBudget: 4, biome: 'town' },
-  { id: 'cave', bounds: { x: 100, y: 0, width: 32, height: 32 }, chunkSize: 16, spawnBudget: 2, biome: 'cave' },
+  { id: 'cave', bounds: { x: 100, y: 0, width: 32, height: 32 }, chunkSize: 16, spawnBudget: 2, biome: 'cave', encounterId: 'encounter.cave' },
 ]
 const graph = new ZoneGraph({
   zones,
@@ -26,6 +26,7 @@ describe('zone graph/runtime', () => {
     expect(graph.connected('cave', 'town')).toBe(true)
     expect(graph.portalsFor('town').map((portal) => portal.id)).toEqual(['door'])
     expect(graph.chunkCount('town')).toBe(16)
+    expect(graph.zones.get('cave')?.encounterId).toBe('encounter.cave')
     expect(() => new ZoneGraph({
       zones,
       portals: [{ id: 'bad', from: 'town', to: 'missing', fromPoint: { x: 0, y: 0 }, toPoint: { x: 0, y: 0 } }],

@@ -351,26 +351,4 @@ export function Modal(props: ModalProps): UiNode {
   </div>`
 }
 
-export interface ListProps<T> {
-  readonly items: UiValue<readonly T[]>
-  readonly renderItem: (item: T, index: number) => UiNode
-  readonly empty?: TextValue
-  readonly label?: TextValue
-  readonly selected?: UiValue<number | null>
-  readonly onSelect?: (item: T, index: number) => void
-}
-
-export function List<T>(props: ListProps<T>): UiNode {
-  const nodes = createMemo(() => {
-    const items = readValue(props.items)
-    if (items.length === 0) {
-      return html`<li class="lg-list__empty">${props.empty === undefined ? '' : resolveText(props.empty)}</li>`
-    }
-    return items.map((item, index) =>
-      html`<li class=${() => (readValue(props.selected ?? null) === index ? 'lg-list__item selected' : 'lg-list__item')}
-        onClick=${() => props.onSelect?.(item, index)}>${props.renderItem(item, index)}</li>`,
-    )
-  })
-  return html`<ul class="lg-list" aria-label=${() => (props.label === undefined ? undefined : resolveText(props.label))}>${nodes}</ul>`
-}
 

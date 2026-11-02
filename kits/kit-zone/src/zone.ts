@@ -1,4 +1,3 @@
-import type { EncounterDef } from '@lunego/kit-encounter'
 import type { Point } from '@lunego/kit-encounter'
 
 export interface ZoneBounds {
@@ -14,7 +13,8 @@ export interface ZoneDef {
   readonly chunkSize: number
   readonly spawnBudget: number
   readonly biome?: string
-  readonly encounter?: EncounterDef
+  /** Content id of an encounter; never embeds encounter data. */
+  readonly encounterId?: string
   readonly tags?: readonly string[]
 }
 

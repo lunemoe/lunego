@@ -4,7 +4,7 @@
 
 ## API
 
-- `ZoneDef`：bounds/chunkSize/spawnBudget/biome/encounter/tags。
+- `ZoneDef`：bounds/chunkSize/spawnBudget/biome/encounterId/tags（encounter 只存内容 ID，不复制定义）。
 - `ZoneGraph`：重复/悬挂引用校验、`connected`、`portalsFor`、`chunkCount`。
 - `ZoneRuntime`：
   - `loadChunk/unloadChunk/loaded`（chunk 上界校验）

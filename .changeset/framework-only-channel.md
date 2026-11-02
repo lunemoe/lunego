@@ -76,3 +76,7 @@ localized text and accessibility helpers. CLI ships the asset pipeline (Aseprite
 LDtk, atlas, PNG, manifest schema and validation, `lunego assets`); render-pixi
 consumes asset frames; input adds a gamepad adapter; host adds profile store,
 saveGame/loadGame, clocks and a deterministic local leaderboard.
+
+Add `@lunego/kit-runtime`: generic ECS/World runtime adapter and catalogs for
+actor/combat/status/AI/encounter/zone/items/progression/quest/dialogue/commerce,
+with startup cross-reference content validation and no concrete game content.

@@ -27,3 +27,16 @@ lunego assets pack --out assets/atlas.png --manifest assets/atlas.frames.json id
 ## AssetPack 指纹
 
 生成的 `AssetPack` 可直接传给 `ContentRegistry.setAssetPack(AssetPack)`，其 pack/version/hash 会进入 content fingerprint，存档可检测资产版本变化。
+
+## 外部 workspace 镜像
+
+在不是 LuneGo 仓库的空目录运行 `lunego new game demo` 时，CLI 会生成：
+
+```text
+.lunego/packages/   # core/host/input/render-pixi/ui/vfx/audio/i18n/testkit/cli/eslint-plugin
+.lunego/kits/       # 所有 kits/kit-*
+pnpm-workspace.yaml # games/*、.lunego/packages/*、.lunego/kits/*
+games/demo/
+```
+
+CLI 会从源码 checkout 的相邻 `packages/`/`kits/`，或安装布局的 `node_modules/@lunego` 发现并复制；kit 列表不硬编码，新增 `kits/kit-*` 会自动进入镜像。已有本仓库 `packages/`/`kits/` 或镜像目录时不会重复创建外部镜像。之后在该目录 `pnpm install --offline` 可解析模板的 `@lunego/*` 与 `@lunego/kit-*` workspace 依赖。

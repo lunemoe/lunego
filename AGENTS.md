@@ -44,13 +44,14 @@ kits/kit-zone/       zone/portal/waypoint 图、chunk 加载与实体预算、fo
 kits/kit-ai/         感知/记忆、威胁、utility、行为树、blackboard/group、leash/phase
 kits/kit-status/     状态实例、绝对 tick 到期、stack/refresh、DoT/HoT、控制标记
 kits/kit-combat/     伤害管线、抗性、护甲/格挡/闪避/护盾、威胁入口
+kits/kit-runtime/    通用 ECS/World 适配层：组件/系统/命令/查询/内容 catalog，串联各 kit 机制（不含具体内容）
 packages/cli/        lunego gen / new game / check / assets
 packages/eslint-plugin/  LG002 / LG012 / LG013 / LG016 的可执行规则
 packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
 templates/game/      可运行俯视角模板：移动、Y 排序、相机、存档/回放
 ```
 
-`features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；模板通过 `lunego new game <name>` 复制到 `games/`。框架与游戏并行演进：当前需要的通用机制直接进 `kits/`，去掉玩法名词并补契约/测试；只做当前需要，不为想象需求预写接口。特效来源与 MIT 许可见 `THIRD_PARTY_NOTICES.md` 与 `packages/vfx/vendor/pixelfx/`。
+`features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；`kits/kit-runtime` 是通用 ECS/World 适配层（组件/系统/命令/查询/内容 catalog），只含机制、不含具体内容；模板通过 `lunego new game <name>` 复制到 `games/`。框架与游戏并行演进：当前需要的通用机制直接进 `kits/`，去掉玩法名词并补契约/测试；只做当前需要，不为想象需求预写接口。特效来源与 MIT 许可见 `THIRD_PARTY_NOTICES.md` 与 `packages/vfx/vendor/pixelfx/`。
 
 ## 设计约束（必须遵守）
 

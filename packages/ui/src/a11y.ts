@@ -13,6 +13,17 @@ export function activateOnKey(handler: () => void): (event: KeyboardEvent) => vo
   }
 }
 
+const EDITABLE_SELECTOR = 'input, textarea, select, [contenteditable="true"]'
+
+/** True when keyboard events belong to a text/input control rather than a widget. */
+export function isEditableTarget(target: EventTarget | null): boolean {
+  return (
+    typeof HTMLElement !== 'undefined' &&
+    target instanceof HTMLElement &&
+    target.closest(EDITABLE_SELECTOR) !== null
+  )
+}
+
 export interface UiDescription {
   readonly id: string
   readonly describedBy: () => string | undefined

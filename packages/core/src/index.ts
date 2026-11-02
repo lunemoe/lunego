@@ -79,6 +79,7 @@ export {
 } from './viewport-math.js'
 export type { CameraWorldOffset } from './viewport-math.js'
 export { isNumericKind, t } from './schema.js'
+export { hashValues } from './hash.js'
 export { cloneDeep, coerceValue } from './schema-coerce.js'
 export type {
   AnyTypeDef,

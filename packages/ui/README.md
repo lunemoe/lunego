@@ -57,10 +57,30 @@ const report = await fonts.loadAssets(Assets) // 只处理 type === 'font'
 
 ## 无障碍
 
-- 所有新控件使用原生 button 或 roving focus，并有 `aria-label`/`aria-selected`/`aria-expanded`/`aria-describedby`/`role`；`TreeView`/`GraphView`/`Dialog`/`ShopRow`/`MinimapView`/`VirtualList`/`DragSource`/`DropTarget`/`SortableGrid` 接受调用方的 `describedBy` id。
+- 所有新控件使用原生 button 或 roving focus，并有 `aria-label`/`aria-selected`/`aria-expanded`/`aria-describedby`/`role`；`List`/`TreeView`/`GraphView`/`Dialog`/`ShopRow`/`MinimapView`/`VirtualList`/`DragSource`/`DropTarget`/`SortableGrid` 接受调用方的 `describedBy` id。
 - 键盘：拖拽 Space/Enter 拾取/放置、方向键选目标、Escape 取消；树与图用方向键/Home/End/Enter；Dialog/ChoiceList 方向键 + Enter/Space；VirtualList 支持 Arrow/PageUp/PageDown/Home/End 滚动；Shop/分页按钮额外处理 Enter/Space。
 - `.lg-ui :focus-visible` 统一提供焦点环；`aria-live` 用于对话/分页/Toast；`aria-busy` 用于加载层。
 - `UiRoot` 的 `data-colorblind`/`data-contrast` 是纯表现开关，不改变任何交互或玩法状态；游戏负责持久化这些设置。
+
+## 选择列表（List）
+
+```ts
+List({
+  items,
+  selected,
+  onSelect: (item, index) => setSelected(index),
+  isDisabled: (item) => item.locked,
+  label: { key: 'loot.title' },
+  empty: { key: 'loot.empty' },
+  describedBy: 'loot-help',
+  renderItem: (item) => item.label,
+})
+```
+
+- 根节点是 `role="listbox"`（`aria-orientation="vertical"`），选项是 `role="option"`；`aria-selected` 来自 `selected`，`aria-disabled` 来自 `isDisabled`，焦点采用 roving tabindex。
+- ArrowUp/ArrowDown/Home/End 移动焦点，Enter/Space 选择；越界停在当前端点（不循环），禁用项跳过。Escape 不拦截，继续冒泡给 `Modal`/`UiMenuStack`；输入框、文本域、select 与 `contenteditable` 内的按键/点击保持原生行为。
+- 空列表安全：显示 `empty` 文案（`role="presentation"`），listbox 本身仍可通过 Tab 获得焦点；`label`/`describedBy` 由调用方传入。
+- 在 `Modal` 内使用时沿用 `UiMenuStack`/`FocusScope` 的初始焦点、Tab trap 与关闭后焦点恢复；`List` 不注册 document 级监听。
 
 ## 菜单、反馈与无障碍
 

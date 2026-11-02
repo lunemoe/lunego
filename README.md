@@ -10,7 +10,7 @@ LuneGo 是一个面向 Web 的 2D 游戏架构框架：逻辑层是确定性的�
 
 **包**：`@lunego/core`、`@lunego/host`、`@lunego/ui`、`@lunego/input`、`@lunego/render-pixi`、`@lunego/vfx`、`@lunego/audio`、`@lunego/i18n`、`@lunego/testkit`、`lunego` CLI、`@lunego/eslint-plugin`，以及 `templates/game` 俯视角模板。
 
-**通用 kits**：`kit-space`、`kit-stats`、`kit-ability`、`kit-loot`、`kit-items`、`kit-progression`、`kit-quest`、`kit-dialogue`、`kit-commerce`、`kit-encounter`、`kit-zone`、`kit-ai`、`kit-status`、`kit-combat`。
+**通用 kits**：`kit-space`、`kit-stats`、`kit-ability`、`kit-loot`、`kit-items`、`kit-progression`、`kit-quest`、`kit-dialogue`、`kit-commerce`、`kit-encounter`、`kit-zone`、`kit-ai`、`kit-status`、`kit-combat`、`kit-runtime`。
 
 **CLI**：`lunego gen [--check]`、`lunego new game <name>`、`lunego check`、`lunego assets <check|build|pack|import>`。`lunego gen` 生成注册表、类型化内容/资源 ID 与项目地图；`lunego check` 校验生成物、内容引用、资产 manifest 与内部导入边界。
 
