@@ -13,6 +13,7 @@ export {
   Tabs,
   Tooltip,
   UiRoot,
+  createUiSignal,
 } from './components.js'
 export type {
   BarKind,
@@ -35,6 +36,14 @@ export type {
   UiRootProps,
   UiValue,
 } from './components.js'
+export { EffectOverlay } from './overlay.js'
+export type {
+  EffectOverlayOptions,
+  FloatingTextOptions,
+  OverlayViewport,
+  OverlayWorldPoint,
+  ProjectileOverlayOptions,
+} from './overlay.js'
 export { mountUi } from './mount.js'
 export type { MountedUi, UiView } from './mount.js'
 export { UI_LAYERS, UI_STYLES, installUiStyles, themeVariables } from './theme.js'

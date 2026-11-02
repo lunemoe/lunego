@@ -1,4 +1,10 @@
-export { AudioCueMap, AudioSystem, attachAudioUnlock, defineAudioCueMap } from './system.js'
+export {
+  AudioCueMap,
+  AudioSystem,
+  attachAudioUnlock,
+  attachBrowserAudioUnlock,
+  defineAudioCueMap,
+} from './system.js'
 export type { UnlockTarget } from './system.js'
 export { SoundBank } from './sounds.js'
 export type { SoundManifest, SoundManifestEntry } from './sounds.js'

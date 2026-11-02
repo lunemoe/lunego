@@ -57,6 +57,24 @@ export default tseslint.config(
   },
   {
     files: [
+      'templates/**/*.ts',
+      'games/**/*.ts',
+      'features/**/*.ts',
+      'kits/**/*.ts',
+    ],
+    ignores: [
+      '**/tests/browser/**',
+      '**/*.spec.ts',
+      '**/src/*-probe.ts',
+      '**/_generated/**',
+      '**/*.config.ts',
+    ],
+    rules: {
+      '@lunego/lg016': 'error',
+    },
+  },
+  {
+    files: [
       'packages/core/src/**/*.ts',
       '**/features/**/schema.ts',
       '**/features/**/logic/**/*.ts',

@@ -104,6 +104,12 @@ export const UI_STYLES = `
 .lg-list__item { padding: 4px 6px; border-radius: 3px; cursor: pointer; }
 .lg-list__item.selected, .lg-list__item:hover { background: var(--lg-surface-raised); }
 .lg-list__empty { color: var(--lg-muted); font-size: 11px; padding: 6px; }
+.lg-fx-number { position: absolute; font: 700 12px var(--lg-font, ui-monospace, monospace); text-shadow: 0 1px 0 #000, 0 0 6px rgba(0,0,0,.6); white-space: nowrap; }
+.lg-fx-number--crit { font-size: 16px; color: #ffd36b; }
+.lg-fx-projectile { position: absolute; image-rendering: pixelated; object-fit: contain; transform: translate(-50%, -50%); }
+.lg-fx-flash { position: absolute; inset: 0; pointer-events: none; }
+.lg-fx-shake { animation: lg-shake 0.16s linear; }
+@keyframes lg-shake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-2px,1px); } 40% { transform: translate(2px,-1px); } 60% { transform: translate(-1px,-2px); } 80% { transform: translate(1px,2px); } }
 .lg-ui input, .lg-ui select { background: #0b1420; color: var(--lg-text); border: 1px solid var(--lg-border); border-radius: 3px; font: inherit; padding: 4px 6px; }
 `
 

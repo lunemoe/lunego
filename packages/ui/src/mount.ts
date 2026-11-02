@@ -10,9 +10,15 @@ export interface MountedUi {
 }
 
 /** Mount a Solid view into a DOM root; styles are installed once. */
-export function mountUi(root: Element, bridge: UiBridge, view: UiView): MountedUi {
-  const disposeStyles = installUiStyles(root.ownerDocument)
-  const disposeRender = render(() => view(bridge) as Node, root)
+export function mountUi(root: Element | string, bridge: UiBridge, view: UiView): MountedUi {
+  const element = typeof root === 'string'
+    ? (typeof document === 'undefined' ? null : document.querySelector(root))
+    : root
+  if (element === null) {
+    throw new Error(`UI mount root ${String(root)} was not found`)
+  }
+  const disposeStyles = installUiStyles(element.ownerDocument)
+  const disposeRender = render(() => view(bridge) as Node, element)
   return {
     dispose: () => {
       disposeRender()

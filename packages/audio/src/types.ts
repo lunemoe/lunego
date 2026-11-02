@@ -24,6 +24,7 @@ export interface AudioBufferLike {
 export interface BufferSourceLike extends AudioNodeLike {
   buffer: AudioBufferLike | null
   readonly playbackRate: AudioParamLike
+  loop: boolean
   start(when?: number): void
   stop(when?: number): void
   onended: (() => void) | null
@@ -61,6 +62,8 @@ export interface AudioRequest {
   readonly pitchJitter?: number
   readonly volumeJitter?: number
   readonly maxConcurrent?: number
+  /** Loop on the music/ambient bus (buffer source loop). */
+  readonly loop?: boolean
 }
 
 export type AudioCueResolver = (cue: CueInstance) => readonly AudioRequest[]

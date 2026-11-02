@@ -74,6 +74,20 @@ describe('lunego cli', () => {
     expect(result.stderr).toContain('internal')
   })
 
+  it('rejects platform imports and local RAF in game code', async () => {
+    const root = await tempDir()
+    expect((await invoke(['new', 'game', 'platform'], root)).code).toBe(0)
+    const game = join(root, 'games', 'platform')
+    await writeFile(
+      join(game, 'src', 'bad-view.ts'),
+      "import { Texture } from 'pixi.js'\nrequestAnimationFrame(() => {})\nexport const texture = Texture\n",
+      'utf8',
+    )
+    const result = await invoke(['check'], game)
+    expect(result.code).toBe(1)
+    expect(result.stderr).toContain('LG016')
+  })
+
   it('detects stale generated files and schema lock drift', async () => {
     const root = await tempDir()
     expect((await invoke(['new', 'game', 'drift'], root)).code).toBe(0)

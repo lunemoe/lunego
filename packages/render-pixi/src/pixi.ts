@@ -29,7 +29,7 @@ export interface PixiRendererOptions {
   readonly width: number
   readonly height: number
   readonly background?: number
-  readonly container: HTMLElement
+  readonly container: HTMLElement | string
   readonly textures?: TextureStore<Texture>
   readonly manifest?: TextureManifest
   readonly ownsTextures?: boolean
@@ -84,9 +84,15 @@ export class PixiAdapter implements RenderAdapter<Container> {
     }
     PixiTextureSource.defaultOptions.scaleMode = 'nearest'
     app.canvas.style.imageRendering = 'pixelated'
-    options.container.appendChild(app.canvas)
-    this.fit(options.container)
-    this.resizeHandler = () => this.fit(options.container)
+    const container = typeof options.container === 'string'
+      ? document.querySelector<HTMLElement>(options.container)
+      : options.container
+    if (container === null) {
+      throw new Error(`pixi container ${options.container} was not found`)
+    }
+    container.appendChild(app.canvas)
+    this.fit(container)
+    this.resizeHandler = () => this.fit(container)
     window.addEventListener('resize', this.resizeHandler)
     if (options.background !== undefined) {
       this.setBackground({ kind: 'background', color: options.background })

@@ -39,6 +39,8 @@ LuneGo 的做法是把"形状"和"功能"分开处理：
 
 ### 1.3 设计原则
 
+0. **最高原则：框架是唯一通道。** 游戏代码只能 import `@lunego/*` 和自己的 `schema.ts`/`content`；不能直接 import pixi.js、solid-js、DOM、WebAudio、Node 内置或裸平台包，也不能自建坐标/相机/锚点/tick/RAF/资源加载/存储。框架缺能力时先在框架补包/API，再写游戏。
+
 1. **逻辑与表现分离。** 逻辑层是一个状态机：`(state, commands) → (state', events)`。它不知道画面、声音和 DOM 的存在。
 2. **唯一写入路径。** 状态只能在 System 和 CommandHandler 里修改，外部只能发 Command。
 3. **确定性。** 相同的初始状态加上相同的命令序列，必然得到相同的结果，因此可以回放，也可以逐 tick 校验。
@@ -82,12 +84,12 @@ LuneGo 的做法是把"形状"和"功能"分开处理：
 | 包                       | 所在侧  | 职责                                                                                           |
 | ----------------------- | ---- | -------------------------------------------------------------------------------------------- |
 | `@lunego/core`          | 两侧共享 | schema DSL、ECS、World、调度器、Command / Event / Cue / Query、RNG 与数学库、序列化与哈希、Feature 机制。零依赖，不碰 DOM |
-| `@lunego/host`          | 桥接   | 运行逻辑；逻辑与表现之间的通信协议；时间模型；存档读写                                                                  |
+| `@lunego/host`          | 桥接   | 运行逻辑；逻辑与表现协议；时间模型；view loop（RAF/visibility/pause）、浏览器存档/按键/调试入口；存档读写 |
 | `@lunego/render-pixi`   | 表现   | 渲染绑定、插值、图层、相机/缩放、精灵/动画/背景、纹理注册表、瓦片地图、像素完美                                                    |
 | `@lunego/vfx`           | 表现   | pixelfx 特效层（MIT，vendor）、Cue → 特效映射、俯视角地面投影、地面/前景分层                                           |
-| `@lunego/ui`            | 表现   | Solid + solid-js/html 的 DOM UI：只读 bridge、主题、Panel/Bar/Button/Tabs/Inventory/SkillBar/Modal/List |
-| `@lunego/input`         | 表现   | 设备 → 抽象动作 → Command                                                                          |
-| `@lunego/audio`         | 表现   | Web Audio、由 Cue 驱动的音效、发声数限制                                                                  |
+| `@lunego/ui`            | 表现   | Solid + solid-js/html DOM UI：bridge、主题、组件、createUiSignal、EffectOverlay（飘字/投射物/闪屏/震动） |
+| `@lunego/input`         | 表现   | 设备 → 抽象动作 → Command；键盘/指针 browser adapter，PointerState 接受 renderer.viewport |
+| `@lunego/audio`         | 表现   | Web Audio 总线、Cue 音效、可循环 music/ambient buffer、抖动与并发上限 |
 | `@lunego/kit-space`     | 框架   | 静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希 broadphase；无玩法名词                                                  |
 | `@lunego/kit-stats`     | 框架   | 属性基础值、加法/乘法修饰器、词缀定义与聚合、上下限                                                                   |
 | `@lunego/kit-ability`   | 框架   | 能力定义、资源消耗、tick 冷却、施法校验、泛型目标选择                                                                |
@@ -471,7 +473,7 @@ export const combatCues = defineCueMap({
 ### 10.1 强制层级
 
 1. **编译期**：逻辑侧 tsconfig 不含 DOM；最严格的 TS 配置；类型化 ID。
-2. **Lint**：`@lunego/eslint-plugin` 检查禁用 API 和代码规范；dependency-cruiser 检查依赖方向。
+2. **Lint**：`@lunego/eslint-plugin` 检查禁用 API 和代码规范；LG016 按游戏/模板分区禁止平台直连；dependency-cruiser 检查依赖方向与 `@lunego/*` 唯一通道。
 3. **注册期**：World 启动时校验依赖无环、调度无歧义、写权限归属。
 4. **运行时（开发模式）**：访问未声明的状态就抛错，tick 之外写入就抛错，每个 tick 检查不变量。
 5. **测试期**：确定性双跑、黄金回放、读档透明。
@@ -498,6 +500,7 @@ export const combatCues = defineCueMap({
 | LG013 | 不写临时实现：禁止 `any`、`@ts-ignore`/`eslint-disable` 和"先这样"式的占位代码 | lint + 审查 |
 | LG014 | 不手改 `_generated/` 下的文件 | `lunego gen --check` |
 | LG015 | 新 feature 必须有 README 契约和测试；修改框架必须附变更记录 | check + 提交前本地检查 |
+| LG016 | 游戏代码只能通过 `@lunego/*` 访问引擎/平台；禁止本地坐标/时间/资源/输入/音频/存储/渲染/UI/相机/锚点实现 | ESLint 分区 + dependency-cruiser + tsconfig + `lunego check` + 审查 |
 
 ### 10.3 生成器与模板
 
@@ -657,6 +660,7 @@ lunego-workspace/            # 私有工作区
 | 016 | 存档透明 | 快照记录 dt/contentHash/待执行命令；`previousEvents` 例外；世界档+档案档显式合并载入 | 已定 |
 | 017 | 表现管线 | 精灵/动画/背景/瓦片地图/纹理注册表；渲染时钟显式传入；指针输入与音频总线各自独立 | 已定 |
 | 018 | UI | Solid + solid-js/html，DOM 叠加层；只读 bridge + 主题 + 动画组件（Bar/Panel/Modal/SkillBar 等） | 已定 |
+| 019 | 框架唯一通道 | 游戏只 import @lunego/* 与自己 schema/content；平台/引擎能力由框架 API 提供，缺能力先补框架 | 已定 |
 
 ---
 

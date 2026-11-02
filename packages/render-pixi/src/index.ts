@@ -30,6 +30,7 @@ export type {
   TextureId,
 } from './types.js'
 export { RenderSystem } from './renderer.js'
+export { createRuntimeCanvas } from './runtime-canvas.js'
 export { cameraWorldTransform, createViewportTransform, viewportTransform } from './viewport.js'
 export type {
   CameraWorldTransform,

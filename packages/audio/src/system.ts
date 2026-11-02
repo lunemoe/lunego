@@ -195,6 +195,7 @@ export class AudioSystem {
     const source = this.context.createBufferSource()
     source.buffer = sound.buffer
     source.playbackRate.value = pitch
+    source.loop = request.loop ?? false
     const gain = this.context.createGain()
     gain.gain.value = volume
     source.connect(gain)
@@ -309,3 +310,25 @@ export function attachAudioUnlock(audio: AudioSystem, target: UnlockTarget): () 
 }
 
 export type { AudioNodeLike }
+
+interface BrowserUnlockGlobal {
+  readonly addEventListener?: (type: 'pointerdown' | 'keydown', listener: () => void) => void
+  readonly removeEventListener?: (type: 'pointerdown' | 'keydown', listener: () => void) => void
+}
+
+/** Attach the first-gesture unlock to the browser window without DOM in games. */
+export function attachBrowserAudioUnlock(audio: AudioSystem): () => void {
+  const global = globalThis as BrowserUnlockGlobal
+  const target: UnlockTarget = {
+    addEventListener: (type, listener) => {
+      if (global.addEventListener === undefined) {
+        throw new Error('browser audio target is unavailable')
+      }
+      global.addEventListener(type, listener)
+    },
+    removeEventListener: (type, listener) => {
+      global.removeEventListener?.(type, listener)
+    },
+  }
+  return attachAudioUnlock(audio, target)
+}

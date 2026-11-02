@@ -1,9 +1,14 @@
-import { createEffect, createMemo, onCleanup, type Accessor } from 'solid-js'
+import { createEffect, createMemo, createSignal, onCleanup, type Accessor } from 'solid-js'
 import html from 'solid-js/html'
 import { themeVariables, type UiTheme } from './theme.js'
 
 export type UiNode = Node | Node[]
 export type UiChild = Node | string | number | readonly UiChild[]
+
+export function createUiSignal<T>(initial: T): [Accessor<T>, (next: T) => void] {
+  const [get, set] = createSignal(initial)
+  return [get, (next: T) => set(() => next)]
+}
 export type UiValue<T> = T | Accessor<T>
 
 function read<T>(value: UiValue<T>): T {

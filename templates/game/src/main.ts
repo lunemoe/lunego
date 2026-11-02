@@ -1,7 +1,11 @@
 import type { Game } from '@lunego/host'
-import type { WorldSnapshot } from '@lunego/core'
-import { createGame } from '@lunego/host'
-import { createSignal } from 'solid-js'
+import {
+  bindBrowserKeys,
+  createBrowserSaveStore,
+  createGame,
+  createViewLoop,
+  exposeBrowserDebug,
+} from '@lunego/host'
 import {
   Bar,
   Button,
@@ -10,22 +14,24 @@ import {
   Panel,
   UiRoot,
   createUiBridge,
+  createUiSignal,
   mountUi,
 } from '@lunego/ui'
-import { attachKeyboard, attachPointer, createInput } from '@lunego/input'
+import { attachBrowserInput, createInput } from '@lunego/input'
 import {
   RenderSystem,
   backgroundSpec,
   createPixiRenderer,
+  createRuntimeCanvas,
   defineRenderBinding,
   rectSpec,
   spriteSpec,
 } from '@lunego/render-pixi'
 import {
-  CanvasEffectSurface,
   Effects,
   VfxSystem,
   defineCueMap,
+  mountCanvasEffectSurface,
 } from '@lunego/vfx'
 import type { VfxSystem as VfxSystemType } from '@lunego/vfx'
 import {
@@ -77,11 +83,10 @@ async function boot(): Promise<void> {
     onFrame: (frame) => vfx.consume(frame, cueMap),
   })
 
-  const uiHost = document.querySelector<HTMLElement>('#ui')
   const bridge = createUiBridge(game)
-  const [helpOpen, setHelpOpen] = createSignal(false)
-  if (uiHost !== null) {
-    mountUi(uiHost, bridge, (ui) => {
+  const [helpOpen, setHelpOpen] = createUiSignal(false)
+  {
+    mountUi('#ui', bridge, (ui) => {
       const vitals = () => ui.models()['Vitals'] as { hp: number; maxHp: number } | undefined
       return UiRoot({
         theme: { accent: '#58c8ff', accentText: '#08121c' },
@@ -122,18 +127,14 @@ async function boot(): Promise<void> {
     width: 480,
     height: 270,
     background: 0x0b1018,
-    container: document.querySelector<HTMLElement>('#game') ?? document.body,
+    container: '#game',
+  })
+  const surface = mountCanvasEffectSurface(vfx, '#game', {
+    className: 'vfx-layer',
+    alignTo: renderer.element,
   })
 
-  const overlay = document.createElement('canvas')
-  overlay.className = 'vfx-layer'
-  const container = document.querySelector<HTMLElement>('#game') ?? document.body
-  container.appendChild(overlay)
-  const surface = new CanvasEffectSurface(vfx, overlay)
-
-  const crate = document.createElement('canvas')
-  crate.width = 16
-  crate.height = 16
+  const crate = createRuntimeCanvas(16, 16)
   const crateContext = crate.getContext('2d')
   if (crateContext !== null) {
     crateContext.fillStyle = '#d88a4a'
@@ -151,9 +152,7 @@ async function boot(): Promise<void> {
   }
   await renderer.textures.registerSource('runtime-crate', crate, { width: 16, height: 16 })
 
-  const backdrop = document.createElement('canvas')
-  backdrop.width = 480
-  backdrop.height = 270
+  const backdrop = createRuntimeCanvas(480, 270)
   const backdropContext = backdrop.getContext('2d')
   if (backdropContext !== null) {
     backdropContext.fillStyle = '#0b1018'
@@ -170,9 +169,7 @@ async function boot(): Promise<void> {
   await renderer.textures.registerSource('runtime-backdrop', backdrop, { width: 480, height: 270 })
   renderer.setBackground(backgroundSpec({ color: 0x0b1018, texture: 'runtime-backdrop' }))
 
-  const tileset = document.createElement('canvas')
-  tileset.width = 32
-  tileset.height = 16
+  const tileset = createRuntimeCanvas(32, 16)
   const tilesetContext = tileset.getContext('2d')
   if (tilesetContext !== null) {
     tilesetContext.fillStyle = '#1a2433'
@@ -255,69 +252,47 @@ async function boot(): Promise<void> {
       return [{ type: MoveIntent.type, payload: { x, y } }]
     },
   })
-  attachKeyboard(input, window)
-  attachPointer(input, window)
+  attachBrowserInput(input)
 
-  function save(): void {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(game.save()))
+  const saves = createBrowserSaveStore(SAVE_KEY)
+  const save = (): void => {
+    saves.save(game.save())
   }
-
-  function load(): void {
-    const raw = localStorage.getItem(SAVE_KEY)
-    if (raw === null) {
-      return
-    }
+  const load = (): void => {
     try {
-      game.load(JSON.parse(raw) as WorldSnapshot)
+      const snapshot = saves.load()
+      if (snapshot !== null) {
+        game.load(snapshot)
+      }
     } catch (error) {
       console.error('load failed', error)
     }
   }
-
-  window.addEventListener('keydown', (event) => {
-    if (event.code === 'KeyK') {
-      save()
-    }
-    if (event.code === 'KeyJ') {
-      load()
-    }
-  })
+  bindBrowserKeys({ KeyK: save, KeyJ: load })
 
   void game.send(Start, {})
 
-  let previous = performance.now()
-  let cameraX = 0
-  let cameraY = 0
-  function frame(now: number): void {
-    const delta = Math.max(0, Math.min(0.1, (now - previous) / 1000))
-    previous = now
-    game.update(delta)
-    for (const command of input.poll()) {
-      void game.send(command.type, command.payload)
-    }
-    const player = game.view.entities(Player)[0]
-    if (player !== undefined) {
-      const position = game.view.get(player, Position)
-      if (position !== undefined) {
-        cameraX = Math.round(position.x - 240)
-        cameraY = Math.round(position.y - 135)
-        renderSystem.setCamera(cameraX, cameraY)
+  createViewLoop({
+    game,
+    update: (view) => {
+      for (const command of input.poll()) {
+        void game.send(command.type, command.payload)
       }
-    }
-    vfx.update(delta)
-    renderSystem.sync(game.view, game.frame.elapsed)
-    const canvas = renderer.element
-    overlay.style.width = canvas.style.width
-    overlay.style.height = canvas.style.height
-    overlay.style.left = `${canvas.offsetLeft}px`
-    overlay.style.top = `${canvas.offsetTop}px`
-    input.pointer.setViewport(renderer.viewport)
-    surface.render(cameraX, cameraY, renderer.zoom)
-    requestAnimationFrame(frame)
-  }
-
-  requestAnimationFrame(frame)
-  window.__luneGame = { game, vfx, renderer, input, save, load }
+      const player = game.view.entities(Player)[0]
+      if (player !== undefined) {
+        const position = game.view.get(player, Position)
+        if (position !== undefined) {
+          renderSystem.setCamera(position.x - 240, position.y - 135)
+        }
+      }
+      const viewport = renderer.viewport
+      vfx.update(view.dt)
+      renderSystem.sync(game.view, view.frame.elapsed)
+      input.pointer.setViewport(viewport)
+      surface.render(viewport.cameraX, viewport.cameraY, viewport.zoom)
+    },
+  })
+  exposeBrowserDebug('__luneGame', { game, vfx, renderer, input, save, load })
 }
 
 await boot()

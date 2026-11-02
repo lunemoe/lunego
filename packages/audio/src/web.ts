@@ -57,6 +57,12 @@ function wrapSource(node: AudioBufferSourceNode): BufferSourceLike {
       node.buffer = buffer as AudioBuffer | null
     },
     playbackRate: node.playbackRate,
+    get loop() {
+      return node.loop
+    },
+    set loop(value: boolean) {
+      node.loop = value
+    },
     start: (when) => {
       node.start(when)
     },

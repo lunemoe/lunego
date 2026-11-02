@@ -21,14 +21,14 @@ pnpm check
 ## 目录
 
 ```
-docs/rules/          LG001–LG015 规则页
+docs/rules/          LG001–LG016 规则页
 packages/core/       schema DSL、ECS、World、调度、命令、RNG、哈希、存档
-packages/host/       主线程运行时、时间模型、存档/读档、回放、崩溃报告
-packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘/指针适配（指针含屏幕/世界坐标）
+packages/host/       主线程运行时、时间模型、view loop、浏览器存档/按键/调试入口、存档/读档、回放、崩溃报告
+packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘/指针 browser adapter（指针接受 renderer.viewport）
 packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配；`renderer.viewport` 是相机/坐标单一来源，`renderSystem.anchorOf` 提供实体显示锚点
 packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
 packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁
-packages/ui/         Solid + solid-js/html 的 DOM UI：桥、主题、Panel/Bar/Button/Tabs/背包/技能栏/Modal/List
+packages/ui/         Solid + solid-js/html DOM UI：桥、主题、组件、createUiSignal、EffectOverlay
 kits/kit-space/      静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希
 kits/kit-stats/      属性基础值、加法/乘法修饰器、词缀聚合
 kits/kit-ability/    能力定义、资源/冷却、施法校验、泛型目标选择
@@ -48,7 +48,7 @@ templates/game/      可运行俯视角模板：移动、Y 排序、相机、存
 3. 结构性变更在 flush 生效；查询按实体索引升序。
 4. 形状一次到位，功能按需生长；不写临时实现、TODO、`any`、`@ts-ignore`、`as unknown as`。
 5. 框架代码不出现玩法名词；游戏代码只通过 feature 的 `schema.ts` 跨 feature 通信。
-6. 规则由工具强制：tsconfig、ESLint、dependency-cruiser、注册期校验、开发期守卫、测试、本地 `pnpm check`。本项目不使用 GitHub Actions/CI。
+6. 规则由工具强制：tsconfig、ESLint（含 LG016 游戏分区）、dependency-cruiser、注册期校验、开发期守卫、测试、本地 `pnpm check`。本项目不使用 GitHub Actions/CI。
 
 ## 常用命令
 
@@ -78,4 +78,4 @@ templates/game/      可运行俯视角模板：移动、Y 排序、相机、存
 
 模板游戏：`templates/game`，逻辑在 `features/motion`，表现只通过 host 的 Frame/只读视图与 Command 交互。生成物、schema.lock、feature README/测试由 `lunego check` 校验。
 
-LG001 DOM 隔离 · LG002 确定性 · LG003 声明 · LG004 写入路径 · LG005 写权限 · LG006 feature 边界 · LG007 逻辑/表现分离 · LG008 框架无玩法 · LG009 类型化 ID · LG010 schema 版本 · LG011 表现层规则（人工） · LG012 无杂物/无模块级可变状态/文件上限 · LG013 无临时实现 · LG014 不改生成物 · LG015 feature 契约与变更记录。
+LG001 DOM 隔离 · LG002 确定性 · LG003 声明 · LG004 写入路径 · LG005 写权限 · LG006 feature 边界 · LG007 逻辑/表现分离 · LG008 框架无玩法 · LG009 类型化 ID · LG010 schema 版本 · LG011 表现层规则（人工） · LG012 无杂物/无模块级可变状态/文件上限 · LG013 无临时实现 · LG014 不改生成物 · LG015 feature 契约与变更记录 · LG016 框架是游戏访问引擎/平台的唯一通道。

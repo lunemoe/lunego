@@ -45,6 +45,7 @@ class Source extends Node implements BufferSourceLike {
   readonly playbackRate = new Param()
   started = false
   stopped = false
+  loop = false
   onended: (() => void) | null = null
   start(): void {
     this.started = true
@@ -142,6 +143,13 @@ describe('audio buses', () => {
     )
     expect(leftContext.sources[0]?.playbackRate.value).not.toBe(1)
     expect(leftContext.sources[0]?.targets[0]).toBeDefined()
+  })
+
+  it('supports looping buffer sources for music and ambience', () => {
+    const context = new Context()
+    const audio = new AudioSystem(context, bankWith())
+    audio.play({ sound: 'hit', bus: 'music', loop: true })
+    expect(context.sources[0]?.loop).toBe(true)
   })
 
   it('caps concurrent voices per sound by stopping the oldest', () => {

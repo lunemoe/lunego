@@ -2,6 +2,33 @@
 module.exports = {
   forbidden: [
     {
+      name: 'game-lunego-only-platform',
+      severity: 'error',
+      comment: 'Game/template code uses LuneGo APIs, never engine/platform packages.',
+      from: {
+        path: '(?:^|/)(games|features|kits|templates)/',
+        pathNot: 'tests/browser|\\.spec\\.ts$|__tests__|\\.test\\.ts$',
+      },
+      to: { path: '(?:^|/)node_modules/(pixi\\.js|solid-js)|(?:^|/)@lunego/core/(?:dist/)?internal' },
+    },
+    {
+      name: 'game-no-node-builtins',
+      severity: 'error',
+      comment: 'Game/template runtime code must not use Node builtins.',
+      from: {
+        path: '(?:^|/)(games|features|kits|templates)/',
+        pathNot: 'tests/browser|\\.spec\\.ts$|__tests__|\\.test\\.ts$',
+      },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'game-no-core-internal',
+      severity: 'error',
+      comment: 'Game/template code cannot reach core internals.',
+      from: { path: '(?:^|/)(games|features|kits|templates)/' },
+      to: { path: '(?:^|/)@lunego/core/(?:dist/)?internal' },
+    },
+    {
       name: 'no-circular',
       severity: 'error',
       comment: 'Cycles make ownership and scheduling unreadable.',

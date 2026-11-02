@@ -4,6 +4,8 @@ import type { PointerTarget } from './pointer.js'
 export { InputActions } from './actions.js'
 export type { ActionState, CommandRequest, InputMap } from './actions.js'
 export { Input, createInput } from './input.js'
+export { attachBrowserInput } from './browser.js'
+export type { BrowserInputTarget } from './browser.js'
 export type { InputOptions, KeyEventLike, KeyboardTarget } from './input.js'
 export { PointerState } from './pointer.js'
 export type {
