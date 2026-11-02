@@ -45,6 +45,40 @@ describe('tilemap layout', () => {
     expect(() => tileFrame({ ...tileset, columns: 0 }, 0)).not.toThrow()
   })
 
+  it('rejects invalid maps and keeps the previous map on failure', () => {
+    expect(() =>
+      buildTilemap({
+        tileset: { ...tileset, tileWidth: Number.NaN },
+        layers: [{ name: 'bad', width: 1, height: 1, tiles: [0] }],
+      }),
+    ).toThrow(/positive integers/)
+    expect(() =>
+      buildTilemap({
+        tileset,
+        layers: [
+          { name: 'dup', width: 1, height: 1, tiles: [0] },
+          { name: 'dup', width: 1, height: 1, tiles: [0] },
+        ],
+      }),
+    ).toThrow(/duplicate/)
+    expect(() =>
+      buildTilemap({
+        tileset,
+        layers: [{ name: 'fraction', width: 1.5, height: 1, tiles: [0] }],
+      }),
+    ).toThrow(/dimensions/)
+    const view = new TilemapView<TileInstance>({
+      create: (tile) => tile,
+      destroy: () => undefined,
+    })
+    view.setMap({ tileset, layers: [{ name: 'ok', width: 1, height: 1, tiles: [0] }] })
+    expect(view.count).toBe(1)
+    expect(() =>
+      view.setMap({ tileset, layers: [{ name: 'bad', width: 1, height: 1, tiles: [Number.NaN] }] }),
+    ).toThrow(/non-integer/)
+    expect(view.count).toBe(1)
+  })
+
   it('computes camera/zoom transforms in scaled world units', () => {
     expect(cameraTransform(10, 20, 2)).toEqual({ x: -20, y: -40, scale: 2 })
     expect(cameraTransform(10.4, 20.6, 2.5)).toEqual({ x: -26, y: -52, scale: 2.5 })

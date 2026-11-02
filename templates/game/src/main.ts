@@ -20,6 +20,7 @@ import {
   defineRenderBinding,
   rectSpec,
   spriteSpec,
+  viewportTransform,
 } from '@lunego/render-pixi'
 import {
   CanvasEffectSurface,
@@ -220,8 +221,12 @@ async function boot(): Promise<void> {
         object.x = position.x
         object.y = position.y
         if (object.kind !== 'rect') {
-          object.width = renderable?.width ?? object.width
-          object.height = renderable?.height ?? object.height
+          if (renderable?.width !== undefined) {
+            object.width = renderable.width
+          }
+          if (renderable?.height !== undefined) {
+            object.height = renderable.height
+          }
           return
         }
         object.width = renderable?.width ?? object.width
@@ -260,8 +265,13 @@ async function boot(): Promise<void> {
 
   function load(): void {
     const raw = localStorage.getItem(SAVE_KEY)
-    if (raw !== null) {
+    if (raw === null) {
+      return
+    }
+    try {
       game.load(JSON.parse(raw) as WorldSnapshot)
+    } catch (error) {
+      console.error('load failed', error)
     }
   }
 
@@ -301,16 +311,19 @@ async function boot(): Promise<void> {
     overlay.style.width = canvas.style.width
     overlay.style.height = canvas.style.height
     const bounds = canvas.getBoundingClientRect()
-    const cssScale = bounds.width / 480
     overlay.style.left = `${canvas.offsetLeft}px`
     overlay.style.top = `${canvas.offsetTop}px`
-    input.pointer.setViewport({
-      scale: cssScale > 0 ? cssScale : 1,
-      offsetX: bounds.left,
-      offsetY: bounds.top,
-      cameraX,
-      cameraY,
-    })
+    input.pointer.setViewport(
+      viewportTransform({
+        cssWidth: bounds.width > 0 ? bounds.width : 480,
+        virtualWidth: 480,
+        offsetX: bounds.left,
+        offsetY: bounds.top,
+        cameraX,
+        cameraY,
+        zoom: renderer.zoom,
+      }),
+    )
     surface.render(cameraX, cameraY)
     requestAnimationFrame(frame)
   }

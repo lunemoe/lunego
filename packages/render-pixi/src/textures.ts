@@ -19,6 +19,12 @@ export interface TextureMetadata {
   readonly frames?: readonly SpriteFrame[]
 }
 
+export interface RegisterTextureMetadata {
+  readonly width: number
+  readonly height: number
+  readonly frames?: readonly SpriteFrame[]
+}
+
 export interface LoadedTexture<T> {
   readonly id: string
   readonly texture: T
@@ -55,40 +61,66 @@ export class TextureStore<T> {
   private readonly loader: TextureLoader<T>
   private readonly entries = new Map<string, LoadedTexture<T>>()
   private readonly failures = new Map<string, unknown>()
+  private readonly pending = new Map<string, Promise<LoadedTexture<T>>>()
   private destroyed = false
 
   constructor(loader: TextureLoader<T>) {
     this.loader = loader
   }
 
-  async load(id: string, source: TextureSource, metadata: TextureMetadata = {}): Promise<LoadedTexture<T>> {
+  load(id: string, source: TextureSource, metadata: TextureMetadata = {}): Promise<LoadedTexture<T>> {
     if (this.destroyed) {
-      throw new Error('texture store is destroyed')
+      return Promise.reject(new Error('texture store is destroyed'))
     }
     if (this.entries.has(id)) {
-      throw new Error(`texture ${id} is already loaded`)
+      return Promise.reject(new Error(`texture ${id} is already loaded`))
     }
-    try {
-      const loaded = await this.loader.load(source)
-      const entry: LoadedTexture<T> = {
-        id,
-        texture: loaded.texture,
-        width: metadata.width ?? loaded.width,
-        height: metadata.height ?? loaded.height,
-        ...(metadata.frames === undefined ? {} : { frames: metadata.frames }),
+    const pending = this.pending.get(id)
+    if (pending !== undefined) {
+      return pending
+    }
+    const promise = (async () => {
+      try {
+        const loaded = await this.loader.load(source)
+        if (this.destroyed) {
+          this.loader.dispose(loaded.texture)
+          throw new Error('texture store is destroyed')
+        }
+        const width = metadata.width ?? loaded.width
+        const height = metadata.height ?? loaded.height
+        if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) {
+          this.loader.dispose(loaded.texture)
+          throw new Error(`texture ${id} must have positive integer dimensions`)
+        }
+        const entry: LoadedTexture<T> = {
+          id,
+          texture: loaded.texture,
+          width,
+          height,
+          ...(metadata.frames === undefined ? {} : { frames: metadata.frames }),
+        }
+        this.entries.set(id, entry)
+        this.failures.delete(id)
+        return entry
+      } catch (error) {
+        if (!this.destroyed) {
+          this.failures.set(id, error)
+        }
+        throw error
+      } finally {
+        this.pending.delete(id)
       }
-      this.entries.set(id, entry)
-      this.failures.delete(id)
-      return entry
-    } catch (error) {
-      this.failures.set(id, error)
-      throw error
-    }
+    })()
+    this.pending.set(id, promise)
+    return promise
   }
 
-  register(id: string, texture: T, metadata: TextureMetadata = {}): LoadedTexture<T> {
+  register(id: string, texture: T, metadata: RegisterTextureMetadata): LoadedTexture<T> {
     if (this.destroyed) {
       throw new Error('texture store is destroyed')
+    }
+    if (!Number.isInteger(metadata.width) || metadata.width <= 0 || !Number.isInteger(metadata.height) || metadata.height <= 0) {
+      throw new Error(`texture ${id} metadata width/height must be positive integers`)
     }
     if (this.entries.has(id)) {
       throw new Error(`texture ${id} is already loaded`)
@@ -96,11 +128,12 @@ export class TextureStore<T> {
     const entry: LoadedTexture<T> = {
       id,
       texture,
-      width: metadata.width ?? 0,
-      height: metadata.height ?? 0,
+      width: metadata.width,
+      height: metadata.height,
       ...(metadata.frames === undefined ? {} : { frames: metadata.frames }),
     }
     this.entries.set(id, entry)
+    this.failures.delete(id)
     return entry
   }
 
@@ -160,6 +193,7 @@ export class TextureStore<T> {
     }
     this.entries.clear()
     this.failures.clear()
+    this.pending.clear()
     this.destroyed = true
   }
 }

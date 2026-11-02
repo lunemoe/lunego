@@ -8,7 +8,7 @@ import type {
   Vec2,
 } from '@lunego/core'
 import type {
-  DisplaySpec,
+  EntityDisplaySpec,
   EntityView,
   RenderAdapter,
   RenderBinding,
@@ -19,7 +19,7 @@ import { RENDER_LAYERS } from './types.js'
 
 interface BindingEntry {
   readonly binding: RenderBinding
-  readonly objects: Map<Entity, { handle: unknown; spec: DisplaySpec }>
+  readonly objects: Map<Entity, { handle: unknown; spec: EntityDisplaySpec; view: EntityView }>
 }
 
 function clampAlpha(alpha: number): number {
@@ -63,25 +63,34 @@ function entityView(source: RenderSource, entity: Entity): EntityView {
  * Framework-owned display lifecycle: create on first query match, update each
  * sync, destroy when the entity leaves the query. No game rules live here.
  */
+export interface RenderSystemOptions {
+  readonly onError?: (error: unknown) => void
+}
+
 export class RenderSystem<Handle> {
   private readonly adapter: RenderAdapter<Handle>
+  private readonly onError: ((error: unknown) => void) | undefined
   private readonly entries: BindingEntry[] = []
   private destroyed = false
 
-  constructor(adapter: RenderAdapter<Handle>) {
+  constructor(adapter: RenderAdapter<Handle>, options: RenderSystemOptions = {}) {
     this.adapter = adapter
+    this.onError = options.onError
   }
 
   add(binding: RenderBinding): this {
+    if (this.destroyed) {
+      throw new Error('render system is destroyed')
+    }
     this.entries.push({ binding, objects: new Map() })
     return this
   }
 
   sync(source: RenderSource, time = 0): void {
     if (this.destroyed) {
-      return
+      throw new Error('render system is destroyed')
     }
-    const byLayer = new Map<RenderLayer, Array<{ handle: Handle; spec: DisplaySpec; entity: Entity; sortByY: boolean }>>()
+    const byLayer = new Map<RenderLayer, Array<{ handle: Handle; spec: EntityDisplaySpec; entity: Entity; sortByY: boolean }>>()
     for (const entry of this.entries) {
       this.syncBinding(entry, source, byLayer, time)
     }
@@ -92,13 +101,12 @@ export class RenderSystem<Handle> {
         continue
       }
       if (bucket.some((item) => item.sortByY)) {
-        bucket.sort((left, right) => {
-          const leftY = left.spec.kind === 'background' ? 0 : left.spec.y
-          const rightY = right.spec.kind === 'background' ? 0 : right.spec.y
-          const leftX = left.spec.kind === 'background' ? 0 : left.spec.x
-          const rightX = right.spec.kind === 'background' ? 0 : right.spec.x
-          return leftY - rightY || leftX - rightX || left.entity - right.entity
-        })
+        bucket.sort(
+          (left, right) =>
+            left.spec.y - right.spec.y ||
+            left.spec.x - right.spec.x ||
+            left.entity - right.entity,
+        )
       }
       this.adapter.order(layer, bucket.map((item) => item.handle))
     }
@@ -124,7 +132,7 @@ export class RenderSystem<Handle> {
   private syncBinding(
     entry: BindingEntry,
     source: RenderSource,
-    byLayer: Map<RenderLayer, Array<{ handle: Handle; spec: DisplaySpec; entity: Entity; sortByY: boolean }>>,
+    byLayer: Map<RenderLayer, Array<{ handle: Handle; spec: EntityDisplaySpec; entity: Entity; sortByY: boolean }>>,
     time: number,
   ): void {
     const entities = source.entities(...entry.binding.query)
@@ -140,7 +148,7 @@ export class RenderSystem<Handle> {
       if (item === undefined) {
         const spec = entry.binding.create(view)
         const handle = this.adapter.create(spec)
-        item = { handle, spec }
+        item = { handle, spec, view }
         entry.objects.set(entity, item)
         this.adapter.attach(entry.binding.layer ?? 'entities', handle)
       }
@@ -164,19 +172,16 @@ export class RenderSystem<Handle> {
     if (item === undefined) {
       return
     }
-    const view = entityView(
-      {
-        alpha: 1,
-        entities: () => [],
-        get: <S extends SchemaShape>(_entity: number, _component: ComponentDef<S>) => undefined,
-        prev: <S extends SchemaShape>(_entity: number, _component: ComponentDef<S>) => undefined,
-        has: () => false,
-      },
-      entity,
-    )
-    entry.binding.destroy?.(item.spec, view)
-    this.adapter.detach(item.handle as Handle)
-    this.adapter.destroy(item.handle as Handle)
-    entry.objects.delete(entity)
+    const view = item.view
+    try {
+      entry.binding.destroy?.(item.spec, view)
+    } catch (error) {
+      this.onError?.(error)
+    } finally {
+      this.adapter.detach(item.handle as Handle)
+      this.adapter.destroy(item.handle as Handle)
+      entry.objects.delete(entity)
+    }
   }
+
 }

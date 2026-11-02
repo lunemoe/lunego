@@ -64,13 +64,41 @@ export function tileFrame(tileset: TilesetDefinition, index: number): SpriteFram
 /** Pure layout pass: game-owned map data -> drawable tile cells. */
 export function buildTilemap(definition: TilemapDefinition): TileInstance[] {
   const { tileset } = definition
-  if (tileset.tileWidth <= 0 || tileset.tileHeight <= 0 || tileset.columns <= 0) {
-    throw new Error('tileset dimensions and columns must be positive')
+  if (
+    !Number.isInteger(tileset.tileWidth) ||
+    !Number.isInteger(tileset.tileHeight) ||
+    tileset.tileWidth <= 0 ||
+    tileset.tileHeight <= 0 ||
+    !Number.isInteger(tileset.columns) ||
+    tileset.columns <= 0
+  ) {
+    throw new Error('tileset dimensions and columns must be positive integers')
+  }
+  for (const value of [tileset.margin ?? 0, tileset.spacing ?? 0]) {
+    if (!Number.isFinite(value) || value < 0) {
+      throw new Error('tileset margin and spacing must be non-negative')
+    }
   }
   const originX = definition.originX ?? 0
   const originY = definition.originY ?? 0
-  const instances: TileInstance[] = []
+  if (!Number.isFinite(originX) || !Number.isFinite(originY)) {
+    throw new Error('tilemap origin must be finite')
+  }
+  const instanceList: TileInstance[] = []
+  const layerNames = new Set<string>()
   for (const layer of definition.layers) {
+    if (layerNames.has(layer.name)) {
+      throw new Error(`duplicate tilemap layer ${layer.name}`)
+    }
+    layerNames.add(layer.name)
+    if (
+      !Number.isInteger(layer.width) ||
+      !Number.isInteger(layer.height) ||
+      layer.width <= 0 ||
+      layer.height <= 0
+    ) {
+      throw new Error(`tilemap layer ${layer.name} dimensions must be positive integers`)
+    }
     if (layer.tiles.length !== layer.width * layer.height) {
       throw new Error(
         `tilemap layer ${layer.name} has ${layer.tiles.length} cells, expected ${layer.width * layer.height}`,
@@ -83,7 +111,10 @@ export function buildTilemap(definition: TilemapDefinition): TileInstance[] {
         if (index < 0) {
           continue
         }
-        instances.push({
+        if (!Number.isSafeInteger(index)) {
+          throw new Error(`tilemap layer ${layer.name} has a non-integer tile index`)
+        }
+        instanceList.push({
           key: `${layer.name}:${row}:${column}`,
           layer: target,
           layerName: layer.name,
@@ -99,7 +130,7 @@ export function buildTilemap(definition: TilemapDefinition): TileInstance[] {
       }
     }
   }
-  return instances
+  return instanceList
 }
 
 export interface TileSink<Handle> {
@@ -152,11 +183,13 @@ export class TilemapView<Handle> {
     if (this.destroyed) {
       throw new Error('tilemap view is destroyed')
     }
-    this.clear()
     if (definition === null) {
+      this.clear()
       return
     }
-    for (const instance of buildTilemap(definition)) {
+    const instances = buildTilemap(definition)
+    this.clear()
+    for (const instance of instances) {
       this.handles.set(instance.key, this.sink.create(instance))
     }
   }

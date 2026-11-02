@@ -11,29 +11,45 @@ export class SoundBank {
   private readonly loader: SoundLoader
   private readonly entries = new Map<string, LoadedSound>()
   private readonly failures = new Map<string, unknown>()
+  private readonly pending = new Map<string, Promise<LoadedSound>>()
   private destroyed = false
 
   constructor(loader: SoundLoader) {
     this.loader = loader
   }
 
-  async load(id: string, source: string | ArrayBuffer): Promise<LoadedSound> {
+  load(id: string, source: string | ArrayBuffer): Promise<LoadedSound> {
     if (this.destroyed) {
-      throw new Error('sound bank is destroyed')
+      return Promise.reject(new Error('sound bank is destroyed'))
     }
     if (this.entries.has(id)) {
-      throw new Error(`sound ${id} is already loaded`)
+      return Promise.reject(new Error(`sound ${id} is already loaded`))
     }
-    try {
-      const buffer = await this.loader.load(source)
-      const entry: LoadedSound = { id, buffer }
-      this.entries.set(id, entry)
-      this.failures.delete(id)
-      return entry
-    } catch (error) {
-      this.failures.set(id, error)
-      throw error
+    const pending = this.pending.get(id)
+    if (pending !== undefined) {
+      return pending
     }
+    const promise = (async () => {
+      try {
+        const buffer = await this.loader.load(source)
+        if (this.destroyed) {
+          throw new Error('sound bank is destroyed')
+        }
+        const entry: LoadedSound = { id, buffer }
+        this.entries.set(id, entry)
+        this.failures.delete(id)
+        return entry
+      } catch (error) {
+        if (!this.destroyed) {
+          this.failures.set(id, error)
+        }
+        throw error
+      } finally {
+        this.pending.delete(id)
+      }
+    })()
+    this.pending.set(id, promise)
+    return promise
   }
 
   register(id: string, buffer: AudioBufferLike): LoadedSound {
@@ -45,6 +61,7 @@ export class SoundBank {
     }
     const entry: LoadedSound = { id, buffer }
     this.entries.set(id, entry)
+    this.failures.delete(id)
     return entry
   }
 
@@ -81,6 +98,7 @@ export class SoundBank {
   destroy(): void {
     this.entries.clear()
     this.failures.clear()
+    this.pending.clear()
     this.destroyed = true
   }
 }

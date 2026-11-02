@@ -9,6 +9,7 @@ import {
   defineFeature,
   defineHandler,
   defineModel,
+  defineState,
   ok,
   t,
 } from '../index.js'
@@ -176,5 +177,37 @@ describe('snapshot transparency', () => {
         expect(error.rule).toBe('LG010')
       }
     }
+  })
+})
+
+describe('flow state persistence', () => {
+  it('hashes flow states and restores them from snapshots', () => {
+    const Mode = defineState('PersistMode', ['idle', 'active'], { initial: 'idle' })
+    const SetMode = defineCommand('persist.setMode', {})
+    const handler = defineHandler(SetMode, {
+      writes: [Mode],
+      run(ctx) {
+        ctx.setState(Mode, 'active')
+        return ok()
+      },
+    })
+    const feature = defineFeature({
+      name: 'persist-flow',
+      schema: { states: [Mode], commands: [SetMode] },
+      handlers: [handler],
+    })
+    const idle = new World({ features: [feature] })
+    const active = new World({ features: [feature] })
+    void active.send(SetMode, {})
+    active.step()
+    expect(active.hash()).not.toBe(idle.hash())
+    const restored = World.fromSnapshot(roundTrip(active.snapshot()), {
+      features: [feature],
+      schemaVersion: 1,
+    })
+    expect(restored.hash()).toBe(active.hash())
+    active.step()
+    restored.step()
+    expect(restored.hash()).toBe(active.hash())
   })
 })

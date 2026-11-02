@@ -2,7 +2,8 @@ import { createEffect, createMemo, onCleanup, type Accessor } from 'solid-js'
 import html from 'solid-js/html'
 import { themeVariables, type UiTheme } from './theme.js'
 
-export type UiNode = Node | Node[] | string | number
+export type UiNode = Node | Node[]
+export type UiChild = Node | string | number | readonly UiChild[]
 export type UiValue<T> = T | Accessor<T>
 
 function read<T>(value: UiValue<T>): T {
@@ -15,7 +16,7 @@ function clamp(value: number, min: number, max: number): number {
 
 export interface UiRootProps {
   readonly theme?: UiTheme
-  readonly children: UiNode | (() => UiNode)
+  readonly children: UiChild | (() => UiChild)
 }
 
 export function UiRoot(props: UiRootProps): UiNode {
@@ -27,7 +28,7 @@ export interface PanelProps {
   readonly title?: UiValue<string | undefined>
   readonly borderImage?: UiValue<string | undefined>
   readonly borderSlice?: number
-  readonly children: UiNode | (() => UiNode)
+  readonly children: UiChild | (() => UiChild)
 }
 
 export function Panel(props: PanelProps): UiNode {
@@ -82,7 +83,7 @@ export interface ButtonProps {
   readonly onClick?: () => void
   readonly disabled?: UiValue<boolean>
   readonly variant?: 'default' | 'primary'
-  readonly children: UiNode | (() => UiNode)
+  readonly children: UiChild | (() => UiChild)
 }
 
 export function Button(props: ButtonProps): UiNode {
@@ -138,7 +139,7 @@ export function Tabs(props: TabsProps): UiNode {
 }
 
 export interface TooltipProps {
-  readonly content: UiValue<UiNode | string | null | undefined>
+  readonly content: UiValue<UiChild | null | undefined>
   readonly children: UiNode
 }
 
@@ -267,7 +268,7 @@ export interface ModalProps {
   readonly title?: UiValue<string | undefined>
   readonly onClose?: () => void
   readonly closeOnBackdrop?: boolean
-  readonly children: UiNode | (() => UiNode)
+  readonly children: UiChild | (() => UiChild)
 }
 
 export function Modal(props: ModalProps): UiNode {

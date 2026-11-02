@@ -12,7 +12,7 @@ export interface MountedUi {
 /** Mount a Solid view into a DOM root; styles are installed once. */
 export function mountUi(root: Element, bridge: UiBridge, view: UiView): MountedUi {
   const disposeStyles = installUiStyles(root.ownerDocument)
-  const disposeRender = render(() => view(bridge), root)
+  const disposeRender = render(() => view(bridge) as Node, root)
   return {
     dispose: () => {
       disposeRender()

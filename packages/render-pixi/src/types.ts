@@ -83,11 +83,13 @@ export interface BackgroundDisplaySpec {
   alpha?: number
 }
 
-export type DisplaySpec =
+export type EntityDisplaySpec =
   | RectDisplaySpec
   | SpriteDisplaySpec
   | AnimatedDisplaySpec
-  | BackgroundDisplaySpec
+
+/** Backward-compatible name for entity display specs; backgrounds are separate. */
+export type DisplaySpec = EntityDisplaySpec
 
 export interface RenderSource {
   readonly alpha: number
@@ -116,14 +118,14 @@ export interface RenderBinding {
   readonly query: readonly (ComponentDef | TagDef)[]
   readonly layer?: RenderLayer
   readonly sortByY?: boolean
-  create(view: EntityView): DisplaySpec
-  update(object: DisplaySpec, view: EntityView): void
+  create(view: EntityView): EntityDisplaySpec
+  update(object: EntityDisplaySpec, view: EntityView): void
   destroy?(object: DisplaySpec, view: EntityView): void
 }
 
 export interface RenderAdapter<Handle> {
-  create(spec: DisplaySpec): Handle
-  update(handle: Handle, spec: DisplaySpec, time?: number): void
+  create(spec: EntityDisplaySpec): Handle
+  update(handle: Handle, spec: EntityDisplaySpec, time?: number): void
   destroy(handle: Handle): void
   attach(layer: RenderLayer, handle: Handle): void
   detach(handle: Handle): void

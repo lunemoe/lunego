@@ -13,6 +13,7 @@ export type {
   AnimationOptions,
   BackgroundDisplaySpec,
   DisplaySpec,
+  EntityDisplaySpec,
   DisplayTransform,
   EntityView,
   RectDisplaySpec,
@@ -27,6 +28,8 @@ export type {
   TextureId,
 } from './types.js'
 export { RenderSystem } from './renderer.js'
+export { viewportTransform } from './viewport.js'
+export type { ViewportTransform, ViewportTransformInput } from './viewport.js'
 export {
   TilemapView,
   buildTilemap,

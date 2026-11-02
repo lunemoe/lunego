@@ -1,6 +1,9 @@
 export {}
 declare global {
   interface Window {
+    __pixiProbe?: {
+      readonly connected: boolean
+    }
     __audioProbe?: {
       readonly state: string
       readonly voices: number
@@ -15,7 +18,10 @@ declare global {
       readonly renderer: {
         readonly textures: { has(id: string): boolean }
         readonly tilemap: { readonly count: number } | null
-        readonly worldContainer: { readonly scale: { readonly x: number } }
+        readonly worldContainer: {
+          readonly scale: { readonly x: number }
+          readonly position: { readonly x: number; readonly y: number }
+        }
         setZoom(value: number): void
       }
       readonly audioProbe?: {

@@ -14,6 +14,7 @@ import {
   type SystemContext,
 } from '../index.js'
 import { Position } from './fixtures.js'
+import { worldInternals } from '../world-internals.js'
 
 function capture(action: () => void): unknown {
   try {
@@ -257,6 +258,15 @@ describe('runtime guards', () => {
     const copy = world.get(entity, Box) as { items: number[] } | undefined
     copy?.items.push(9)
     expect(world.get(entity, Box)).toEqual({ items: [] })
+  })
+
+  it('keeps internal capabilities off the reflected world object', () => {
+    const feature = defineFeature({ name: 'reflection', schema: { components: [Position] } })
+    const world = new World({ features: [feature] })
+    expect(Object.getOwnPropertySymbols(world)).toHaveLength(0)
+    const internals = worldInternals(world)
+    expect(typeof internals.componentView).toBe('function')
+    expect(Object.keys(world)).not.toContain('componentView')
   })
 
   it('rejects hash and snapshot while a tick is running', () => {

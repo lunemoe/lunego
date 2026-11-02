@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import { readFile } from 'node:fs/promises'
 import { cruise, type IForbiddenRuleType } from 'dependency-cruiser'
 import { featureDirs, pathExists, readSchemaVersion, walkFiles } from './project.js'
 import { generate } from './gen.js'
@@ -9,6 +10,18 @@ export interface CheckResult {
 }
 
 const forbidden: IForbiddenRuleType[] = [
+  {
+    name: 'no-unresolved',
+    severity: 'error',
+    from: {},
+    to: { couldNotResolve: true },
+  },
+  {
+    name: 'core-internal-scope',
+    severity: 'error',
+    from: {},
+    to: { path: '(?:^|/)@lunego/core/(?:dist/)?(?:internal|world-internals)' },
+  },
   {
     name: 'no-circular',
     severity: 'error',
@@ -58,6 +71,23 @@ async function checkContracts(cwd: string, messages: string[]): Promise<void> {
   }
 }
 
+async function checkInternalImports(cwd: string, messages: string[]): Promise<void> {
+  for (const root of ['features', 'games']) {
+    if (!(await pathExists(join(cwd, root)))) {
+      continue
+    }
+    for (const file of await walkFiles(join(cwd, root))) {
+      if (!file.endsWith('.ts')) {
+        continue
+      }
+      const content = await readFile(file, 'utf8')
+      if (content.includes('@lunego/core/internal') || content.includes('world-internals')) {
+        messages.push(`LG004 ${file} imports a core internal capability`)
+      }
+    }
+  }
+}
+
 async function checkDirections(cwd: string, messages: string[]): Promise<void> {
   const paths: string[] = []
   for (const candidate of ['features', 'games']) {
@@ -100,6 +130,7 @@ export async function runCheck(cwd: string): Promise<CheckResult> {
     messages.push(`LG014 ${error instanceof Error ? error.message : String(error)}`)
   }
   await checkContracts(cwd, messages)
+  await checkInternalImports(cwd, messages)
   await checkDirections(cwd, messages)
   return { ok: messages.length === 0, messages }
 }

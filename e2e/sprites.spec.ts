@@ -44,11 +44,23 @@ test('renders runtime canvas sprites, tilemap, background and pointer world spac
   expect(pointer.world?.x).toBeGreaterThan(0)
   expect(pointer.world?.y).toBeGreaterThan(0)
 
-  const zoom = await page.evaluate(() => {
+  await page.evaluate(async () => {
     window.__luneGame?.renderer.setZoom(2)
-    const scale = window.__luneGame?.renderer.worldContainer.scale.x
-    window.__luneGame?.renderer.setZoom(1)
-    return scale
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
   })
-  expect(zoom).toBe(2)
+  const zoomX = box.x + 200
+  const zoomY = box.y + 140
+  await page.mouse.move(zoomX, zoomY)
+  await page.waitForTimeout(50)
+  const zoomState = await page.evaluate(() => ({
+    scale: window.__luneGame?.renderer.worldContainer.scale.x,
+    worldX: window.__luneGame?.renderer.worldContainer.position.x,
+    zoom: window.__luneGame?.renderer.zoom,
+    pointerWorld: window.__luneGame?.input.pointer.worldPosition,
+  }))
+  expect(zoomState.scale).toBe(2)
+  expect(zoomState.zoom).toBe(2)
+  const expectedX = -(zoomState.worldX ?? 0) / 2 + (zoomX - box.x) / ((box.width / 480) * 2)
+  expect(zoomState.pointerWorld?.x).toBeCloseTo(expectedX, 5)
+  await page.evaluate(() => window.__luneGame?.renderer.setZoom(1))
 })

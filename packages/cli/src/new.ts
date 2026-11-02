@@ -1,11 +1,18 @@
 import { cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { generate } from './gen.js'
 import { pathExists } from './project.js'
 
-export function templatesRoot(): string {
-  return fileURLToPath(new URL('../../../templates', import.meta.url))
+export function templatesRoot(moduleUrl: string = import.meta.url): string {
+  const packageRoot = fileURLToPath(new URL('..', moduleUrl))
+  const packaged = join(packageRoot, 'templates')
+  if (existsSync(packaged)) {
+    return packaged
+  }
+  // Source checkout before the build has copied templates into the package.
+  return join(packageRoot, '..', '..', 'templates')
 }
 
 const textExtensions: Readonly<Record<string, true>> = {

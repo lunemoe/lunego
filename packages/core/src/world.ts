@@ -32,7 +32,7 @@ import {
 } from './schema.js'
 import { ContentRegistry } from './content.js'
 import { cloneDeep } from './schema-coerce.js'
-import { INTERNALS, type WorldInternals } from './world-internals.js'
+import { registerWorldInternals, type WorldInternals } from './world-internals.js'
 import { createModelProxy } from './model.js'
 import { RngRegistry, type RngStream } from './rng.js'
 import type { Diagnostic } from './scheduler.js'
@@ -83,7 +83,6 @@ export class World {
   private readonly rng: RngRegistry
   private readonly content: ContentRegistry
   private readonly structural: StructuralQueue
-  readonly [INTERNALS]: WorldInternals
   private readonly internals: WorldInternals
   private readonly contentHashValue: string
   private readonly persistence: WorldPersistenceSource
@@ -138,7 +137,7 @@ export class World {
       markWarned: (name) => world.ephemeralWarned.add(name),
     }
     this.internals = this.createContextHost()
-    this[INTERNALS] = this.internals
+    registerWorldInternals(this, this.internals)
   }
 
   get tick(): number { return this.tickValue }

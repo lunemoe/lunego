@@ -139,6 +139,39 @@ describe('render bindings', () => {
     expect(adapter.camera).toEqual({ x: 3, y: 4 })
     system.destroy()
     expect(adapter.destroyed).toContain(firstIds[0])
+    expect(() => system.sync(source)).toThrow(/destroyed/)
+    expect(() => system.add(binding)).toThrow(/destroyed/)
+  })
+
+  it('cleans handles when a binding destroy callback throws and keeps syncing', () => {
+    const source = new FakeSource()
+    source.current.set(1, { x: 1, y: 1 })
+    source.current.set(2, { x: 2, y: 2 })
+    const adapter = new FakeAdapter()
+    const errors: unknown[] = []
+    const seen: Array<{ entity: number; x: number | undefined }> = []
+    const system = new RenderSystem(adapter, { onError: (error) => errors.push(error) })
+    system.add(
+      defineRenderBinding({
+        query: [Position],
+        create: () => rectSpec(4, 4, 0xffffff),
+        update: () => undefined,
+        destroy: (object, view) => {
+          seen.push({ entity: view.entity, x: view.get(Position)?.x })
+          object.visible = false
+          throw new Error('destroy failed')
+        },
+      }),
+    )
+    system.sync(source)
+    const handles = [...adapter.specs.keys()]
+    source.entitiesList.splice(0)
+    expect(() => system.sync(source)).not.toThrow()
+    expect(errors).toHaveLength(2)
+    expect(seen.map((entry) => entry.entity)).toEqual([1, 2])
+    expect(seen.map((entry) => entry.x)).toEqual([1, 2])
+    expect(adapter.destroyed).toEqual(expect.arrayContaining(handles))
+    expect(adapter.orders.get('entities')).toEqual([])
   })
 
   it('orders each layer only once across multiple bindings', () => {

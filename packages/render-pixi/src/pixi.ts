@@ -2,7 +2,6 @@ import {
   Application,
   Container,
   Graphics,
-  Rectangle,
   Sprite,
   Texture,
   TextureSource as PixiTextureSource,
@@ -10,7 +9,7 @@ import {
 import type {
   AnimatedDisplaySpec,
   BackgroundDisplaySpec,
-  DisplaySpec,
+  EntityDisplaySpec,
   RectDisplaySpec,
   RenderAdapter,
   RenderLayer,
@@ -29,6 +28,7 @@ import {
   type TilemapDefinition,
 } from './tilemap.js'
 import { PixiTextureLoader } from './pixi-textures.js'
+import { FrameTextureCache } from './pixi-frames.js'
 
 export interface PixiRendererOptions {
   readonly width: number
@@ -38,6 +38,8 @@ export interface PixiRendererOptions {
   readonly textures?: TextureStore<Texture>
   readonly manifest?: TextureManifest
   readonly ownsTextures?: boolean
+  /** Whether dispose() should destroy the injected Pixi Application. */
+  readonly ownsApp?: boolean
 }
 
 function snapped(value: number, pixelSnap: boolean): number {
@@ -57,10 +59,13 @@ export class PixiAdapter implements RenderAdapter<Container> {
   private readonly backgroundFill = new Graphics()
   private readonly backgroundImage = new Sprite()
   private readonly layers = new Map<RenderLayer, Container>()
-  private readonly frameTextures = new Map<string, Texture>()
+  private readonly frameTextures = new FrameTextureCache()
   private readonly virtualWidth: number
   private readonly virtualHeight: number
   private readonly ownsTextures: boolean
+  private readonly ownsApp: boolean
+  private readonly resizeHandler: () => void
+  private disposed = false
   private backgroundValue: BackgroundDisplaySpec | null = null
   private tilemapValue: TilemapView<Sprite> | null = null
   private tilemapDefinition: TilemapDefinition | null = null
@@ -74,6 +79,7 @@ export class PixiAdapter implements RenderAdapter<Container> {
     this.virtualHeight = options.height
     this.textures = options.textures ?? new TextureStore(new PixiTextureLoader())
     this.ownsTextures = options.ownsTextures ?? options.textures === undefined
+    this.ownsApp = options.ownsApp ?? false
     this.backgroundLayer = new Container()
     this.backgroundLayer.addChild(this.backgroundFill, this.backgroundImage)
     this.app.stage.addChild(this.backgroundLayer)
@@ -89,7 +95,8 @@ export class PixiAdapter implements RenderAdapter<Container> {
     app.canvas.style.imageRendering = 'pixelated'
     options.container.appendChild(app.canvas)
     this.fit(options.container)
-    window.addEventListener('resize', () => this.fit(options.container))
+    this.resizeHandler = () => this.fit(options.container)
+    window.addEventListener('resize', this.resizeHandler)
     if (options.background !== undefined) {
       this.setBackground({ kind: 'background', color: options.background })
     }
@@ -150,7 +157,7 @@ export class PixiAdapter implements RenderAdapter<Container> {
     this.setBackground(null)
   }
 
-  create(spec: DisplaySpec): Container {
+  create(spec: EntityDisplaySpec): Container {
     if (spec.kind === 'rect') {
       const graphics = new Graphics()
       graphics.label = 'rect'
@@ -163,10 +170,7 @@ export class PixiAdapter implements RenderAdapter<Container> {
     return sprite
   }
 
-  update(handle: Container, spec: DisplaySpec, time = 0): void {
-    if (spec.kind === 'background') {
-      return
-    }
+  update(handle: Container, spec: EntityDisplaySpec, time = 0): void {
     if (handle instanceof Graphics) {
       this.updateRect(handle, spec as RectDisplaySpec)
       return
@@ -213,14 +217,25 @@ export class PixiAdapter implements RenderAdapter<Container> {
   }
 
   dispose(): void {
-    for (const texture of this.frameTextures.values()) {
-      texture.destroy()
+    if (this.disposed) {
+      return
     }
+    this.disposed = true
+    window.removeEventListener('resize', this.resizeHandler)
+    this.tilemapValue?.destroy()
+    this.tilemapValue = null
+    this.tilemapDefinition = null
     this.frameTextures.clear()
     if (this.ownsTextures) {
       this.textures.destroy()
     }
-    this.app.destroy(true)
+    if (this.ownsApp) {
+      this.app.destroy(true)
+      return
+    }
+    this.app.stage.removeChild(this.backgroundLayer, this.world)
+    this.backgroundLayer.destroy({ children: true })
+    this.world.destroy({ children: true })
   }
 
   private updateRect(graphics: Graphics, spec: RectDisplaySpec): void {
@@ -245,7 +260,7 @@ export class PixiAdapter implements RenderAdapter<Container> {
     const frame = spec.kind === 'animated' ? this.animatedFrame(spec, loaded?.frames, time) : spec.frame
     const texture = frame === undefined
       ? loaded?.texture
-      : this.frameTexture(spec.texture, frame, loaded?.texture)
+      : this.frameTextures.get(spec.texture, frame, loaded?.texture)
     if (texture === undefined) {
       sprite.texture = Texture.EMPTY
       sprite.visible = false
@@ -274,27 +289,6 @@ export class PixiAdapter implements RenderAdapter<Container> {
     time: number,
   ): SpriteFrame | undefined {
     return animationFrameAt(spec, spec.frames ?? registered ?? [], time)
-  }
-
-  private frameTexture(
-    id: string,
-    frame: SpriteFrame,
-    base: Texture | undefined,
-  ): Texture | undefined {
-    if (base === undefined) {
-      return undefined
-    }
-    const key = `${id}:${frame.x}:${frame.y}:${frame.width}:${frame.height}`
-    const cached = this.frameTextures.get(key)
-    if (cached !== undefined) {
-      return cached
-    }
-    const texture = new Texture({
-      source: base.source,
-      frame: new Rectangle(frame.x, frame.y, frame.width, frame.height),
-    })
-    this.frameTextures.set(key, texture)
-    return texture
   }
 
   private applyCamera(): void {
@@ -326,7 +320,7 @@ export class PixiAdapter implements RenderAdapter<Container> {
   }
 
   private createTile(instance: TileInstance, base: Texture, textureId: string): Sprite {
-    const texture = this.frameTexture(`${textureId}:${instance.index}`, instance.frame, base)
+    const texture = this.frameTextures.get(`${textureId}:${instance.index}`, instance.frame, base)
     const sprite = new Sprite(texture ?? Texture.EMPTY)
     sprite.position.set(instance.x, instance.y)
     sprite.width = instance.width
@@ -387,5 +381,6 @@ export async function createPixiRenderer(options: PixiRendererOptions): Promise<
     ...options,
     textures,
     ownsTextures: options.ownsTextures ?? options.textures === undefined,
+    ownsApp: options.ownsApp ?? true,
   })
 }

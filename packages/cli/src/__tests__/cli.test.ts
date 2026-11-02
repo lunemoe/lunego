@@ -1,10 +1,11 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
+import { templatesRoot } from '../new.js'
 
 const run = promisify(execFile)
 const cli = fileURLToPath(new URL('../../dist/cli.js', import.meta.url))
@@ -39,6 +40,7 @@ describe('lunego cli', () => {
     const packageJson = await readFile(join(game, 'package.json'), 'utf8')
     expect(packageJson).toContain('@lunego/game-demo')
     expect(await readFile(join(game, 'features/motion/README.md'), 'utf8')).toContain('motion')
+    expect(await readFile(join(game, 'vitest.config.ts'), 'utf8')).toContain("name: 'demo'")
 
     const generated = await invoke(['gen', '--check'], game)
     expect(generated.code).toBe(0)
@@ -46,6 +48,30 @@ describe('lunego cli', () => {
     const checked = await invoke(['check'], game)
     expect(checked.code).toBe(0)
     expect(checked.stdout).toContain('check passed')
+  })
+
+  it('resolves templates from the package root in a node_modules layout', async () => {
+    const root = await tempDir()
+    const packageRoot = join(root, 'node_modules', 'lunego')
+    await mkdir(join(packageRoot, 'templates', 'game'), { recursive: true })
+    await writeFile(join(packageRoot, 'templates', 'game', 'package.json'), '{}', 'utf8')
+    const moduleUrl = pathToFileURL(join(packageRoot, 'dist', 'new.js')).href
+    expect(templatesRoot(moduleUrl)).toBe(join(packageRoot, 'templates'))
+  })
+
+  it('rejects game code importing the core internal capability', async () => {
+    const root = await tempDir()
+    expect((await invoke(['new', 'game', 'inner'], root)).code).toBe(0)
+    const game = join(root, 'games', 'inner')
+    await writeFile(
+      join(game, 'features/motion/logic/internal-probe.ts'),
+      "import { worldInternals } from '@lunego/core/internal'\nexport const probe = worldInternals\n",
+      'utf8',
+    )
+    const result = await invoke(['check'], game)
+    expect(result.code).toBe(1)
+    expect(result.stderr).toContain('LG004')
+    expect(result.stderr).toContain('internal')
   })
 
   it('detects stale generated files and schema lock drift', async () => {

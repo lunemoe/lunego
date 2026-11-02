@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    name: 'game-template',
+    name: '__GAME_NAME__',
     include: ['features/**/*.test.ts'],
     environment: 'node',
   },

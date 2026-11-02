@@ -168,6 +168,13 @@ describe('audio buses', () => {
     expect(audio.voiceCount).toBe(2)
   })
 
+  it('rejects non-positive concurrency limits', () => {
+    const context = new Context()
+    const audio = new AudioSystem(context, bankWith())
+    expect(() => audio.play({ sound: 'hit', maxConcurrent: 0 })).toThrow(/concurrency/)
+    expect(() => new AudioSystem(context, bankWith(), { maxConcurrent: 0 })).toThrow(/concurrency/)
+  })
+
   it('unlocks on the first gesture and detaches', async () => {
     const context = new Context()
     const audio = new AudioSystem(context, bankWith())
@@ -218,3 +225,38 @@ describe('sound bank', () => {
   })
 })
 
+
+describe('sound bank concurrency and lifecycle', () => {
+  it('deduplicates concurrent loads and rejects an in-flight load after destroy', async () => {
+    let resolveLoad: ((buffer: AudioBufferLike) => void) | null = null
+    const loader: SoundLoader = {
+      load: () => new Promise((resolve) => { resolveLoad = resolve }),
+    }
+    const bank = new SoundBank(loader)
+    const first = bank.load('hit', 'hit.ogg')
+    const second = bank.load('hit', 'hit.ogg')
+    expect(first).toBe(second)
+    resolveLoad?.({ duration: 0.5 })
+    const [a, b] = await Promise.all([first, second])
+    expect(a.buffer.duration).toBe(0.5)
+    expect(b.id).toBe('hit')
+    expect(bank.size).toBe(1)
+
+    const slow = bank.load('late', 'late.ogg')
+    bank.destroy()
+    resolveLoad?.({ duration: 0.5 })
+    await expect(slow).rejects.toThrow(/destroyed/)
+    expect(bank.has('late')).toBe(false)
+  })
+
+  it('clears a failure when the sound is registered', async () => {
+    const loader = new FakeLoader()
+    loader.failures.add('bad.ogg')
+    const bank = new SoundBank(loader)
+    await expect(bank.load('bad', 'bad.ogg')).rejects.toThrow(/cannot load/)
+    expect(bank.failure('bad')).toBeInstanceOf(Error)
+    bank.register('bad', { duration: 1 })
+    expect(bank.failure('bad')).toBeUndefined()
+    expect(bank.has('bad')).toBe(true)
+  })
+})

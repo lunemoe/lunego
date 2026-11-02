@@ -30,6 +30,7 @@ export type {
   TabItem,
   TabsProps,
   TooltipProps,
+  UiChild,
   UiNode,
   UiRootProps,
   UiValue,

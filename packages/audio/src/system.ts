@@ -96,6 +96,9 @@ export class AudioSystem {
     this.ownsContext = options.ownsContext ?? false
     this.onError = options.onError
     this.maxConcurrent = options.maxConcurrent ?? 8
+    if (!Number.isInteger(this.maxConcurrent) || this.maxConcurrent < 1) {
+      throw new Error('audio concurrency limit must be a positive integer')
+    }
     this.seed = options.seed ?? 1
     this.master = context.createGain()
     this.master.connect(context.destination)
@@ -179,6 +182,9 @@ export class AudioSystem {
     )
     const busName = request.bus ?? 'sfx'
     const limit = request.maxConcurrent ?? this.maxConcurrent
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new Error('audio concurrency limit must be a positive integer')
+    }
     const playing = this.bySound.get(request.sound) ?? []
     if (playing.length >= limit) {
       const oldest = playing[0]

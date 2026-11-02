@@ -16,18 +16,20 @@ export default tseslint.config(
       '**/_generated/**',
       '**/*.d.ts',
       'packages/vfx/vendor/**',
+      'packages/cli/templates/**',
     ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.cjs', 'eslint.config.js'],
+    files: ['**/*.cjs', '**/*.mjs', 'eslint.config.js'],
     languageOptions: {
       globals: {
         module: 'writable',
         require: 'readonly',
         process: 'readonly',
         __dirname: 'readonly',
+        URL: 'readonly',
         console: 'readonly',
       },
     },

@@ -7,22 +7,32 @@ import { LuneGoError } from './errors.js'
  * Capabilities owned by the kernel and handed to the tick pipeline. They are
  * never reachable through the documented World surface: the accessor lives in
  * `@lunego/core/internal`, which dependency rules reserve for the host and
- * testkit. Storing them on a per-world symbol keeps the registry free of
- * module-level mutable state.
+ * testkit. A WeakMap keeps the capability off the world object, so reflection
+ * cannot find or replace it.
  */
 export interface WorldInternals extends ContextHost {
   queueEvent<E extends EventDef>(event: E, payload: EventPayload<E>): void
   restore(snapshot: WorldSnapshot): void
 }
 
-export const INTERNALS: unique symbol = Symbol('lunego.world-internals')
+const registry = (() => {
+  const map = new WeakMap<object, WorldInternals>()
+  return {
+    register(world: object, internals: WorldInternals): void {
+      map.set(world, internals)
+    },
+    get(world: object): WorldInternals | undefined {
+      return map.get(world)
+    },
+  }
+})()
 
-interface InternalsCarrier {
-  readonly [INTERNALS]?: WorldInternals
+export function registerWorldInternals(world: object, internals: WorldInternals): void {
+  registry.register(world, internals)
 }
 
 export function worldInternals(world: object): WorldInternals {
-  const internals = (world as InternalsCarrier)[INTERNALS]
+  const internals = registry.get(world)
   if (internals === undefined) {
     throw new TypeError('value is not a World created by @lunego/core')
   }

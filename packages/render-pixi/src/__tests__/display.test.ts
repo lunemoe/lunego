@@ -191,7 +191,7 @@ describe('texture store', () => {
     store.destroy()
     expect(loader.disposed).toHaveLength(2)
     expect(store.size).toBe(0)
-    expect(() => store.register('again', { id: 99, disposed: false })).toThrow(/destroyed/)
+    expect(() => store.register('again', { id: 99, disposed: false }, { width: 1, height: 1 })).toThrow(/destroyed/)
   })
 
   it('registers already-created textures without a loader round trip', () => {
@@ -202,5 +202,50 @@ describe('texture store', () => {
     expect(store.ids()).toEqual(['runtime'])
     store.destroy()
     expect(texture.disposed).toBe(true)
+  })
+})
+
+describe('texture store concurrency and lifecycle', () => {
+  it('deduplicates concurrent loads and disposes an in-flight texture after destroy', async () => {
+    let resolveLoad: ((value: TextureLoadResult<FakeTexture>) => void) | null = null
+    const disposed: number[] = []
+    const loader: TextureLoader<FakeTexture> = {
+      load: () => new Promise((resolve) => { resolveLoad = resolve }),
+      dispose: (texture) => { disposed.push(texture.id) },
+    }
+    const store = new TextureStore(loader)
+    const first = store.load('hero', 'hero.png')
+    const second = store.load('hero', 'hero.png')
+    expect(first).toBe(second)
+    resolveLoad?.({ texture: { id: 5, disposed: false }, width: 16, height: 16 })
+    const [a, b] = await Promise.all([first, second])
+    expect(a.texture.id).toBe(5)
+    expect(b.texture.id).toBe(5)
+    expect(store.size).toBe(1)
+
+    const slow = store.load('late', 'late.png')
+    store.destroy()
+    resolveLoad?.({ texture: { id: 6, disposed: false }, width: 8, height: 8 })
+    await expect(slow).rejects.toThrow(/destroyed/)
+    expect(disposed).toContain(6)
+  })
+
+  it('clears a previous failure when the id is registered later', async () => {
+    const loader = new FakeLoader()
+    loader.failures.add('broken')
+    const store = new TextureStore(loader)
+    await expect(store.load('broken', 'broken')).rejects.toThrow(/cannot load/)
+    expect(store.failure('broken')).toBeInstanceOf(Error)
+    store.register('broken', { id: 9, disposed: false }, { width: 4, height: 4 })
+    expect(store.failure('broken')).toBeUndefined()
+    expect(store.get('broken')?.width).toBe(4)
+  })
+
+  it('requires explicit dimensions when registering a texture', () => {
+    const store = new TextureStore(new FakeLoader())
+    expect(() =>
+      store.register('zero', { id: 1, disposed: false }, { width: 0, height: 0 }),
+    ).toThrow(/positive/)
+    expect(() => store.register('bad', { id: 2, disposed: false }, { width: 1.5, height: 1 })).toThrow(/integers/)
   })
 })

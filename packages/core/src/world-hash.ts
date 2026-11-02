@@ -7,6 +7,7 @@ import type { Entity } from './schema.js'
 import type { RngRegistry } from './rng.js'
 import type { WorldCatalog } from './catalog.js'
 import type { EmittedEvent } from './events.js'
+import { flowStateSnapshot } from './flow-state-registry.js'
 
 export interface WorldHashInput {
   readonly catalog: WorldCatalog
@@ -85,6 +86,14 @@ export function hashWorld(input: WorldHashInput): string {
   for (const runtime of models) {
     hasher.string(runtime.def.name)
     writeValue(hasher, t.struct(runtime.def.schema), runtime.draft ?? runtime.committed)
+  }
+
+  const flowStates = flowStateSnapshot(catalog)
+  const flowNames = Object.keys(flowStates).sort()
+  hasher.u32(flowNames.length)
+  for (const name of flowNames) {
+    hasher.string(name)
+    hasher.string(flowStates[name] ?? '')
   }
 
   const rngStates = rng.states()

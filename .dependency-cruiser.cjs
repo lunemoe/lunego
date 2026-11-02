@@ -15,7 +15,7 @@ module.exports = {
         'The internal capability subpath is reserved for the host bridge, testkit and framework tests.',
       from: {
         pathNot:
-          '(?:^|/)(packages/(core|host|testkit|eslint-plugin)/|templates/)',
+          '(?:^|/)packages/(core|host|testkit|eslint-plugin)/',
       },
       to: {
         path: '(?:^|/)packages/core/src/(internal|world-internals)\\.ts$',
@@ -163,7 +163,7 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '(^|/)(dist|coverage)/' },
+    exclude: { path: '(^|/)(dist|coverage|packages/cli/templates|e2e)/' },
     tsConfig: { fileName: 'tsconfig.base.json' },
     tsPreCompilationDeps: true,
     enhancedResolveOptions: {
