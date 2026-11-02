@@ -5,6 +5,7 @@ import type {
   EventDef,
   EventPayload,
   FlowStateDef,
+  StateDef,
   HandlerContext,
   ModelDef,
   QueryArg,
@@ -41,6 +42,7 @@ export class RunContext
   private readonly role: ContextRole
   private readonly contextName: string
   private readonly declarations: ContextDeclarations
+  private readonly extraWrites = new Set<string>()
   private readonly dev: boolean
   private readonly timeService: TimeService
   private readonly logService: LogService
@@ -88,6 +90,11 @@ export class RunContext
     this.ensureActive()
     this.assertReadable(def.name)
     return this.world.readFlowState(def as FlowStateDef<string>) as V
+  }
+
+  /** State hooks may always transition the state they belong to. */
+  grantState(def: StateDef): void {
+    this.extraWrites.add(def.name)
   }
 
   setState<V extends string>(def: FlowStateDef<V>, next: V): void {
@@ -289,7 +296,11 @@ export class RunContext
     if (!this.dev) {
       return
     }
-    if (!this.declarations.reads.has(name) && !this.declarations.writes.has(name)) {
+    if (
+      !this.declarations.reads.has(name) &&
+      !this.declarations.writes.has(name) &&
+      !this.extraWrites.has(name)
+    ) {
       throw guardError(
         'LG003',
         `${this.role} ${this.contextName} accesses ${name} without declaring it in reads/writes`,
@@ -304,7 +315,7 @@ export class RunContext
     if (!this.dev) {
       return
     }
-    if (!this.declarations.writes.has(name)) {
+    if (!this.declarations.writes.has(name) && !this.extraWrites.has(name)) {
       throw guardError(
         'LG003',
         `${this.role} ${this.contextName} writes ${name} without declaring it in writes`,

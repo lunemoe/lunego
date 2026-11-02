@@ -422,7 +422,9 @@ export const spriteBinding = defineRenderBinding({
 
 - **DOM 叠加层 + Solid**：`@lunego/ui` 用 `solid-js` + `solid-js/html`，不需要额外 JSX 构建链。游戏只能从 `@lunego/ui` 取受限原语 `createSignal/createMemo/createEffect/createRoot/onCleanup/html/createComponent`，不能直接 import solid-js。`createUiBridge(game)` 持有只读 `frame`/`models` signal，通过 host 的 `subscribeFrames` 更新；UI 只调用 `send`/`query`。
 - **组件**：`UiRoot`/theme tokens、`Panel`（九宫格 border-image，无图退回 CSS）、`Bar`（hp/mp/xp/neutral）、`Button`、`Tabs`、`InventoryGrid`/`ItemSlot`、`Tooltip`、`SkillBar`（CD 遮罩）、`KeyHint`、`Modal`（Escape/backdrop 关闭）、`List`；全部只做展示与回调。
-- **资源无关**：九宫格/图标由游戏传入 URL；缺少资源时用纯 CSS/文字退化，不造假数据。`mountUi(root, bridge, view)` 负责挂载、样式安装与销毁。
+- **资源无关**：九宫格/图标由游戏传入 URL；缺少资源时用纯 CSS/文字退化，不造假数据。`Panel.borderImage/borderSlice/borderWidth`、`ItemSlot.icon`、`SkillSlot.icon` 是资源注入点；框架不引用游戏资产路径。`mountUi(root, bridge, view)` 负责挂载、样式安装与销毁。
+- **行为与可访问性归框架，美学归游戏**：框架规定组件行为、焦点/菜单栈、键盘与指针交互、数据绑定、主题 token 名称，以及焦点可见、`prefers-reduced-motion`、UI scale、最低对比度和资源注入点；调色板、字体、九宫格图、图标集、间距/密度、动效、装饰和文案由游戏通过 `UiTheme`/props 提供。框架不内置游戏美术、玩法名词或强制像素风；像素对齐/最近邻只是能力，不是风格要求。
+- **主题与约束**：组件颜色、间距、字体只能通过 CSS 变量、props 或 `UiTheme`（框架拥有 token 名称，游戏全量覆盖）；`theme.ts` 只保留可被覆盖的中性 fallback。不得硬编码游戏资产路径，不得硬编码界面文案（本地化 key 由游戏提供；当前组件默认 aria/empty 文案仍是 i18n 待办）。
 - **分工**：屏幕空间的面板用 DOM；跟随实体的世界空间 UI（血条、伤害数字）仍在画布内绘制。UI 不计算游戏规则。
 
 ### 8.3 Cue 的表现映射

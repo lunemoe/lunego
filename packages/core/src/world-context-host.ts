@@ -53,6 +53,7 @@ export interface WorldContextDeps {
   readFlowState(def: FlowStateDef): string
   requestStateChange(def: FlowStateDef, next: string): void
   queueEvent<E extends EventDef>(event: E, payload: EventPayload<E>): void
+  rejectPending(reason: Error): void
   restore(snapshot: WorldSnapshot): void
 }
 
@@ -81,6 +82,7 @@ export function createWorldContextHost(deps: WorldContextDeps): WorldInternals {
     readFlowState: (def) => deps.readFlowState(def),
     requestStateChange: (def, next) => deps.requestStateChange(def, next),
     queueEvent: (event, payload) => deps.queueEvent(event, payload),
+    rejectPending: (reason) => deps.rejectPending(reason),
     restore: (snapshot) => deps.restore(snapshot),
   }
 }

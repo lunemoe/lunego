@@ -9,16 +9,48 @@ export interface StorageLike {
 export interface BrowserSaveStore {
   save(snapshot: WorldSnapshot): void
   load(): WorldSnapshot | null
+  export(): string
+  import(serialized: string): WorldSnapshot
+  persist(): Promise<boolean>
   clear(): void
+}
+
+export class BrowserSaveError extends Error {
+  readonly code: string
+
+  constructor(code: string, message: string, cause?: unknown) {
+    super(message, cause === undefined ? undefined : { cause })
+    this.name = 'BrowserSaveError'
+    this.code = code
+  }
 }
 
 interface StorageGlobal {
   readonly localStorage?: StorageLike
+  readonly navigator?: {
+    readonly storage?: {
+      persist?: () => Promise<boolean>
+    }
+  }
+}
+
+function parseSnapshot(raw: string, source: string): WorldSnapshot {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch (error) {
+    throw new BrowserSaveError('save_corrupt', `${source} is not valid JSON`, error)
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new BrowserSaveError('save_corrupt', `${source} is not a snapshot object`)
+  }
+  return parsed as WorldSnapshot
 }
 
 export function createBrowserSaveStore(
   key: string,
   storage: StorageLike | undefined = (globalThis as StorageGlobal).localStorage,
+  persistence: StorageGlobal['navigator'] = (globalThis as StorageGlobal).navigator,
 ): BrowserSaveStore {
   if (key.length === 0) {
     throw new Error('save key must not be empty')
@@ -26,22 +58,68 @@ export function createBrowserSaveStore(
   if (storage === undefined) {
     throw new Error('localStorage is unavailable; inject a StorageLike')
   }
+  const backupKey = `${key}.bak`
+  const load = (): WorldSnapshot | null => {
+    const primary = storage.getItem(key)
+    if (primary !== null) {
+      try {
+        return parseSnapshot(primary, key)
+      } catch (primaryError) {
+        const backup = storage.getItem(backupKey)
+        if (backup !== null) {
+          try {
+            return parseSnapshot(backup, backupKey)
+          } catch (backupError) {
+            throw new BrowserSaveError(
+              'save_corrupt',
+              `both ${key} and ${backupKey} are corrupt`,
+              backupError,
+            )
+          }
+        }
+        throw primaryError
+      }
+    }
+    const backup = storage.getItem(backupKey)
+    return backup === null ? null : parseSnapshot(backup, backupKey)
+  }
   return {
     save: (snapshot) => {
-      storage.setItem(key, JSON.stringify(snapshot))
+      const serialized = JSON.stringify(snapshot)
+      try {
+        storage.setItem(key, serialized)
+        storage.setItem(backupKey, serialized)
+      } catch (error) {
+        throw new BrowserSaveError('save_failed', `failed to write save ${key}`, error)
+      }
     },
-    load: () => {
-      const raw = storage.getItem(key)
-      if (raw === null) {
-        return null
+    load,
+    export: () => {
+      const snapshot = load()
+      if (snapshot === null) {
+        throw new BrowserSaveError('save_missing', `no save exists at ${key}`)
+      }
+      return JSON.stringify(snapshot)
+    },
+    import: (serialized) => parseSnapshot(serialized, 'imported save'),
+    persist: async () => {
+      if (persistence?.storage?.persist === undefined) {
+        return false
       }
       try {
-        return JSON.parse(raw) as WorldSnapshot
-      } catch {
-        return null
+        return await persistence.storage.persist()
+      } catch (error) {
+        throw new BrowserSaveError('persist_failed', 'storage persistence request failed', error)
       }
     },
-    clear: () => storage.removeItem(key),
+    clear: () => {
+      try {
+        storage.removeItem(key)
+        storage.removeItem(backupKey)
+      } catch (error) {
+        throw new BrowserSaveError('save_failed', `failed to clear save ${key}`, error)
+      }
+    },
   }
 }
 

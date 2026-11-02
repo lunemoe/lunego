@@ -13,6 +13,7 @@ import {
   type SendOptions,
   type WorldSnapshot,
 } from '@lunego/core'
+import { worldInternals } from '@lunego/core/internal'
 import type {
   CrashReport,
   GameFrame,
@@ -26,7 +27,7 @@ import type {
   TimeGapDecision,
   TimeMode,
 } from './types.js'
-import { verifyReplay } from './replay.js'
+import { exportGameReplay, replayGame } from './game-replay.js'
 import { collectFeatures, interpolatedComponents, uniqueModels } from './features.js'
 import { buildGameFrame, toCrashReport } from './frame.js'
 import { createRenderSource } from './view-source.js'
@@ -116,7 +117,6 @@ export class Game {
       alpha: () => this.alpha,
     })
   }
-
   get tick(): number {
     return this.worldValue.tick
   }
@@ -127,42 +127,33 @@ export class Game {
     listener(this.frameValue)
     return () => { this.frameListeners.delete(listener) }
   }
-
   get paused(): boolean {
     return this.pausedValue
   }
-
   get speed(): number {
     return this.speedValue
   }
-
   get alpha(): number {
     if (this.timeMode !== 'realtime') {
       return 1
     }
     return Math.min(1, this.accumulator / this.dt)
   }
-
   get frame(): GameFrame {
     return this.frameValue
   }
-
   get models(): Readonly<Record<string, unknown>> {
     return this.frameValue.models
   }
-
   get view(): RenderSource {
     return this.viewSource
   }
-
   get crashReport(): CrashReport | null {
     return this.crashValue
   }
-
   get viewError(): unknown {
     return this.viewErrorValue
   }
-
   get pendingCommandCount(): number {
     return this.worldValue.pendingCommandCount
   }
@@ -178,6 +169,9 @@ export class Game {
     payload: unknown,
     options?: SendOptions,
   ): Promise<CommandOutcome> {
+    if (this.destroyedValue) {
+      return Promise.reject(new LuneGoError('game_destroyed', 'game is destroyed'))
+    }
     if (typeof command === 'string') {
       return this.worldValue.send(command, payload, options)
     }
@@ -261,14 +255,26 @@ export class Game {
   }
 
   load(snapshot: WorldSnapshot): void {
-    this.worldValue = World.fromSnapshot(snapshot, {
-      features: this.features,
-      schemaVersion: this.schemaVersion,
-      dt: this.dt,
-      dev: this.dev,
-      ...(this.content === undefined ? {} : { content: this.content }),
-      ...(this.onDiagnostic === undefined ? {} : { onDiagnostic: this.onDiagnostic }),
-    })
+    if (this.destroyedValue) {
+      throw new LuneGoError('game_destroyed', 'game is destroyed')
+    }
+    let next: World
+    try {
+      next = World.fromSnapshot(snapshot, {
+        features: this.features,
+        schemaVersion: this.schemaVersion,
+        dt: this.dt,
+        dev: this.dev,
+        ...(this.content === undefined ? {} : { content: this.content }),
+        ...(this.onDiagnostic === undefined ? {} : { onDiagnostic: this.onDiagnostic }),
+      })
+    } catch (error) {
+      throw new LuneGoError('load_failed', 'failed to load snapshot', { cause: error })
+    }
+    worldInternals(this.worldValue).rejectPending(
+      new LuneGoError('game_loaded', 'game was loaded before the command ran'),
+    )
+    this.worldValue = next
     this.initialSnapshot = snapshot
     this.hashLog.length = 0
     this.checkpoints.length = 0
@@ -297,38 +303,33 @@ export class Game {
   }
 
   exportReplay(): ReplayData {
-    const tick = this.worldValue.tick
-    const commands = this.worldValue.commandLog.filter((entry) => entry.tick <= tick)
-    const hashes = [...this.hashLog]
-    const checkpoints = [...this.checkpoints]
-    if (!checkpoints.some((entry) => entry.tick === tick)) {
-      checkpoints.push({ tick, hash: this.worldValue.hash() })
-    }
-    if (!hashes.some((entry) => entry.tick === tick)) {
-      hashes.push({ tick, hash: this.worldValue.hash() })
-    }
-    return {
+    return exportGameReplay({
+      world: this.worldValue,
+      initialSnapshot: this.initialSnapshot,
       schemaVersion: this.schemaVersion,
-      snapshot: this.initialSnapshot,
-      commands,
-      checkpoints,
-      hashes,
-      endTick: tick,
-    }
+      hashes: this.hashLog,
+      checkpoints: this.checkpoints,
+    })
   }
 
   replay(data: ReplayData): ReplayReport {
-    return verifyReplay(data, {
+    return replayGame(data, {
       features: this.features,
       dt: this.dt,
       dev: this.dev,
+      ...(this.content === undefined ? {} : { content: this.content }),
     })
   }
 
   destroy(): void {
+    if (this.destroyedValue) {
+      return
+    }
     this.destroyedValue = true
+    worldInternals(this.worldValue).rejectPending(
+      new LuneGoError('game_destroyed', 'game was destroyed before the command ran'),
+    )
   }
-
   private worldOptions(): ConstructorParameters<typeof World>[0] {
     return {
       features: this.features,
@@ -339,14 +340,12 @@ export class Game {
       ...(this.onDiagnostic === undefined ? {} : { onDiagnostic: this.onDiagnostic }),
     }
   }
-
   private decideGap(gap: number): TimeGapDecision {
     if (this.onTimeGap === undefined) {
       return 'skip'
     }
     return this.onTimeGap({ gap, maxCatchUp: this.maxCatchUp, tick: this.worldValue.tick })
   }
-
   private stepInternal(render: boolean): GameFrame | null {
     this.capturePrevious()
     try {
@@ -381,7 +380,6 @@ export class Game {
       return null
     }
   }
-
   private capturePrevious(): void {
     for (const component of this.interpolated) {
       const values = new Map<Entity, unknown>()

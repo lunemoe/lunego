@@ -207,6 +207,7 @@ describe('testkit', () => {
       tick: entry.tick,
       type: entry.type,
       payload: entry.payload,
+      sentAt: entry.sentAt,
       ...(typeof entry.source === 'number' ? { source: entry.source } : {}),
     }))
     const log: ReplayLog = {

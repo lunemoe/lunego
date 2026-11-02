@@ -42,14 +42,31 @@ const localViewportNames: Readonly<Record<string, true>> = {
   anchorOf: true,
 }
 
-const memberMutators: Readonly<Record<string, true>> = {
-  setItem: true,
-  removeItem: true,
-  appendChild: true,
-  removeChild: true,
-  addEventListener: true,
-  reload: true,
-  setAttribute: true,
+const platformRoots: Readonly<Record<string, true>> = {
+  document: true,
+  window: true,
+  globalThis: true,
+  localStorage: true,
+  sessionStorage: true,
+  navigator: true,
+  performance: true,
+  location: true,
+  history: true,
+}
+
+const platformFunctions: Readonly<Record<string, true>> = {
+  eval: true,
+  Function: true,
+  setTimeout: true,
+  setInterval: true,
+  requestAnimationFrame: true,
+  fetch: true,
+}
+
+const debugAllowedMembers: Readonly<Record<string, true>> = {
+  __luneGame: true,
+  __luneDebug: true,
+  __playwright: true,
 }
 
 function isTypePosition(node: TSESTree.Node): boolean {
@@ -114,6 +131,23 @@ function rootIdentifier(node: TSESTree.Node): TSESTree.Identifier | null {
     }
     return null
   }
+}
+
+function unwrap(node: TSESTree.Node): TSESTree.Node {
+  let current = node
+  while (
+    current.type === 'TSAsExpression' ||
+    current.type === 'TSNonNullExpression' ||
+    current.type === 'TSInstantiationExpression'
+  ) {
+    current = current.expression
+  }
+  return current
+}
+
+function isOutermostMember(node: TSESTree.MemberExpression): boolean {
+  const parent = node.parent
+  return !(parent?.type === 'MemberExpression' && parent.object === node)
 }
 
 function insideRenderBinding(node: TSESTree.Node): boolean {
@@ -204,7 +238,27 @@ export const lg016 = createRule<Options, MessageIds>({
         }
       },
       MemberExpression(node) {
-        if (node.object.type === 'Identifier' && node.object.name === 'globalThis' && !debugEntry) {
+        if (debugEntry) {
+          if (!isOutermostMember(node)) {
+            return
+          }
+          const root = rootIdentifier(node.object)?.name ?? null
+          const property = node.property.type === 'Identifier'
+            ? node.property.name
+            : node.property.type === 'Literal' && typeof node.property.value === 'string'
+              ? node.property.value
+              : null
+          if (
+            root !== null &&
+            platformRoots[root] === true &&
+            property !== null &&
+            debugAllowedMembers[property] !== true
+          ) {
+            report(node, 'debugMutation', { name: `${root}.${property}` })
+          }
+          return
+        }
+        if (node.object.type === 'Identifier' && node.object.name === 'globalThis') {
           const name = node.property.type === 'Identifier'
             ? node.property.name
             : node.property.type === 'Literal' && typeof node.property.value === 'string'
@@ -215,15 +269,6 @@ export const lg016 = createRule<Options, MessageIds>({
             if (reason !== undefined) {
               report(node, 'forbiddenGlobal', { name: `globalThis.${name}`, reason })
             }
-          }
-        }
-        if (!debugEntry) {
-          return
-        }
-        if (node.property.type === 'Identifier' && memberMutators[node.property.name] === true) {
-          const root = rootIdentifier(node.object)?.name ?? null
-          if (root === 'window' || root === 'document' || root === 'localStorage' || root === 'sessionStorage' || root === 'navigator') {
-            report(node, 'debugMutation', { name: node.property.name })
           }
         }
       },
@@ -238,6 +283,12 @@ export const lg016 = createRule<Options, MessageIds>({
         }
       },
       CallExpression(node) {
+        if (debugEntry) {
+          if (node.callee.type === 'Identifier' && platformFunctions[node.callee.name] === true) {
+            report(node, 'debugMutation', { name: node.callee.name })
+            return
+          }
+        }
         if (node.callee.type === 'Identifier' && localViewportNames[node.callee.name] === true) {
           report(node, 'localViewport', { name: node.callee.name })
           return
@@ -247,9 +298,10 @@ export const lg016 = createRule<Options, MessageIds>({
           node.callee.name === 'rectSpec' &&
           insideRenderBinding(node)
         ) {
-          for (const argument of node.arguments) {
-            if (argument.type === 'Literal' && typeof argument.value === 'number') {
-              report(argument, 'bindingSize', { field: 'rectSpec' })
+          for (const argument of node.arguments.slice(0, 2)) {
+            const value = unwrap(argument)
+            if (value.type === 'Literal' && typeof value.value === 'number') {
+              report(value, 'bindingSize', { field: 'rectSpec' })
             }
           }
         }
@@ -258,8 +310,9 @@ export const lg016 = createRule<Options, MessageIds>({
         if (node.operator !== '??' || !insideRenderBinding(node)) {
           return
         }
-        if (node.left.type === 'MemberExpression') {
-          const property = node.left.property
+        const left = unwrap(node.left)
+        if (left.type === 'MemberExpression') {
+          const property = left.property
           const name = property.type === 'Identifier'
             ? property.name
             : property.type === 'Literal' && typeof property.value === 'string'
@@ -267,28 +320,15 @@ export const lg016 = createRule<Options, MessageIds>({
               : null
           if (
             (name === 'width' || name === 'height') &&
-            node.right.type === 'Literal' &&
-            typeof node.right.value === 'number'
+            unwrap(node.right).type === 'Literal' &&
+            typeof (unwrap(node.right) as TSESTree.Literal).value === 'number'
           ) {
-            report(node.right, 'bindingSize', { field: name })
+            report(unwrap(node.right), 'bindingSize', { field: name })
           }
         }
       },
       AssignmentExpression(node) {
         const left = node.left
-        if (debugEntry && left.type === 'MemberExpression') {
-          const root = rootIdentifier(left.object)?.name ?? null
-          if (
-            root === 'window' ||
-            root === 'document' ||
-            root === 'globalThis' ||
-            root === 'localStorage' ||
-            root === 'sessionStorage' ||
-            root === 'navigator'
-          ) {
-            report(node, 'debugMutation', { name: 'assignment' })
-          }
-        }
         if (!insideRenderBinding(node) || left.type !== 'MemberExpression') {
           return
         }
@@ -301,7 +341,7 @@ export const lg016 = createRule<Options, MessageIds>({
         if (name !== 'width' && name !== 'height') {
           return
         }
-        const right = node.right
+        const right = unwrap(node.right)
         if (right.type === 'Literal' && typeof right.value === 'number') {
           report(right, 'bindingSize', { field: name })
         }
@@ -318,8 +358,9 @@ export const lg016 = createRule<Options, MessageIds>({
         if (key !== 'width' && key !== 'height') {
           return
         }
-        if (node.value.type === 'Literal' && typeof node.value.value === 'number') {
-          report(node.value, 'bindingSize', { field: key })
+        const value = unwrap(node.value)
+        if (value.type === 'Literal' && typeof value.value === 'number') {
+          report(value, 'bindingSize', { field: key })
         }
       },
     }

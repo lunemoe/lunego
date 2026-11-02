@@ -1,10 +1,11 @@
-import { World, type FeatureDef } from '@lunego/core'
+import { World, type ContentRegistry, type FeatureDef } from '@lunego/core'
 import type { ReplayData, ReplayReport } from './types.js'
 
 export interface ReplayOptions {
   readonly features: readonly FeatureDef[]
   readonly dt?: number
   readonly dev?: boolean
+  readonly content?: ContentRegistry
 }
 
 function createReplayWorld(data: ReplayData, options: ReplayOptions): World {
@@ -13,25 +14,31 @@ function createReplayWorld(data: ReplayData, options: ReplayOptions): World {
     schemaVersion: data.schemaVersion,
     ...(options.dt === undefined ? {} : { dt: options.dt }),
     ...(options.dev === undefined ? {} : { dev: options.dev }),
+    ...(options.content === undefined ? {} : { content: options.content }),
   })
-}
-
-function sendUpTo(world: World, data: ReplayData, targetTick: number): void {
-  for (const command of data.commands) {
-    if (command.tick <= data.snapshot.tick || command.tick > targetTick) {
-      continue
-    }
-    void world.send(command.type, command.payload, {
-      tick: command.tick,
-      source: command.source,
-    }).catch(() => undefined)
-  }
 }
 
 function hashAtTick(data: ReplayData, targetTick: number, options: ReplayOptions): string {
   const world = createReplayWorld(data, options)
-  sendUpTo(world, data, targetTick)
+  const sent = new Set<number>()
   while (world.tick < targetTick) {
+    const nextTick = world.tick + 1
+    for (let index = 0; index < data.commands.length; index += 1) {
+      const command = data.commands[index]
+      if (
+        command === undefined ||
+        sent.has(index) ||
+        command.tick <= data.snapshot.tick ||
+        command.sentAt >= nextTick
+      ) {
+        continue
+      }
+      sent.add(index)
+      void world.send(command.type, command.payload, {
+        tick: command.tick,
+        source: command.source,
+      }).catch(() => undefined)
+    }
     world.step()
   }
   return world.hash()

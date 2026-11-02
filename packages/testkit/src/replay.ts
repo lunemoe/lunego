@@ -10,6 +10,8 @@ export interface ReplayCommand {
   readonly type: string
   readonly payload: unknown
   readonly source?: CommandSource
+  /** Tick when the command was sent; defaults to tick - 1. */
+  readonly sentAt?: number
 }
 
 export interface ReplayCheckpoint {
@@ -76,15 +78,22 @@ export function verifyReplay(log: ReplayLog, options: ReplayOptions): ReplayResu
         `replay command ${command.type} targets tick ${command.tick}, after end ${log.endTick}`,
       )
     }
-    void world.send(command.type, command.payload, {
-      tick: command.tick,
-      ...(command.source === undefined ? {} : { source: command.source }),
-    })
   }
 
   const hashes = new Map<number, string>()
   hashes.set(startTick, world.hash())
+  const sent = new Set<ReplayCommand>()
   for (let tick = startTick + 1; tick <= log.endTick; tick += 1) {
+    for (const command of log.commands) {
+      if (sent.has(command) || (command.sentAt ?? command.tick - 1) >= tick) {
+        continue
+      }
+      sent.add(command)
+      void world.send(command.type, command.payload, {
+        tick: command.tick,
+        ...(command.source === undefined ? {} : { source: command.source }),
+      })
+    }
     world.step()
     hashes.set(tick, world.hash())
   }

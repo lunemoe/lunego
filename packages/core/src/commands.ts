@@ -59,6 +59,7 @@ export class CommandQueue {
         envelope: {
           tick: envelope.tick,
           seq: envelope.seq,
+          sentAt: envelope.sentAt ?? envelope.tick,
           source: envelope.source,
           type: envelope.type,
           payload: envelope.payload,

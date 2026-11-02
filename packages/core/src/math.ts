@@ -16,6 +16,10 @@ export const SQRT2 = 1.4142135623730951
 
 const TAN_PI_12 = 0.2679491924311227
 const PI_12 = 0.2617993877991494
+const PIO2_HI = 1.5707963267341256
+const PIO2_LO = 6.077100506506192e-11
+const PIO2_LO2 = 2.0222662487959506e-21
+const MAX_TRIG_ARG = 1099511627776 // 2^40; beyond this argument reduction is not reliable
 
 function sinPoly(x: number): number {
   const x2 = x * x
@@ -46,13 +50,21 @@ function cosPoly(x: number): number {
   )
 }
 
-export function sin(x: number): number {
-  if (!Number.isFinite(x)) {
-    return Number.NaN
+function reduceQuadrant(x: number): { readonly r: number; readonly q: number } | null {
+  if (!Number.isFinite(x) || x > MAX_TRIG_ARG || x < -MAX_TRIG_ARG) {
+    return null
   }
   const quadrant = Math.round(x / HALF_PI)
-  const r = x - quadrant * HALF_PI
-  const q = ((quadrant % 4) + 4) % 4
+  const r = (x - quadrant * PIO2_HI) - quadrant * PIO2_LO - quadrant * PIO2_LO2
+  return { r, q: ((quadrant % 4) + 4) % 4 }
+}
+
+export function sin(x: number): number {
+  const reduced = reduceQuadrant(x)
+  if (reduced === null) {
+    return Number.NaN
+  }
+  const { r, q } = reduced
   if (q === 0) {
     return sinPoly(r)
   }
@@ -66,12 +78,11 @@ export function sin(x: number): number {
 }
 
 export function cos(x: number): number {
-  if (!Number.isFinite(x)) {
+  const reduced = reduceQuadrant(x)
+  if (reduced === null) {
     return Number.NaN
   }
-  const quadrant = Math.round(x / HALF_PI)
-  const r = x - quadrant * HALF_PI
-  const q = ((quadrant % 4) + 4) % 4
+  const { r, q } = reduced
   if (q === 0) {
     return cosPoly(r)
   }
@@ -117,21 +128,45 @@ export function atan(x: number): number {
   return sign * atanSeries(ax)
 }
 
+function negativeZero(value: number): boolean {
+  return value === 0 && 1 / value === Number.NEGATIVE_INFINITY
+}
+
 export function atan2(y: number, x: number): number {
   if (Number.isNaN(y) || Number.isNaN(x)) {
     return Number.NaN
   }
+  const yNegative = y < 0 || negativeZero(y)
+  const xNegative = x < 0 || negativeZero(x)
   if (y === 0) {
-    return x >= 0 ? 0 : PI
+    if (!xNegative) {
+      return yNegative ? -0 : 0
+    }
+    return yNegative ? -PI : PI
   }
   if (x === 0) {
-    return y > 0 ? HALF_PI : -HALF_PI
+    return yNegative ? -HALF_PI : HALF_PI
+  }
+  if (y === Number.POSITIVE_INFINITY || y === Number.NEGATIVE_INFINITY) {
+    if (x === Number.POSITIVE_INFINITY || x === Number.NEGATIVE_INFINITY) {
+      if (!yNegative) {
+        return xNegative ? (3 * PI) / 4 : PI / 4
+      }
+      return xNegative ? (-3 * PI) / 4 : -PI / 4
+    }
+    return yNegative ? -HALF_PI : HALF_PI
+  }
+  if (x === Number.POSITIVE_INFINITY) {
+    return yNegative ? -0 : 0
+  }
+  if (x === Number.NEGATIVE_INFINITY) {
+    return yNegative ? -PI : PI
   }
   const base = atan(y / x)
-  if (x > 0) {
+  if (!xNegative) {
     return base
   }
-  return y > 0 ? base + PI : base - PI
+  return yNegative ? base - PI : base + PI
 }
 
 function logSeries(z: number): number {
@@ -184,6 +219,14 @@ function pow2(exponent: number): number {
   if (exponent < -1074) {
     return 0
   }
+  if (exponent < -1022) {
+    let result = Number.MIN_VALUE
+    const extra = exponent + 1074
+    for (let index = 0; index < extra; index += 1) {
+      result *= 2
+    }
+    return result
+  }
   let result = 1
   if (exponent >= 0) {
     let base = 2
@@ -235,34 +278,62 @@ export function exp(x: number): number {
   if (x < -745.1332191019411) {
     return 0
   }
-  const exponent = Math.floor(x / LN2 + 0.5)
-  const r = x - exponent * LN2
+  let exponent = Math.floor(x / LN2 + 0.5)
+  let r = x - exponent * LN2
+  if (exponent < -1074) {
+    const delta = -1074 - exponent
+    exponent = -1074
+    r -= delta * LN2
+  }
   return expSeries(r) * pow2(exponent)
+}
+
+function oddInteger(value: number): boolean {
+  return Number.isInteger(value) && Math.abs(value % 2) === 1
 }
 
 export function pow(x: number, y: number): number {
   if (y === 0) {
     return 1
   }
-  if (x === 1) {
-    return 1
-  }
   if (Number.isNaN(x) || Number.isNaN(y)) {
     return Number.NaN
   }
-  if (x === 0) {
+  if (x === 1) {
+    return Number.isFinite(y) ? 1 : Number.NaN
+  }
+  if (x === -1 && !Number.isFinite(y)) {
+    return Number.NaN
+  }
+  if (!Number.isFinite(y)) {
+    const magnitude = x < 0 ? -x : x
+    if (magnitude > 1) {
+      return y > 0 ? Number.POSITIVE_INFINITY : 0
+    }
     return y > 0 ? 0 : Number.POSITIVE_INFINITY
+  }
+  if (x === 0) {
+    const negative = negativeZero(x) && oddInteger(y)
+    if (y > 0) {
+      return negative ? -0 : 0
+    }
+    return negative ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY
   }
   if (x === Number.POSITIVE_INFINITY) {
     return y > 0 ? Number.POSITIVE_INFINITY : 0
+  }
+  if (x === Number.NEGATIVE_INFINITY) {
+    if (y > 0) {
+      return oddInteger(y) ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY
+    }
+    return oddInteger(y) ? -0 : 0
   }
   if (x < 0) {
     if (!Number.isInteger(y)) {
       return Number.NaN
     }
     const magnitude = exp(y * log(-x))
-    const odd = Math.abs(y % 2) === 1
-    return odd ? -magnitude : magnitude
+    return oddInteger(y) ? -magnitude : magnitude
   }
   return exp(y * log(x))
 }

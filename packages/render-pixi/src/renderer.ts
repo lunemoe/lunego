@@ -111,23 +111,31 @@ export class RenderSystem<Handle> {
     }
     const byLayer = new Map<RenderLayer, Array<{ handle: Handle; spec: EntityDisplaySpec; entity: Entity; sortByY: boolean }>>()
     for (const entry of this.entries) {
-      this.syncBinding(entry, source, byLayer, time)
+      try {
+        this.syncBinding(entry, source, byLayer, time)
+      } catch (error) {
+        this.report(error)
+      }
     }
     for (const layer of RENDER_LAYERS) {
       const bucket = byLayer.get(layer)
-      if (bucket === undefined) {
-        this.adapter.order(layer, [])
-        continue
+      try {
+        if (bucket === undefined) {
+          this.adapter.order(layer, [])
+          continue
+        }
+        if (bucket.some((item) => item.sortByY)) {
+          bucket.sort(
+            (left, right) =>
+              left.spec.y - right.spec.y ||
+              left.spec.x - right.spec.x ||
+              left.entity - right.entity,
+          )
+        }
+        this.adapter.order(layer, bucket.map((item) => item.handle))
+      } catch (error) {
+        this.report(error)
       }
-      if (bucket.some((item) => item.sortByY)) {
-        bucket.sort(
-          (left, right) =>
-            left.spec.y - right.spec.y ||
-            left.spec.x - right.spec.x ||
-            left.entity - right.entity,
-        )
-      }
-      this.adapter.order(layer, bucket.map((item) => item.handle))
     }
   }
 
@@ -207,7 +215,13 @@ export class RenderSystem<Handle> {
     byLayer: Map<RenderLayer, Array<{ handle: Handle; spec: EntityDisplaySpec; entity: Entity; sortByY: boolean }>>,
     time: number,
   ): void {
-    const entities = source.entities(...entry.binding.query)
+    let entities: readonly Entity[]
+    try {
+      entities = source.entities(...entry.binding.query)
+    } catch (error) {
+      this.report(error)
+      return
+    }
     const active = new Set(entities)
     for (const entity of [...entry.objects.keys()]) {
       if (!active.has(entity)) {
@@ -217,26 +231,57 @@ export class RenderSystem<Handle> {
     for (const entity of entities) {
       const view = entityView(source, entity)
       let item = entry.objects.get(entity)
-      if (item === undefined) {
-        const spec = entry.binding.create(view)
-        const handle = this.adapter.create(spec)
-        item = { handle, spec, view, bounds: fallbackBounds(spec) }
-        entry.objects.set(entity, item)
-        this.adapter.attach(entry.binding.layer ?? 'entities', handle)
+      let created = false
+      try {
+        if (item === undefined) {
+          const spec = entry.binding.create(view)
+          const handle = this.adapter.create(spec)
+          item = { handle, spec, view, bounds: fallbackBounds(spec) }
+          created = true
+          entry.objects.set(entity, item)
+          this.adapter.attach(entry.binding.layer ?? 'entities', handle)
+        }
+        entry.binding.update(item.spec, view)
+        const handle = item.handle as Handle
+        this.adapter.update(handle, item.spec, time)
+        item.bounds = this.adapter.measure?.(item.spec, time) ?? fallbackBounds(item.spec)
+        const layer = entry.binding.layer ?? 'entities'
+        const bucket = byLayer.get(layer) ?? []
+        bucket.push({
+          handle,
+          spec: item.spec,
+          entity,
+          sortByY: entry.binding.sortByY ?? layer === 'entities',
+        })
+        byLayer.set(layer, bucket)
+      } catch (error) {
+        this.report(error)
+        if (created && item !== undefined) {
+          entry.objects.delete(entity)
+          this.release(item.handle as Handle)
+        }
       }
-      entry.binding.update(item.spec, view)
-      const handle = item.handle as Handle
-      this.adapter.update(handle, item.spec, time)
-      item.bounds = this.adapter.measure?.(item.spec, time) ?? fallbackBounds(item.spec)
-      const layer = entry.binding.layer ?? 'entities'
-      const bucket = byLayer.get(layer) ?? []
-      bucket.push({
-        handle,
-        spec: item.spec,
-        entity,
-        sortByY: entry.binding.sortByY ?? layer === 'entities',
-      })
-      byLayer.set(layer, bucket)
+    }
+  }
+
+  private report(error: unknown): void {
+    try {
+      this.onError?.(error)
+    } catch {
+      // A broken error hook must not stop other render bindings.
+    }
+  }
+
+  private release(handle: Handle): void {
+    try {
+      this.adapter.detach(handle)
+    } catch (error) {
+      this.report(error)
+    }
+    try {
+      this.adapter.destroy(handle)
+    } catch (error) {
+      this.report(error)
     }
   }
 
@@ -249,11 +294,10 @@ export class RenderSystem<Handle> {
     try {
       entry.binding.destroy?.(item.spec, view)
     } catch (error) {
-      this.onError?.(error)
+      this.report(error)
     } finally {
-      this.adapter.detach(item.handle as Handle)
-      this.adapter.destroy(item.handle as Handle)
       entry.objects.delete(entity)
+      this.release(item.handle as Handle)
     }
   }
 

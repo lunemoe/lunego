@@ -7,6 +7,7 @@ import type { Entity } from './schema.js'
 import type { RngRegistry } from './rng.js'
 import type { WorldCatalog } from './catalog.js'
 import type { EmittedEvent } from './events.js'
+import type { CommandEnvelope } from './world-types.js'
 import { flowStateSnapshot } from './flow-state-registry.js'
 
 export interface WorldHashInput {
@@ -18,6 +19,8 @@ export interface WorldHashInput {
   readonly dt: number
   readonly contentHash: string
   readonly previousEvents: readonly EmittedEvent[]
+  readonly pendingCommands: readonly CommandEnvelope[]
+  readonly nextSeq: number
 }
 
 function hashEntityTable(hasher: StateHasher, table: EntityTableSnapshot): void {
@@ -42,6 +45,17 @@ export function hashWorld(input: WorldHashInput): string {
   hasher.f32(input.dt)
   hasher.string(input.contentHash)
   hasher.safeInteger(input.tick)
+  hasher.u32(input.nextSeq)
+  hasher.u32(input.pendingCommands.length)
+  for (const command of input.pendingCommands) {
+    hasher.safeInteger(command.tick)
+    hasher.u32(command.seq)
+    hasher.safeInteger(command.sentAt)
+    hasher.u8(typeof command.source === 'number' ? 0 : 1)
+    hasher.string(String(command.source))
+    hasher.string(command.type)
+    hasher.string(JSON.stringify(command.payload))
+  }
   const table = entityStore.snapshot()
   hashEntityTable(hasher, table)
 

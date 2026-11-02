@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { GameFrame, WorldSnapshot } from '@lunego/core'
 import {
+  BrowserSaveError,
   bindBrowserKeys,
   createBrowserSaveStore,
   createViewLoop,
@@ -137,11 +138,65 @@ describe('browser adapters', () => {
     const snapshot = { tick: 3 } as WorldSnapshot
     store.save(snapshot)
     expect(store.load()).toEqual(snapshot)
+    expect(store.export()).toBe(JSON.stringify(snapshot))
+    expect(store.import('{"tick":4}')).toEqual({ tick: 4 })
+    expect(() => store.import('{bad')).toThrow(BrowserSaveError)
+    expect(() => store.import('[]')).toThrow(BrowserSaveError)
+
     values.set('save', '{bad')
-    expect(store.load()).toBeNull()
+    expect(store.load()).toEqual(snapshot)
+    values.set('save.bak', '{bad')
+    expect(() => store.load()).toThrow(/corrupt/)
     store.clear()
     expect(store.load()).toBeNull()
+    expect(() => store.export()).toThrow(/no save/)
     expect(() => createBrowserSaveStore('', storage)).toThrow(/key/)
+  })
+
+  it('diagnoses write failures without corrupting the previous save', () => {
+    const values = new Map<string, string>()
+    let failWrites = false
+    const storage: StorageLike = {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => {
+        if (failWrites) {
+          throw new Error('quota exceeded')
+        }
+        values.set(key, value)
+      },
+      removeItem: (key) => values.delete(key),
+    }
+    const store = createBrowserSaveStore('save', storage)
+    const first = { tick: 1 } as WorldSnapshot
+    store.save(first)
+    failWrites = true
+    expect(() => store.save({ tick: 2 } as WorldSnapshot)).toThrow(BrowserSaveError)
+    expect(store.load()).toEqual(first)
+  })
+
+  it('requests persistent storage and reports failures', async () => {
+    const storage: StorageLike = {
+      getItem: () => null,
+      setItem: () => undefined,
+      removeItem: () => undefined,
+    }
+    let requested = 0
+    const persisted = createBrowserSaveStore('save', storage, {
+      storage: {
+        persist: () => {
+          requested += 1
+          return Promise.resolve(true)
+        },
+      },
+    })
+    await expect(persisted.persist()).resolves.toBe(true)
+    expect(requested).toBe(1)
+    const unavailable = createBrowserSaveStore('save', storage, {})
+    await expect(unavailable.persist()).resolves.toBe(false)
+    const failing = createBrowserSaveStore('save', storage, {
+      storage: { persist: () => Promise.reject(new Error('denied')) },
+    })
+    await expect(failing.persist()).rejects.toThrow(/persistence request failed/)
   })
 
   it('binds keys and exposes/removes debug handles', () => {

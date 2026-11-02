@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSignal } from 'solid-js'
 import {
@@ -91,6 +94,59 @@ describe('ui bridge', () => {
     await Promise.resolve()
     expect(game.sent).toEqual([{ type: 'skill.cast', payload: { slot: 1 } }])
     expect(bridge.query({} as never, 1)).toBe(1)
+  })
+})
+
+describe('ui theme contract', () => {
+  it('applies caller theme tokens and keeps neutral defaults', () => {
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountUi(root, createUiBridge(fakeGame(frame(1, 1))), () =>
+      UiRoot({
+        theme: {
+          accent: '#123456',
+          font: 'Georgia, serif',
+          radius: '12px',
+          spacing: '7px',
+          fontSize: '15px',
+        },
+        children: Panel({
+          title: 'Neutral',
+          borderImage: '/caller/frame.png',
+          borderSlice: 6,
+          borderWidth: 10,
+          children: htmlSpan('Body'),
+        }),
+      }),
+    )
+    const ui = root.querySelector<HTMLElement>('.lg-ui')
+    expect(ui?.style.getPropertyValue('--lg-accent')).toBe('#123456')
+    expect(ui?.style.getPropertyValue('--lg-font')).toBe('Georgia, serif')
+    expect(ui?.style.getPropertyValue('--lg-radius')).toBe('12px')
+    expect(ui?.style.getPropertyValue('--lg-space')).toBe('7px')
+    expect(ui?.style.getPropertyValue('--lg-font-size')).toBe('15px')
+    const panel = root.querySelector<HTMLElement>('.lg-panel')
+    expect(panel?.style.getPropertyValue('--lg-panel-image')).toContain('/caller/frame.png')
+    expect(panel?.style.getPropertyValue('--lg-panel-slice')).toBe('6')
+    expect(panel?.style.getPropertyValue('--lg-panel-border')).toBe('10')
+    const css = document.querySelector('style[data-lunego-ui]')?.textContent ?? ''
+    expect(css).toContain('var(--lg-accent)')
+    expect(css).toContain('prefers-reduced-motion')
+  })
+
+  it('does not embed game copy or asset paths in framework components', async () => {
+    const candidates = [
+      join(process.cwd(), 'src', 'components.ts'),
+      join(process.cwd(), 'packages', 'ui', 'src', 'components.ts'),
+    ]
+    const file = candidates.find((candidate) => existsSync(candidate))
+    if (file === undefined) {
+      throw new Error('components.ts not found')
+    }
+    const source = await readFile(file, 'utf8')
+    for (const forbidden of ["'Empty slot'", "'Nothing here'", '"Skills"', "'Close'", 'assets/']) {
+      expect(source).not.toContain(forbidden)
+    }
   })
 })
 

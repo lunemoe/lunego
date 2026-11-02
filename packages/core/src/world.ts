@@ -199,7 +199,7 @@ export class World {
         }
       }
       this.structural.flush(true)
-      applyStateTransitions(this.internals, this.catalog, this.stateTransitions.splice(0))
+      applyStateTransitions(this.internals, this.catalog, this.stateTransitions)
       this.structural.flush(false)
       const patches = this.catalog.commitModels(this.dev)
       if (this.dev) {
@@ -338,6 +338,7 @@ export class World {
         }
         this.eventState.queue(event, payload, this.catalog)
       },
+      rejectPending: (reason) => this.commands.rejectAll(reason),
       restore: (snapshot) => this.restore(snapshot),
     })
   }

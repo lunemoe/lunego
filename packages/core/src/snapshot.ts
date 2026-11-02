@@ -142,6 +142,7 @@ export function snapshotWorld(input: SnapshotInput, scope: PersistScope): WorldS
     pendingCommands: input.pendingCommands.map((command) => ({
       tick: command.tick,
       seq: command.seq,
+      sentAt: command.sentAt,
       source: command.source,
       type: command.type,
       payload: cloneDeep(command.payload),

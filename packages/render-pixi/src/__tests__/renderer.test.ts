@@ -174,6 +174,46 @@ describe('render bindings', () => {
     expect(adapter.orders.get('entities')).toEqual([])
   })
 
+  it('isolates create/update failures per entity and keeps other bindings alive', () => {
+    const source = new FakeSource()
+    source.entitiesList.push(3)
+    source.current.set(1, { x: 1, y: 1 })
+    source.current.set(2, { x: 2, y: 2 })
+    source.current.set(3, { x: 3, y: 3 })
+    const adapter = new FakeAdapter()
+    const errors: unknown[] = []
+    const system = new RenderSystem(adapter, { onError: (error) => errors.push(error) })
+    system.add(
+      defineRenderBinding({
+        query: [Position],
+        create: (view) => {
+          if (view.entity === 1) {
+            throw new Error('create failed')
+          }
+          return rectSpec(4, 4, 0xffffff)
+        },
+        update: (_object, view) => {
+          if (view.entity === 2) {
+            throw new Error('update failed')
+          }
+        },
+      }),
+    )
+    system.add(
+      defineRenderBinding({
+        query: [Marker],
+        layer: 'background',
+        create: () => rectSpec(2, 2, 0x000000),
+        update: () => undefined,
+      }),
+    )
+    expect(() => system.sync(source)).not.toThrow()
+    expect(errors).toHaveLength(2)
+    expect(adapter.orders.get('entities')).toHaveLength(1)
+    expect(adapter.orders.get('background')).toHaveLength(3)
+    expect(adapter.specs.size).toBe(5)
+  })
+
   it('exposes entity bounds and feet/center/top anchors from the last update', () => {
     const source = new FakeSource()
     source.entitiesList.splice(1)

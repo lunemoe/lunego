@@ -23,11 +23,7 @@ ruleTester.run('lg016', lg016, {
     'const screen = renderer.viewport.worldToScreen(1, 2)',
     'const feet = renderSystem.anchorOf(entity, "feet")',
     {
-      code: '// @lunego/debug-entry\nconst el = document.body',
-      filename: 'games/demo/src/debug.ts',
-    },
-    {
-      code: '// @lunego/debug-entry\nconst el = globalThis.document.body',
+      code: '// @lunego/debug-entry\nconst value = globalThis.__luneDebug',
       filename: 'games/demo/src/debug.ts',
     },
   ],
@@ -64,6 +60,46 @@ ruleTester.run('lg016', lg016, {
       code: '// @lunego/debug-entry\nwindow.__p9 = debug',
       filename: 'games/demo/src/debug.ts',
       errors: [{ messageId: 'debugMutation' }],
+    },
+    {
+      code: '// @lunego/debug-entry\ndocument.title',
+      filename: 'games/demo/src/debug.ts',
+      errors: [{ messageId: 'debugMutation' }],
+    },
+    {
+      code: '// @lunego/debug-entry\nwindow.setTimeout(() => {}, 0)',
+      filename: 'games/demo/src/debug.ts',
+      errors: [{ messageId: 'debugMutation' }],
+    },
+    {
+      code: '// @lunego/debug-entry\nglobalThis.document',
+      filename: 'games/demo/src/debug.ts',
+      errors: [{ messageId: 'debugMutation' }],
+    },
+    {
+      code: '// @lunego/debug-entry\nFunction("return 1")',
+      filename: 'games/demo/src/debug.ts',
+      errors: [{ messageId: 'debugMutation' }],
+    },
+    {
+      code: '// @lunego/debug-entry\nglobalThis.eval("1")',
+      filename: 'games/demo/src/debug.ts',
+      errors: [{ messageId: 'debugMutation' }],
+    },
+    {
+      code: 'defineRenderBinding({ create: () => rectSpec(8 as number, 8 as number, 0xffffff as number) })',
+      filename: gameFile,
+      errors: [{ messageId: 'bindingSize' }, { messageId: 'bindingSize' }],
+    },
+    {
+      code: 'defineRenderBinding({ create: () => ({ width: 16 as number }) })',
+      filename: gameFile,
+      errors: [{ messageId: 'bindingSize' }],
+    },
+    {
+      code: 'defineRenderBinding({ update: (object) => { object.width = 16 as number } })',
+      filename: gameFile,
+      errors: [{ messageId: 'bindingSize' }],
     },
     { code: 'const el = globalThis.document.body', filename: gameFile, errors: [{ messageId: 'forbiddenGlobal' }] },
     { code: 'const el = globalThis.window', filename: gameFile, errors: [{ messageId: 'forbiddenGlobal' }] },

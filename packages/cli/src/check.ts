@@ -127,12 +127,11 @@ async function checkEslint(cwd: string, messages: string[]): Promise<void> {
   }
 }
 
-async function checkTypeScript(cwd: string, messages: string[]): Promise<void> {
-  const logicConfig = join(cwd, 'tsconfig.logic.json')
-  const config = (await pathExists(logicConfig)) ? logicConfig : join(cwd, 'tsconfig.json')
-  if (!(await pathExists(config))) {
-    return
-  }
+async function runTypeScript(
+  cwd: string,
+  config: string,
+  messages: string[],
+): Promise<void> {
   try {
     const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc')
     await execFileAsync(process.execPath, [tsc, '-p', config, '--noEmit'], {
@@ -143,7 +142,29 @@ async function checkTypeScript(cwd: string, messages: string[]): Promise<void> {
   } catch (error) {
     const failure = error as { stderr?: string; stdout?: string; message?: string }
     const detail = (failure.stderr || failure.stdout || failure.message || String(error)).trim()
+    if (/error TS(2307|2688|5083|6053|18003)/.test(detail)) {
+      messages.push(
+        `check: TypeScript dependencies are not installed or unresolved; run pnpm install\n${detail}`,
+      )
+      return
+    }
     messages.push(`LG001 TypeScript failed:\n${detail}`)
+  }
+}
+
+async function checkTypeScript(cwd: string, messages: string[]): Promise<void> {
+  const logicConfig = join(cwd, 'tsconfig.logic.json')
+  const config = (await pathExists(logicConfig)) ? logicConfig : join(cwd, 'tsconfig.json')
+  if (await pathExists(config)) {
+    await runTypeScript(cwd, config, messages)
+  }
+  const viewConfig = join(cwd, 'tsconfig.json')
+  if (
+    config !== viewConfig &&
+    (await pathExists(viewConfig)) &&
+    (await pathExists(join(cwd, 'node_modules', 'vite')))
+  ) {
+    await runTypeScript(cwd, viewConfig, messages)
   }
 }
 

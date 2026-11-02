@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ContentRegistry,
   defineCommand,
   defineComponent,
+  defineContentType,
   defineFeature,
   defineHandler,
   defineModel,
@@ -129,14 +131,21 @@ describe('host game', () => {
     expect(game.update(1)).toBe(0)
   })
 
-  it('runs fastForward without render frames', () => {
+  it('runs fastForward without render frames or effects', () => {
     const renders: boolean[] = []
+    let effects = 0
     const game = makeGame({
       timeMode: 'fastForward',
-      onFrame: (frame) => renders.push(frame.render),
+      onFrame: (frame) => {
+        renders.push(frame.render)
+        if (frame.render) {
+          effects += 1
+        }
+      },
     })
     expect(game.update(1)).toBe(10)
     expect(renders.every((render) => render === false)).toBe(true)
+    expect(effects).toBe(0)
   })
 
   it('applies time gap decisions', () => {
@@ -236,6 +245,68 @@ describe('host game', () => {
       targetHashes.push(target.frame.hash)
     }
     expect(targetHashes).toEqual(sourceHashes)
+  })
+
+  it('rejects pending commands on destroy/load and keeps the old world on load failure', async () => {
+    const game = makeGame()
+    const pendingDestroy = game.send(SetVelocity, { x: 1, y: 0 }, { tick: 10 })
+    const destroyed = pendingDestroy.catch((error: unknown) => error)
+    game.destroy()
+    const destroyError = await destroyed
+    expect((destroyError as { code?: string }).code).toBe('game_destroyed')
+    const afterDestroy = await game.send(SetVelocity, { x: 1, y: 0 }).catch((error: unknown) => error)
+    expect((afterDestroy as { code?: string }).code).toBe('game_destroyed')
+
+    const live = makeGame()
+    spawnPlayer(live)
+    const pendingLoad = live.send(SetVelocity, { x: 2, y: 0 }, { tick: 10 })
+    const loaded = pendingLoad.catch((error: unknown) => error)
+    const snapshot = live.save()
+    live.load(snapshot)
+    const loadError = await loaded
+    expect((loadError as { code?: string }).code).toBe('game_loaded')
+
+    const tick = live.tick
+    const before = live.view.entities(Position).length
+    expect(() => live.load({ ...snapshot, schemaVersion: 999 })).toThrow(
+      expect.objectContaining({ code: 'load_failed' }),
+    )
+    expect(live.tick).toBe(tick)
+    expect(live.view.entities(Position)).toHaveLength(before)
+  })
+
+  it('includes pending commands in replay checkpoints', () => {
+    const game = makeGame()
+    spawnPlayer(game)
+    void game.send(SetVelocity, { x: 7, y: 0 }, { tick: 10 })
+    game.step(1)
+    const log = game.exportReplay()
+    expect(game.replay(log).ok).toBe(true)
+    const tampered = {
+      ...log,
+      commands: log.commands.map((command) =>
+        command.tick === 10
+          ? { ...command, payload: { x: 8, y: 0 } }
+          : command,
+      ),
+    }
+    expect(game.replay(tampered).firstDivergenceTick).toBe(2)
+  })
+
+  it('replays sessions with a non-empty content registry', () => {
+    const Item = defineContentType('HostItem', { value: t.i32 })
+    const content = new ContentRegistry()
+    content.add(Item, 'sword', { value: 3 })
+    const game = makeGame({ content })
+    spawnPlayer(game)
+    game.update(0.1)
+    const log = game.exportReplay()
+    expect(game.replay(log).ok).toBe(true)
+
+    const other = new ContentRegistry()
+    other.add(Item, 'sword', { value: 4 })
+    const otherGame = makeGame({ content: other })
+    expect(() => otherGame.replay(log)).toThrow(/content/)
   })
 
   it('replays a session and locates a corrupted tick with binary search', () => {

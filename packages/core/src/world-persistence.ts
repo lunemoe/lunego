@@ -65,6 +65,8 @@ export function worldHash(source: WorldPersistenceSource): string {
     dt: source.dt,
     contentHash: source.contentHash,
     previousEvents: source.eventState.previousList,
+    pendingCommands: source.commands.pendingEnvelopes(),
+    nextSeq: source.commands.nextSeq,
   })
 }
 

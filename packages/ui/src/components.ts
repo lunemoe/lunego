@@ -33,6 +33,7 @@ export interface PanelProps {
   readonly title?: UiValue<string | undefined>
   readonly borderImage?: UiValue<string | undefined>
   readonly borderSlice?: number
+  readonly borderWidth?: number
   readonly children: UiChild | (() => UiChild)
 }
 
@@ -48,6 +49,7 @@ export function Panel(props: PanelProps): UiNode {
       : {
           '--lg-panel-image': `url("${image}")`,
           '--lg-panel-slice': String(props.borderSlice ?? 8),
+          '--lg-panel-border': String(props.borderWidth ?? 8),
         }
   }
   return html`<section class=${() => (hasImage() ? 'lg-panel has-image' : 'lg-panel')} style=${style}>
@@ -171,12 +173,13 @@ export interface ItemSlotProps {
   readonly selected?: UiValue<boolean>
   readonly onClick?: () => void
   readonly label?: string
+  readonly emptyLabel?: string
 }
 
 export function ItemSlot(props: ItemSlotProps): UiNode {
   const item = () => props.item ?? null
   const button = html`<button class=${() => (read(props.selected ?? false) ? 'lg-slot selected' : 'lg-slot')}
-    aria-label=${() => item()?.label ?? props.label ?? 'Empty slot'}
+    aria-label=${() => item()?.label ?? props.label ?? props.emptyLabel ?? ''}
     disabled=${() => item()?.disabled === true || item() === null}
     onClick=${() => props.onClick?.()}>
     ${() => {
@@ -241,6 +244,8 @@ export interface SkillSlotData {
 export interface SkillBarProps {
   readonly slots: UiValue<readonly SkillSlotData[]>
   readonly onActivate?: (id: string) => void
+  /** Localized accessible label supplied by the game. */
+  readonly label?: string
 }
 
 export function SkillBar(props: SkillBarProps): UiNode {
@@ -256,7 +261,7 @@ export function SkillBar(props: SkillBarProps): UiNode {
       </button>`,
     ),
   )
-  return html`<div class="lg-skillbar" role="toolbar" aria-label="Skills">${nodes}</div>`
+  return html`<div class="lg-skillbar" role="toolbar" aria-label=${() => props.label ?? ''}>${nodes}</div>`
 }
 
 export interface KeyHintProps {
@@ -273,6 +278,8 @@ export interface ModalProps {
   readonly title?: UiValue<string | undefined>
   readonly onClose?: () => void
   readonly closeOnBackdrop?: boolean
+  /** Localized accessible label supplied by the game. */
+  readonly closeLabel?: string
   readonly children: UiChild | (() => UiChild)
 }
 
@@ -298,7 +305,7 @@ export function Modal(props: ModalProps): UiNode {
     <section class="lg-panel lg-modal" role="dialog" aria-modal="true" aria-hidden=${() => String(!read(props.open))}>
       <div class="lg-modal__head">
         <h2 class="lg-modal__title">${() => read(props.title ?? '')}</h2>
-        <button class="lg-button" aria-label="Close" onClick=${() => props.onClose?.()}>×</button>
+        <button class="lg-button" aria-label=${() => props.closeLabel ?? ''} onClick=${() => props.onClose?.()}>×</button>
       </div>
       ${props.children}
     </section>
@@ -317,7 +324,7 @@ export function List<T>(props: ListProps<T>): UiNode {
   const nodes = createMemo(() => {
     const items = read(props.items)
     if (items.length === 0) {
-      return html`<li class="lg-list__empty">${props.empty ?? 'Nothing here'}</li>`
+      return html`<li class="lg-list__empty">${props.empty ?? ''}</li>`
     }
     return items.map((item, index) =>
       html`<li class=${() => (read(props.selected ?? null) === index ? 'lg-list__item selected' : 'lg-list__item')}

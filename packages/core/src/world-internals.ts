@@ -12,6 +12,7 @@ import { LuneGoError } from './errors.js'
  */
 export interface WorldInternals extends ContextHost {
   queueEvent<E extends EventDef>(event: E, payload: EventPayload<E>): void
+  rejectPending(reason: Error): void
   restore(snapshot: WorldSnapshot): void
 }
 

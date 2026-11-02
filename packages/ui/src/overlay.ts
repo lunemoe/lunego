@@ -118,7 +118,7 @@ export class EffectOverlay {
     const lifetime = options.lifetimeSeconds ?? 0.8
     const element = this.createElement('div', options.crit === true ? 'lg-fx-number lg-fx-number--crit' : 'lg-fx-number')
     element.textContent = options.text
-    element.style.color = options.color ?? '#ffffff'
+    element.style.color = options.color ?? 'var(--lg-text)'
     this.place(element, viewport, options.x, options.y)
     this.addActive({
       element,
@@ -156,7 +156,7 @@ export class EffectOverlay {
     return element
   }
 
-  flash(color = '#ffffff', durationSeconds = 0.15): HTMLElement {
+  flash(color = 'var(--lg-text)', durationSeconds = 0.15): HTMLElement {
     const element = this.createElement('div', 'lg-fx-flash')
     element.style.background = color
     const started = this.now

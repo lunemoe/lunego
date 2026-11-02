@@ -61,6 +61,23 @@ describe('snapshot transparency', () => {
     expect(snapshot.components.PersistPosition?.entries[0]?.entity).toBe(entity)
   })
 
+  it('hashes pending commands and nextSeq, and restores them', () => {
+    const world = makeWorld()
+    void world.send(Hit, { amount: 2 }, { tick: 4 })
+    const snapshot = roundTrip(world.snapshot())
+    const restored = World.fromSnapshot(snapshot, {
+      features: [feature],
+      schemaVersion: 1,
+    })
+    expect(restored.hash()).toBe(world.hash())
+    expect(snapshot.nextSeq).toBe(1)
+    expect(snapshot.pendingCommands).toHaveLength(1)
+
+    const other = makeWorld()
+    void other.send(Hit, { amount: 3 }, { tick: 4 })
+    expect(other.hash()).not.toBe(world.hash())
+  })
+
   it('restores dt from the snapshot unless the caller disagrees', () => {
     const world = makeWorld(1 / 30)
     world.spawn({ PersistPosition: { x: 0 } })

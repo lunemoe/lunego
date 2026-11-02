@@ -70,6 +70,7 @@ describe('commands', () => {
       {
         tick: 1,
         seq: 0,
+        sentAt: 0,
         source: 7,
         type: 'test.reward',
         payload: { amount: 5 },

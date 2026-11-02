@@ -5,6 +5,8 @@ export type CommandSource = number | string
 export interface CommandEnvelope {
   readonly tick: number
   readonly seq: number
+  /** Tick when the command entered the queue. */
+  readonly sentAt: number
   readonly source: CommandSource
   readonly type: string
   readonly payload: unknown

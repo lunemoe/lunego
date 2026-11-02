@@ -81,7 +81,11 @@ async function boot(): Promise<void> {
     dt: 1 / 60,
     schemaVersion: 4,
     timeMode: 'realtime',
-    onFrame: (frame) => vfx.consume(frame, cueMap),
+    onFrame: (frame) => {
+      if (frame.render) {
+        vfx.consume(frame, cueMap)
+      }
+    },
   })
 
   const bridge = createUiBridge(game)
@@ -290,10 +294,12 @@ async function boot(): Promise<void> {
         }
       }
       const viewport = renderer.viewport
-      vfx.update(view.dt)
-      renderSystem.sync(game.view, view.frame.elapsed)
       input.pointer.setViewport(viewport)
-      surface.render(viewport.cameraX, viewport.cameraY, viewport.zoom)
+      if (view.frame.render) {
+        vfx.update(view.dt)
+        renderSystem.sync(game.view, view.frame.elapsed)
+        surface.render(viewport.cameraX, viewport.cameraY, viewport.zoom)
+      }
     },
   })
   exposeBrowserDebug('__luneGame', { game, vfx, renderer, input, save, load })

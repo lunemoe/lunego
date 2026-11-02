@@ -1,3 +1,5 @@
+import { sqrt } from '@lunego/core/math'
+
 export interface Point {
   readonly x: number
   readonly y: number
@@ -110,7 +112,7 @@ export function checkCast(
 }
 
 export function normalize(point: Point): Point {
-  const length = Math.sqrt(point.x * point.x + point.y * point.y)
+  const length = sqrt(point.x * point.x + point.y * point.y)
   if (length === 0) {
     return { x: 1, y: 0 }
   }
@@ -137,7 +139,7 @@ export function targetsInCone<T extends TargetCandidate>(
       if (entry.distanceSq === 0) {
         return true
       }
-      return (entry.dx * facing.x + entry.dy * facing.y) / Math.sqrt(entry.distanceSq) >= minDot
+      return (entry.dx * facing.x + entry.dy * facing.y) / sqrt(entry.distanceSq) >= minDot
     })
     .sort(
       (left, right) =>

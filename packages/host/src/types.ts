@@ -35,6 +35,7 @@ export interface GameFrame {
   readonly tick: number
   readonly dt: number
   readonly elapsed: number
+  /** False during fastForward; render adapters must not play effects. */
   readonly render: boolean
   readonly events: readonly FrameEvent[]
   readonly cues: readonly CueInstance[]

@@ -55,6 +55,7 @@ describe('lunego cli', () => {
     const created = await invoke(['new', 'game', 'demo'], root)
     expect(created.code).toBe(0)
     const game = join(root, 'games', 'demo')
+    expect(await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8')).toContain('.lunego/packages/*')
     const packageJson = await readFile(join(game, 'package.json'), 'utf8')
     expect(packageJson).toContain('@lunego/game-demo')
     expect(packageJson).toContain('"lunego": "workspace:*"')
@@ -67,16 +68,14 @@ describe('lunego cli', () => {
     const checked = await invoke(['check'], game)
     expect(checked.code).toBe(0)
     expect(checked.stdout).toContain('check passed')
-    const bin = join(game, 'node_modules', '.bin')
-    await mkdir(bin, { recursive: true })
-    await writeFile(
-      join(bin, 'lunego'),
-      `#!/bin/sh\nexec "${process.execPath}" "${cli}" "$@"\n`,
-      { mode: 0o755 },
-    )
-    const pnpmCheck = await run('pnpm', ['check'], { cwd: game })
+    const installed = await run('pnpm', ['install', '--ignore-scripts'], {
+      cwd: root,
+      timeout: 180_000,
+    })
+    expect(installed.stdout).toContain('Done')
+    const pnpmCheck = await run('pnpm', ['check'], { cwd: game, timeout: 180_000 })
     expect(pnpmCheck.stdout).toContain('check passed')
-  })
+  }, 60_000)
 
   it('resolves templates from the package root in a node_modules layout', async () => {
     const root = await tempDir()
@@ -185,12 +184,40 @@ describe('lunego cli', () => {
       "export const badAppRandom = Math.random()\n",
       'utf8',
     )
+    await writeFile(
+      join(game, 'src/bad.ts'),
+      "export const badSrcRandom = Math.random()\n",
+      'utf8',
+    )
+    await writeFile(
+      join(game, 'src/world.ts'),
+      "export const badWorldRandom = Math.random()\n",
+      'utf8',
+    )
+    await mkdir(join(game, 'src/app'), { recursive: true })
+    await writeFile(
+      join(game, 'src/app/bad.ts'),
+      "export const badSrcAppRandom = Math.random()\n",
+      'utf8',
+    )
+    await mkdir(join(game, 'src/debug'), { recursive: true })
+    await writeFile(
+      join(game, 'src/debug/bad.ts'),
+      "// @lunego/debug-entry\ndocument.title\nwindow.setTimeout(() => {}, 0)\nFunction('return 1')\nglobalThis.eval('1')\n",
+      'utf8',
+    )
+    await mkdir(join(game, 'src/view'), { recursive: true })
+    await writeFile(
+      join(game, 'src/view/cast.ts'),
+      "export const cast = rectSpec(8 as number, 8 as number, 0xffffff as number)\n",
+      'utf8',
+    )
     const result = await invoke(['check'], game)
     expect(result.code).toBe(1)
     expect(result.stderr).toContain('LG016')
     expect(result.stderr).toContain('LG002')
     expect(result.stderr).toContain('LG001')
-    expect(result.stderr.match(/LG002/g)?.length ?? 0).toBeGreaterThanOrEqual(5)
+    expect(result.stderr.match(/LG002/g)?.length ?? 0).toBeGreaterThanOrEqual(8)
   })
 
   it('detects stale generated files and schema lock drift', async () => {

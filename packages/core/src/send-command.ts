@@ -48,6 +48,7 @@ export function sendCommand(
   const envelope: CommandEnvelope = deepFreeze({
     tick: targetTick,
     seq: state.commands.nextSequence(),
+    sentAt: state.tick,
     source,
     type: def.type,
     payload: coerced,

@@ -9,6 +9,7 @@ export type {
   ViewLoopVisibility,
 } from './view-loop.js'
 export {
+  BrowserSaveError,
   bindBrowserKeys,
   createBrowserSaveStore,
   exposeBrowserDebug,

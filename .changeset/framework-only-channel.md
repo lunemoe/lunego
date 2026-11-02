@@ -26,3 +26,13 @@ primitives; audio adds MusicController; RenderSystem supports per-binding/layer
 bounds; gen emits typed asset IDs/display metadata/AssetPack hash from
 assets/manifest.json; ContentRegistry includes asset pack identity in its
 fingerprint; ViewClock uses simulation time.
+
+Add same-tick state transition chaining with a 32-step guard and implicit
+self-state writes in hooks; fix IEEE edge cases for atan2/pow, large trig
+argument reduction and subnormal exp; include pending commands/nextSeq and
+command send time in hashes/replays; pass ContentRegistry to replay; isolate
+render binding failures; reject pending commands on Game destroy/load; harden
+browser saves with backup, export/import and persistence requests. UI now
+documents behavior/a11y ownership, exposes theme tokens for all neutral
+colors/spacing and removes hardcoded game copy; `lunego new` creates an
+external workspace mirror so empty-directory installs and checks are real.

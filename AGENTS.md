@@ -28,7 +28,7 @@ packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘/
 packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配；`renderer.viewport` 是相机/坐标单一来源，`renderSystem.anchorOf/boundsOf` 支持按 binding/layer 取锚点
 packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
 packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁、MusicController 循环音乐
-packages/ui/         Solid + solid-js/html DOM UI：桥、主题、组件、受限 Solid 原语、EffectOverlay
+packages/ui/         Solid + solid-js/html DOM UI：桥、主题 token、组件、受限 Solid 原语、EffectOverlay
 kits/kit-space/      静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希
 kits/kit-stats/      属性基础值、加法/乘法修饰器、词缀聚合
 kits/kit-ability/    能力定义、资源/冷却、施法校验、泛型目标选择
@@ -49,6 +49,7 @@ templates/game/      可运行俯视角模板：移动、Y 排序、相机、存
 4. 形状一次到位，功能按需生长；不写临时实现、TODO、`any`、`@ts-ignore`、`as unknown as`。
 5. 框架代码不出现玩法名词；游戏代码只通过 feature 的 `schema.ts` 跨 feature 通信。
 6. 规则由工具强制：tsconfig、ESLint（含 LG016 游戏分区）、dependency-cruiser、注册期校验、开发期守卫、测试、本地 `pnpm check`。本项目不使用 GitHub Actions/CI。
+7. UI 框架规定行为与可访问性，不规定美学：颜色/间距/字体走 CSS 变量、props 或 `UiTheme`；游戏提供调色板、字体、九宫格、图标和文案 key，框架不内置美术/玩法名词/强制像素风。
 
 ## 常用命令
 

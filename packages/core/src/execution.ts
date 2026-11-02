@@ -100,6 +100,7 @@ export function executeStateHook(
   catalog: WorldCatalog,
   hook: StateHookDef,
   transition: StateTransition,
+  owner: FlowStateDef,
 ): void {
   const binding = catalog.stateHookBindings.get(hook)
   if (binding === undefined) {
@@ -111,6 +112,7 @@ export function executeStateHook(
     `state ${String(transition.to)}`,
     binding.declarations,
   )
+  context.grantState(owner)
   context.activate()
   try {
     hook.run(context, transition)
@@ -129,17 +131,15 @@ export interface PendingStateTransition {
 export function applyStateTransitions(
   world: ContextHost,
   catalog: WorldCatalog,
-  pending: readonly PendingStateTransition[],
+  pending: PendingStateTransition[],
 ): void {
-  let remaining = [...pending]
   let processed = 0
-  while (remaining.length > 0) {
+  while (pending.length > 0) {
     processed += 1
     if (processed > 32) {
       throw new LuneGoError('state_transition_loop', 'state transitions did not settle within 32 steps')
     }
-    const next = remaining
-    remaining = []
+    const next = pending.splice(0)
     for (const transition of next) {
       const runtime = flowStateRuntime(catalog, transition.def)
       const from = runtime.current
@@ -152,7 +152,7 @@ export function applyStateTransitions(
           from,
           to: transition.to,
           tick: world.tick,
-        })
+        }, transition.def)
       }
       runtime.current = transition.to
       const enter = transition.def.options.onEnter[transition.to]
@@ -161,7 +161,7 @@ export function applyStateTransitions(
           from,
           to: transition.to,
           tick: world.tick,
-        })
+        }, transition.def)
       }
     }
   }

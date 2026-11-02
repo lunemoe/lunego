@@ -1,9 +1,66 @@
 import { cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { extname, join } from 'node:path'
+import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { generate } from './gen.js'
 import { pathExists } from './project.js'
+
+const frameworkPackages = ['core', 'host', 'input', 'render-pixi', 'ui', 'vfx', 'audio', 'cli', 'eslint-plugin'] as const
+
+function frameworkPackagesRoot(moduleUrl: string): string {
+  return fileURLToPath(new URL('../../', moduleUrl))
+}
+
+async function findWorkspaceRoot(start: string): Promise<string | null> {
+  let current = resolve(start)
+  while (true) {
+    if (await pathExists(join(current, 'pnpm-workspace.yaml'))) {
+      return current
+    }
+    const parent = dirname(current)
+    if (parent === current) {
+      return null
+    }
+    current = parent
+  }
+}
+
+async function workspaceHasFramework(root: string): Promise<boolean> {
+  return (
+    (await pathExists(join(root, 'packages/core/package.json'))) ||
+    (await pathExists(join(root, 'lunego/packages/core/package.json'))) ||
+    (await pathExists(join(root, 'node_modules/@lunego/core/package.json')))
+  )
+}
+
+async function copyFramework(source: string, target: string): Promise<void> {
+  await cp(source, target, {
+    recursive: true,
+    filter: (path) => {
+      const name = path.slice(path.lastIndexOf('/') + 1)
+      return name !== 'node_modules' && name !== '.vite' && name !== '.vite-temp'
+    },
+  })
+}
+
+async function prepareExternalWorkspace(cwd: string): Promise<void> {
+  const packagesRoot = frameworkPackagesRoot(import.meta.url)
+  const mirrorRoot = join(cwd, '.lunego', 'packages')
+  if (!(await pathExists(mirrorRoot))) {
+    await mkdir(mirrorRoot, { recursive: true })
+    for (const name of frameworkPackages) {
+      await copyFramework(join(packagesRoot, name), join(mirrorRoot, name))
+    }
+  }
+  const workspacePath = join(cwd, 'pnpm-workspace.yaml')
+  if (!(await pathExists(workspacePath))) {
+    await writeFile(
+      workspacePath,
+      "packages:\n  - 'games/*'\n  - '.lunego/packages/*'\n",
+      'utf8',
+    )
+  }
+}
 
 export function templatesRoot(moduleUrl: string = import.meta.url): string {
   const packageRoot = fileURLToPath(new URL('..', moduleUrl))
@@ -70,6 +127,10 @@ export async function newGame(cwd: string, name: string): Promise<NewGameResult>
     throw new Error(`game template not found at ${join(root, 'game')}`)
   }
   await copyTemplate(join(root, 'game'), target, name)
+  const workspaceRoot = await findWorkspaceRoot(cwd)
+  if (workspaceRoot === null || !(await workspaceHasFramework(workspaceRoot))) {
+    await prepareExternalWorkspace(cwd)
+  }
   const generated = await generate(target, false)
   if (generated.errors.length > 0) {
     throw new Error(generated.errors.join('\n'))
