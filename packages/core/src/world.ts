@@ -55,6 +55,7 @@ import {
   type WorldPersistenceSource,
 } from './world-persistence.js'
 import { flowStateRuntime } from './flow-state-registry.js'
+import { isPrefab, prefabComponents, type Prefab } from './prefab.js'
 import { createWorldContextHost } from './world-context-host.js'
 import { assertNotStepping } from './world-internals.js'
 import { worldFromSnapshot, worldFromSnapshots } from './world-restore.js'
@@ -216,12 +217,13 @@ export class World {
     }
   }
 
-  spawn(components: Readonly<Record<string, unknown>>): Entity {
+  spawn(source: Prefab | Readonly<Record<string, unknown>>, overrides?: Readonly<Record<string, unknown>>): Entity {
     if (this.stepping) {
       throw new LuneGoError('nested_spawn', 'world.spawn() cannot run inside a tick', {
         rule: 'LG004',
       })
     }
+    const components = isPrefab(source) ? prefabComponents(source, overrides) : source
     const entity = this.structural.spawn(components, () => undefined)
     this.structural.flush(false)
     return entity

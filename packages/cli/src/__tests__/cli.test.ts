@@ -68,6 +68,17 @@ describe('lunego cli', () => {
     const checked = await invoke(['check'], game)
     expect(checked.code).toBe(0)
     expect(checked.stdout).toContain('check passed')
+    const idsPath = join(game, 'features/_generated/ids.ts')
+    const ids = await readFile(idsPath, 'utf8')
+    expect(ids).toContain('ContentIds')
+    expect(ids).toContain('"DemoText"')
+    expect(ids).toContain('ContentId<"DemoText">')
+    const localeRun = await run(process.execPath, [cli, 'gen', '--cwd', game], {
+      cwd: game,
+      env: { ...process.env, LC_ALL: 'tr_TR.UTF-8', LANG: 'tr_TR.UTF-8' },
+    })
+    expect(localeRun.stdout).toContain('generated')
+    expect(await readFile(idsPath, 'utf8')).toBe(ids)
     const installed = await run('pnpm', ['install', '--ignore-scripts'], {
       cwd: root,
       timeout: 180_000,
@@ -130,6 +141,42 @@ describe('lunego cli', () => {
     const broken = await invoke(['check'], game)
     expect(broken.code).toBe(1)
     expect(broken.stderr).toContain('LG009')
+  })
+
+  it('scans content packs and rejects missing t.ref targets', async () => {
+    const root = await tempDir()
+    expect((await invoke(['new', 'game', 'refs'], root)).code).toBe(0)
+    const game = join(root, 'games', 'refs')
+    await mkdir(join(game, 'features/motion/content'), { recursive: true })
+    await writeFile(
+      join(game, 'features/motion/content/refs.ts'),
+      "import { defineContent, defineContentType, t } from '@lunego/core'\n" +
+      "export const Item = defineContentType('Item', { name: t.str })\n" +
+      "export const Monster = defineContentType('Monster', { drop: t.ref(Item) })\n" +
+      "export const Items = defineContent(Item, { sword: { name: 'sword' } })\n" +
+      "export const Monsters = defineContent(Monster, { slime: { drop: 'missing' } })\n",
+      'utf8',
+    )
+    const result = await invoke(['check'], game)
+    expect(result.code).toBe(1)
+    expect(result.stderr).toContain('LG009')
+    expect(result.stderr).toContain('Monster/slime.drop')
+    expect(result.stderr).toContain('missing Item/missing')
+  })
+
+  it('rejects kit imports from game/feature code', async () => {
+    const root = await tempDir()
+    expect((await invoke(['new', 'game', 'kitboundary'], root)).code).toBe(0)
+    const game = join(root, 'games', 'kitboundary')
+    await mkdir(join(game, 'kits/bad/src'), { recursive: true })
+    await writeFile(
+      join(game, 'kits/bad/src/index.ts'),
+      "import { MotionFeature } from '../../../features/motion/logic/index.js'\nexport const bad = MotionFeature\n",
+      'utf8',
+    )
+    const result = await invoke(['check'], game)
+    expect(result.code).toBe(1)
+    expect(result.stderr).toContain('LG006/LG007')
   })
 
   it('rejects game code importing the core internal capability', async () => {

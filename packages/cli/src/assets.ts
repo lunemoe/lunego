@@ -121,7 +121,7 @@ function metadata(entry: AssetEntry): Record<string, unknown> {
 function assetSource(pack: string, version: string | number, hash: string, entries: readonly AssetEntry[]): string {
   const ids = entries.map((entry) => entry.id).sort()
   const assets: Record<string, unknown> = {}
-  for (const entry of [...entries].sort((left, right) => left.id.localeCompare(right.id))) {
+  for (const entry of [...entries].sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))) {
     assets[entry.id] = metadata(entry)
   }
   return [
@@ -213,7 +213,7 @@ export async function generateAssets(cwd: string): Promise<AssetGeneration | nul
 
   const hash = createHash('sha256')
   hash.update(JSON.stringify(manifest))
-  for (const entry of [...manifest.assets].sort((left, right) => left.id.localeCompare(right.id))) {
+  for (const entry of [...manifest.assets].sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))) {
     if (typeof entry.file !== 'string') {
       continue
     }

@@ -19,6 +19,8 @@ export {
   without,
 } from './definitions.js'
 export { defineFeature } from './features.js'
+export { definePrefab, isPrefab, prefabComponents } from './prefab.js'
+export type { Prefab, PrefabComponents } from './prefab.js'
 export { defineState } from './state-definitions.js'
 export type {
   BaseContext,
@@ -106,8 +108,8 @@ export type {
   Vec2Type,
 } from './schema.js'
 
-export { ContentRegistry, defineContentType, parseContentId } from './content.js'
-export type { AssetPackMetadata } from './content.js'
+export { ContentRegistry, defineContent, defineContentType, parseContentId } from './content.js'
+export type { AssetPackMetadata, ContentPack } from './content.js'
 export { createModelProxy, diffModel } from './model.js'
 export type { ModelPatch } from './model.js'
 export type { RngStateWords, RngStream } from './rng.js'

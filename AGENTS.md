@@ -47,7 +47,7 @@ templates/game/      可运行俯视角模板：移动、Y 排序、相机、存
 2. 唯一写入路径：System / Handler；外部只发 Command。
 3. 结构性变更在 flush 生效；查询按实体索引升序。
 4. 形状一次到位，功能按需生长；不写临时实现、TODO、`any`、`@ts-ignore`、`as unknown as`。
-5. 框架代码不出现玩法名词；游戏代码只通过 feature 的 `schema.ts` 跨 feature 通信。
+5. 框架运行时（core/host/testkit 等）不出现 AI/任务/战斗/物品等具体领域语义；`kits/*` 只允许通用机制名，不得含具体内容/数值或 import 游戏/content；游戏代码只通过 feature 的 `schema.ts` 跨 feature 通信。
 6. 规则由工具强制：tsconfig、ESLint（含 LG016 游戏分区）、dependency-cruiser、注册期校验、开发期守卫、测试、本地 `pnpm check`。本项目不使用 GitHub Actions/CI。
 7. UI 框架规定行为与可访问性，不规定美学：颜色/间距/字体走 CSS 变量、props 或 `UiTheme`；游戏提供调色板、字体、九宫格、图标和文案 key，框架不内置美术/玩法名词/强制像素风。
 

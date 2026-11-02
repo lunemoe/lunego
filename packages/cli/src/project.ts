@@ -29,7 +29,7 @@ export async function walkFiles(root: string, skip: readonly string[] = []): Pro
     } catch {
       return
     }
-    for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    for (const entry of entries.sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))) {
       const full = join(dir, entry.name)
       const relativePath = toPosix(relative(root, full))
       if (skip.some((part) => relativePath === part || relativePath.startsWith(`${part}/`))) {
@@ -51,7 +51,7 @@ export async function featureDirs(cwd: string): Promise<string[]> {
   try {
     const entries = await readdir(featuresRoot, { withFileTypes: true })
     const dirs: string[] = []
-    for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    for (const entry of entries.sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))) {
       if (!entry.isDirectory()) {
         continue
       }

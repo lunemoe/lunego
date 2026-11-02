@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ContentRegistry,
   coerceValue,
+  defineContent,
   defineContentType,
   parseContentId,
   t,
@@ -27,6 +28,34 @@ describe('content registry', () => {
     restored.registerType(Monster)
     restored.load(JSON.parse(JSON.stringify(json)))
     expect(restored.get(Monster, slime)).toEqual({ hp: 10, tags: ['ooze'] })
+  })
+
+  it('declares packs, exposes typed ids and validates references', () => {
+    const Item = defineContentType('prefabItem', { name: t.str })
+    const Monster = defineContentType('prefabMonster', {
+      drop: t.ref(Item),
+      tags: t.array(t.ref(Item)),
+    })
+    const items = defineContent(Item, {
+      sword: { name: 'sword' },
+      shield: { name: 'shield' },
+    })
+    const monsters = defineContent(Monster, {
+      slime: { drop: items.ids.sword, tags: [items.ids.shield] },
+    })
+    const registry = new ContentRegistry()
+    registry.addPack(items)
+    registry.addPack(monsters)
+    expect(monsters.ids.slime).toBe('slime')
+    expect(registry.get(Monster, monsters.ids.slime).drop).toBe(items.ids.sword)
+
+    const broken = new ContentRegistry()
+    broken.registerType(Item)
+    broken.registerType(Monster)
+    const bad = defineContent(Monster, {
+      slime: { drop: 'missing' as typeof items.ids.sword, tags: [] },
+    })
+    expect(() => broken.addPack(bad)).toThrow(/missing prefabItem\/missing/)
   })
 
   it('includes asset pack metadata in the fingerprint', () => {

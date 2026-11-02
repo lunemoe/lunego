@@ -1,3 +1,4 @@
+import { ContentRegistry } from '@lunego/core'
 import type { Game } from '@lunego/host'
 import {
   bindBrowserKeys,
@@ -45,6 +46,8 @@ import {
   Start,
 } from '../features/motion/schema.js'
 import { MotionFeature } from '../features/motion/logic/index.js'
+import { DemoContent, DemoText } from '../features/motion/content/demo.js'
+import { ContentIds } from '../features/_generated/ids.js'
 
 const SAVE_KEY = '__GAME_NAME__-save'
 
@@ -62,6 +65,9 @@ declare global {
 }
 
 async function boot(): Promise<void> {
+  const content = new ContentRegistry()
+  content.addPack(DemoContent)
+  const demoTitle = content.get(DemoText, ContentIds.DemoText.title).text
   const vfx = new VfxSystem({ width: 480, height: 270, maxEffects: 64 })
   const cueMap = defineCueMap({
     [MoveDust.name]: (cue) => {
@@ -79,8 +85,9 @@ async function boot(): Promise<void> {
   })
   const game = createGame({
     features: [MotionFeature],
+    content,
     dt: 1 / 60,
-    schemaVersion: 4,
+    schemaVersion: 5,
     timeMode: 'realtime',
     onFrame: (frame) => {
       if (frame.render) {
@@ -121,7 +128,7 @@ async function boot(): Promise<void> {
         reducedMotion,
         children: [
           Panel({
-            title: 'Status',
+            title: demoTitle,
             children: [
               Bar({
                 kind: 'hp',

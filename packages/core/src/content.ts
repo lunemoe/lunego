@@ -4,6 +4,8 @@ import { coerceValue } from './schema-coerce.js'
 import { StateHasher, writeValue } from './hash.js'
 import {
   t,
+  type AnyTypeDef,
+  type ConcreteTypeDef,
   type ContentId,
   type ContentTypeDef,
   type SchemaShape,
@@ -28,6 +30,32 @@ export function parseContentId<Name extends string>(
     throw new LuneGoError('content_invalid', `${type.name} id must be a non-empty string`)
   }
   return id as ContentId<Name>
+}
+
+export interface ContentPack<Name extends string = string, Value = unknown> {
+  readonly type: ContentTypeDef<Name, Value>
+  readonly values: Readonly<Record<string, Value>>
+  readonly ids: Readonly<Record<string, ContentId<Name>>>
+}
+
+/** Declares one content type's values; typed IDs are exposed at runtime and by `lunego gen`. */
+export function defineContent<
+  const Name extends string,
+  Value,
+  const Values extends Record<string, Value>,
+>(
+  type: ContentTypeDef<Name, Value>,
+  values: Values,
+): ContentPack<Name, Value> {
+  const ids: Record<string, ContentId<Name>> = {}
+  for (const id of Object.keys(values)) {
+    ids[id] = parseContentId(type, id)
+  }
+  return {
+    type,
+    values: values as Readonly<Record<string, Value>>,
+    ids,
+  }
 }
 
 /**
@@ -145,6 +173,28 @@ export class ContentRegistry {
     return hasher.hex()
   }
 
+  /** Registers a declared pack, then verifies all `t.ref` targets. */
+  addPack<Name extends string, Value>(pack: ContentPack<Name, Value>): void {
+    this.registerType(pack.type)
+    for (const id of Object.keys(pack.values)) {
+      this.add(pack.type, parseContentId(pack.type, id), pack.values[id])
+    }
+    this.validateReferences()
+  }
+
+  /** Throws when any `t.ref` points at a missing content id (LG009). */
+  validateReferences(): void {
+    for (const [typeName, bucket] of this.entries) {
+      const type = this.types.get(typeName)
+      if (type === undefined) {
+        continue
+      }
+      for (const [id, value] of bucket) {
+        validateValue(this, t.struct(type.schema), value, `${typeName}/${id}`)
+      }
+    }
+  }
+
   ids<Name extends string>(type: ContentTypeDef<Name>): readonly string[] {
     return [...(this.entries.get(type.name)?.keys() ?? [])]
   }
@@ -179,9 +229,55 @@ export class ContentRegistry {
         throw new LuneGoError('content_invalid', `content type ${typeName} has no bucket`)
       }
       for (const id of Object.keys(bucket)) {
+        if (target.has(id)) {
+          throw new LuneGoError('content_invalid', `duplicate content id ${typeName}/${id}`)
+        }
         const coerced = coerceValue(t.struct(type.schema), bucket[id], `${typeName}/${id}`)
         target.set(id, coerced)
       }
     }
+    this.validateReferences()
+  }
+}
+
+function validateValue(
+  registry: ContentRegistry,
+  def: AnyTypeDef,
+  value: unknown,
+  path: string,
+): void {
+  if (value === undefined) {
+    return
+  }
+  const concrete = def as ConcreteTypeDef
+  switch (concrete.kind) {
+    case 'ref':
+      if (!registry.has(concrete.contentType, value as ContentId)) {
+        throw new LuneGoError(
+          'content_missing',
+          `${path} references missing ${concrete.contentType.name}/${String(value)}`,
+          { rule: 'LG009' },
+        )
+      }
+      return
+    case 'array':
+      if (Array.isArray(value)) {
+        for (let index = 0; index < value.length; index += 1) {
+          validateValue(registry, concrete.element, value[index], `${path}[${index}]`)
+        }
+      }
+      return
+    case 'struct':
+      if (isRecord(value)) {
+        for (const field of Object.keys(concrete.shape)) {
+          validateValue(registry, concrete.shape[field], value[field], `${path}.${field}`)
+        }
+      }
+      return
+    case 'optional':
+      validateValue(registry, concrete.inner, value, path)
+      return
+    default:
+      return
   }
 }

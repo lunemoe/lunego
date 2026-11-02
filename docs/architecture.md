@@ -386,8 +386,8 @@ Kit 与游戏 feature 形状相同，只是位于框架的 `kits/` 目录、不�
   ```
 
   类型集合按需扩充，但每加一种类型，都必须同时支持上述所有产出。
-- **内容** **[已定]**：用 TypeScript 编写，例如 `defineContentType('monster', {...})`。构建期做三件事：校验 schema、校验所有引用都存在、编译成 JSON 内容包。之后由 `lunego gen` 生成类型化 ID（如 `Monsters.slime`），禁止使用魔法字符串。
-- **Prefab**：实体模板，是一组组件的初始数据，用法为 `ctx.spawn(Prefabs.slime, overrides)`。
+- **内容** **[已定]**：用 TypeScript 编写：`defineContentType` 定义 schema，`defineContent(Type, { id: value })` 声明值；`ContentRegistry.addPack(pack)` 校验并注册，`validateReferences()` 递归检查所有 `t.ref` 目标存在。`lunego gen` 扫描真实 `defineContent` 声明，生成带 `ContentId<Type>` 的 `ContentIds` 分组（排序使用代码点比较，不使用 `localeCompare`），`lunego check` 对缺失/重复/未知引用报 LG009。禁止使用魔法字符串。
+- **Prefab**：`definePrefab(name, { Component: {...}, Tag: true })` 声明实体模板；`ctx.spawn(Prefab, overrides)` / `World.spawn(Prefab, overrides)` 做组件级浅合并并走同一套 schema 校验，产出与等价普通 spawn 相同的 hash。Prefab 可放入 content value。
 - **资源**：原始文件放在 `assets/`（`.aseprite`、`.ldtk`、音频、字体）。构建管线用 Aseprite CLI 导出图集和动画，并把 LDtk 关卡导入为内容。`assets/manifest.json` 记录 pack/version/assets（文件、frameWidth/Height、columns/rows/frames、fps、anchor、animations）；`lunego gen` 生成 `features/_generated/assets.ts` 的类型化 ID/显示元数据/`AssetPack` hash，`lunego check` 校验文件存在、尺寸、帧范围、动画列和版本。
 - **资源拆分**：对逻辑有意义的数据（动画帧时长、攻击判定帧、瓦片碰撞）进入内容包，纯视觉数据只给表现层。逻辑层永远不加载图片。
 
@@ -503,7 +503,7 @@ export const combatCues = defineCueMap({
 | LG005 | 写权限归属（`writers`） | 注册期校验 |
 | LG006 | feature 只能 import 其他 feature 的 `schema.ts` | dependency-cruiser |
 | LG007 | 逻辑与表现互不 import 实现 | tsconfig + dependency-cruiser |
-| LG008 | 框架不 import 游戏代码，框架里不出现玩法名词 | dependency-cruiser + 审查 |
+| LG008 | 框架/core/host/testkit 不出现具体玩法语义；kit 只含通用机制，不 import 游戏/content | dependency-cruiser + `lunego check` + 审查 |
 | LG009 | 不用魔法字符串引用内容或资源 | 类型化 ID + lint |
 | LG010 | 持久化 schema 变更必须升版本并提供迁移 | `schema.lock.json` |
 | LG011 | 表现层不实现游戏规则 | 审查（**无法完全由机器强制**） |
@@ -635,17 +635,17 @@ lunego-workspace/            # 私有工作区
 
 ## 13. 远期方向：已留位置，需要时再做
 
-| 方向                 | 现在已经遵守的约束                                                          | 什么时候做            | 要点                                                                                      |
-| ------------------ | ------------------------------------------------------------------ | ---------------- | --------------------------------------------------------------------------------------- |
+| 方向                 | 现在已经遵守的约束                                                          | 什么时候做            | 要点                                                                                       |
+| ------------------ | ------------------------------------------------------------------ | ---------------- | ---------------------------------------------------------------------------------------- |
 | 联机（客户端联机、Steam 联机） | 命令带 `source`；逻辑确定且数学函数走软件实现；World 之外没有隐藏状态；世界存档与玩家档案分离；Cue 带确定性 ID | 核心玩法稳定后，决定做合作模式时 | 推荐锁步同步，加本地角色的表现预测；主机掉线时任意玩家可以接任；网页用 WebRTC，Steam 用 Steam Networking；届时新增 `net` 包和三引擎本地校验 |
-| Worker 运行          | Host 协议边界                                                          | 主线程性能不够时         | 改配置即可                                                                                   |
-| 桌面与 Steam          | 平台能力只在表现侧使用                                                        | 准备上架时            | 推荐 Electron：各平台都是同一个 Chromium，Steam Deck 上表现稳定，steamworks.js 成熟；新增平台抽象（成就、云存档、大厅）       |
-| Devtools           | —                                                                  | M1 之后按需          | 实体检查器、命令日志、时间回溯、特效调参                                                                    |
-| AI 桥（MCP）          | devtools 协议用可序列化的请求与响应                                             | 有了 devtools 之后   | 让 AI 直接连上运行中的游戏：查状态、发命令、截图                                                              |
-| 本地化                | 逻辑层只产出本地化键                                                         | 做外文版时            | 字符串表、动态像素字体图集                                                                           |
-| 无障碍                | 反馈全部走 Cue 映射层                                                      | 发布前              | 关闭震屏和闪烁、色盲模式、UI 缩放                                                                      |
-| 开源社区               | 架构规则就是贡献规范                                                         | 框架发布 0.1 时       | 文档站（含 llms.txt）、create-lunego、npm 发布、CONTRIBUTING                                       |
-| 回滚 / 权威同步          | 同联机                                                                | 有游戏需要时           | 回滚适合格斗类，权威同步适合需要防作弊的游戏                                                                  |
+| Worker 运行          | Host 协议边界                                                          | 主线程性能不够时         | 改配置即可                                                                                    |
+| 桌面与 Steam          | 平台能力只在表现侧使用                                                        | 准备上架时            | 推荐 Electron：各平台都是同一个 Chromium，Steam Deck 上表现稳定，steamworks.js 成熟；新增平台抽象（成就、云存档、大厅）        |
+| Devtools           | —                                                                  | M1 之后按需          | 实体检查器、命令日志、时间回溯、特效调参                                                                     |
+| AI 桥（MCP）          | devtools 协议用可序列化的请求与响应                                             | 有了 devtools 之后   | 让 AI 直接连上运行中的游戏：查状态、发命令、截图                                                               |
+| 本地化                | 逻辑层只产出本地化键                                                         | 做外文版时            | 字符串表、动态像素字体图集                                                                            |
+| 无障碍                | 反馈全部走 Cue 映射层                                                      | 发布前              | 关闭震屏和闪烁、色盲模式、UI 缩放                                                                       |
+| 开源社区               | 架构规则就是贡献规范                                                         | 框架发布 0.1 时       | 文档站（含 llms.txt）、create-lunego、npm 发布、CONTRIBUTING                                        |
+| 回滚 / 权威同步          | 同联机                                                                | 有游戏需要时           | 回滚适合格斗类，权威同步适合需要防作弊的游戏                                                                   |
 
 ---
 

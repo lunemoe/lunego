@@ -1,3 +1,4 @@
+import { isPrefab, prefabComponents, type Prefab } from './prefab.js'
 import type {
   ComponentDef,
   CueDef,
@@ -197,9 +198,10 @@ export class RunContext
     return this.world.runQuery(query, args)
   }
 
-  spawn(components: Readonly<Record<string, unknown>>): Entity {
+  spawn(source: Prefab | Readonly<Record<string, unknown>>, overrides?: Readonly<Record<string, unknown>>): Entity {
     this.ensureActive()
     this.assertStructuralRole()
+    const components = isPrefab(source) ? prefabComponents(source, overrides) : source
     return this.world.spawnFromContext(components, (name) => {
       this.assertWritable(name)
     })

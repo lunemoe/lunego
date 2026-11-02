@@ -11,6 +11,7 @@ import type {
   TagDef,
 } from './definitions.js'
 import type { RngStream } from './rng.js'
+import type { Prefab } from './prefab.js'
 import type {
   ComponentView,
   ContentId,
@@ -78,6 +79,7 @@ export interface BaseContext {
 }
 
 export interface StructuralContext {
+  spawn(prefab: Prefab, overrides?: Readonly<Record<string, unknown>>): Entity
   spawn(components: Readonly<Record<string, unknown>>): Entity
   add<S extends SchemaShape>(
     entity: Entity,

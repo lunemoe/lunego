@@ -42,3 +42,9 @@ trap/restore, ToastQueue/ToastHost, LoadingOverlay, portal/flip Tooltip,
 ActionContext and input release/multi-pointer handling, profile-scoped
 settings/keybinds with KeybindCapture and browser settings store, plus
 UI scale/reduced-motion and reduced shake/flash.
+
+Batch 0 content foundations: defineContent/ContentPack and addPack reference
+validation, AST-based content ID generation with typed ContentIds, deterministic
+code-point sorting, static t.ref existence checks in lunego check, prefab
+spawn/overrides with hash parity, and the LG008 core/host/testkit vs kit
+domain boundary. Template adds a real DemoText content pack and generated IDs.

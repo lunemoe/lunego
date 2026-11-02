@@ -6,8 +6,9 @@ import { ESLint } from 'eslint'
 import { gameConfig } from '@lunego/eslint-plugin'
 import { readFile } from 'node:fs/promises'
 import { cruise, type IForbiddenRuleType } from 'dependency-cruiser'
-import { featureDirs, pathExists, readSchemaVersion, walkFiles } from './project.js'
+import { featureDirs, pathExists, readSchemaVersion, toPosix, walkFiles } from './project.js'
 import { generate } from './gen.js'
+import { scanContent, validateContentReferenceErrors } from './content-scan.js'
 
 export interface CheckResult {
   readonly ok: boolean
@@ -52,6 +53,18 @@ const forbidden: IForbiddenRuleType[] = [
     severity: 'error',
     from: { path: '^(src|features|games)/' },
     to: { path: '(?:^|/)@lunego/core/(?:dist/)?internal' },
+  },
+  {
+    name: 'kits-no-game-code',
+    severity: 'error',
+    from: { path: '^kits/' },
+    to: { path: '^(features|games|content)/' },
+  },
+  {
+    name: 'kits-direction',
+    severity: 'error',
+    from: { path: '^kits/' },
+    to: { path: '^packages/', pathNot: '^packages/core/' },
   },
   {
     name: 'no-circular',
@@ -168,7 +181,27 @@ async function checkTypeScript(cwd: string, messages: string[]): Promise<void> {
   }
 }
 
+async function checkContentReferences(cwd: string, messages: string[]): Promise<void> {
+  try {
+    const scanned = await scanContent(cwd)
+    messages.push(...validateContentReferenceErrors(scanned))
+  } catch (error) {
+    messages.push(`LG009 content scan failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 async function checkInternalImports(cwd: string, messages: string[]): Promise<void> {
+  if (await pathExists(join(cwd, 'kits'))) {
+    for (const file of await walkFiles(join(cwd, 'kits'))) {
+      if (!file.endsWith('.ts') || file.includes('__tests__') || file.endsWith('.test.ts')) {
+        continue
+      }
+      const content = await readFile(file, 'utf8')
+      if (/from\s+['"][^'"]*(?:features|games|content)\//.test(content)) {
+        messages.push(`LG006/LG007 kit ${toPosix(relative(cwd, file))} imports game/content code`)
+      }
+    }
+  }
   for (const root of ['features', 'games']) {
     if (!(await pathExists(join(cwd, root)))) {
       continue
@@ -187,7 +220,7 @@ async function checkInternalImports(cwd: string, messages: string[]): Promise<vo
 
 async function checkDirections(cwd: string, messages: string[]): Promise<void> {
   const paths: string[] = []
-  for (const candidate of ['src', 'features', 'games']) {
+  for (const candidate of ['src', 'features', 'games', 'kits']) {
     if (await pathExists(join(cwd, candidate))) {
       paths.push(candidate)
     }
@@ -228,6 +261,7 @@ export async function runCheck(cwd: string): Promise<CheckResult> {
   }
   await checkContracts(cwd, messages)
   await checkTypeScript(cwd, messages)
+  await checkContentReferences(cwd, messages)
   await checkInternalImports(cwd, messages)
   await checkEslint(cwd, messages)
   await checkDirections(cwd, messages)
