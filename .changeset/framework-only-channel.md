@@ -8,6 +8,10 @@
 "@lunego/audio": minor
 "@lunego/render-pixi": minor
 "@lunego/core": patch
+"@lunego/kit-space": minor
+"@lunego/kit-ai": minor
+"@lunego/kit-status": minor
+"@lunego/kit-combat": minor
 ---
 
 Add LG016: game/template code may only use @lunego/* and its own
@@ -48,3 +52,9 @@ validation, AST-based content ID generation with typed ContentIds, deterministic
 code-point sorting, static t.ref existence checks in lunego check, prefab
 spawn/overrides with hash parity, and the LG008 core/host/testkit vs kit
 domain boundary. Template adds a real DemoText content pack and generated IDs.
+
+ARPG mechanism kits: kit-space gains deterministic pathfinding (A* over the tile
+grid with diagonal rules), kit-ai provides threat tables and decision scoring,
+kit-status tracks stacked timed modifiers on top of kit-stats, and kit-combat
+resolves damage packets, mitigation and status application. UI adds drag/sort,
+virtual list, equipment, tree, graph, dialog, shop and minimap controls.

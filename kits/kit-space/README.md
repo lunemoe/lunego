@@ -19,3 +19,12 @@
 ## 对应 p9
 
 p9 `motion/logic/grid.ts` 的 `CollisionGridValue` 与 `collision.ts` 的 `blockedAt` / `moveOnGrid` 分别泛化为 `CollisionGrid` 与 `blockedCircle` / `moveCircleOnGrid`；玩法侧的 actor 半径、地图数据仍留在游戏。
+
+## 寻路
+
+- `gridAStar(grid, from, to, { diagonal?, maxNodes?, maxExpanded?, cornerCutting? })`：
+  - 2D tile、整数代价（直走 10/对角 14）、二叉堆。
+  - 排序 tie-break：`f → h → tile index`；预算超限返回 `null`。
+  - 默认禁止穿过两个实心对角（`cornerCutting: false`）。
+- `flowField(grid, goals, { maxNodes? })`：多目标 BFS 整数距离场，`-1` 不可达、`0` 目标；`distance/next` 按固定方向顺序返回。
+- 两者只依赖 core 之外的纯数据，不随机、不读时钟。

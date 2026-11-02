@@ -30,6 +30,19 @@ Panel({
 - `UiRoot({ uiScale, reducedMotion })`：写入 `--lg-ui-scale`/`data-reduced-motion`；`EffectOverlay` 的 shake/flash 在 reduced motion 下跳过。
 - `Panel` 九宫格由调用方传 `borderImage/borderSlice/borderWidth`；组件不引用游戏资产。
 
+## 完整游戏控件
+
+以下控件只做展示、交互与可访问性，不包含玩法规则、价格/库存计算、槽位合法性或对话条件；文案（`label`/`emptyLabel`/`buyLabel`/`nextLabel`…）、图标 URL、价格与颜色 token 全部由调用方传入。颜色/间距/字体统一使用 `--lg-*` 变量。
+
+- **拖拽**：`DragSource`/`DropTarget`/`SortableGrid`，以及 `beginDrag`/`currentDrag`/`endDrag`/`sortableCellId`。放置回调只收到 `{ itemId, from, to }`；`from`/`to` 是调用方定义的来源/目标 id，`SortableGrid` 的 `to` 为 `sortableCellId(source, index)`。指针走原生拖拽事件；键盘 Space/Enter 拾取与放置、方向键遍历目标、Escape 取消。`DragSource.preview` 可选。
+- **VirtualList**：固定 `rowHeight`/`height`/`overscan`，只挂载可视窗口（含 overscan）的行；`virtualRange()` 暴露纯窗口计算。行文案与 aria label 由 `renderRow`/`rowLabel` 提供。
+- **EquipmentSlots**：调用方给出槽位定义（`id`/`label`/`itemId`/`icon`/`disabled`）、`onSelect`、`onDrop` 与 `emptyLabel`；方向键在槽位间移动焦点，Enter/Space 在拖拽中放置，否则选择。空槽可接收拖放。
+- **TreeView**：`TreeItemData` 树数据、`selected`/`expanded`（受控或组件内状态）、`onSelect`/`onToggle`；`flattenTree()` 暴露可见节点展平。ArrowRight 展开/进子节点，ArrowLeft 折叠/回父节点，上下/Home/End 移动，Enter/Space 选择。
+- **GraphView**：`GraphNodeData`/`GraphEdgeData`，选择与节点间方向键焦点移动；拖拽平移，滚轮/`+`/`-`/`0` 缩放；缩放按钮仅在其本地化 label 传入时渲染。不解释节点/边语义。
+- **Dialog / ChoiceList / PagedText**：对话文本、说话人、立绘、选项及 `disabled` 条件由调用方提供；`onChoose` 每组选项只触发一次；方向键与 Enter/Space 可达。`PagedText` 的上一页/下一页 label 必须由调用方传入。
+- **ShopRow**：名称、已格式化价格/数量、买卖按钮 label 与 `onBuy`/`onSell`；不计算价格、折扣或库存。未传对应回调时按钮禁用。
+- **MinimapView**：传入地图尺寸、世界坐标标记（`icon`/`color`/`label`）、可选 `viewport` 与玩家位置/朝向；`projectMinimapPoint()` 执行保持宽高比的投影并在区域外夹取/标记 `visible=false`；默认最多挂载 64 个标记（`maxMarkers`）。标记颜色接受任意 CSS 颜色或调用方 token（如 `var(--lg-accent)`）。
+
 ## 待办
 
 - 组件默认 aria/empty 文案（`emptyLabel`/`closeLabel`/`label` 已可由游戏传入）仍需迁移到游戏的本地化 key。
