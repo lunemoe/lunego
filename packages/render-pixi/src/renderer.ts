@@ -27,6 +27,7 @@ interface BindingEntry {
     view: EntityView
     bounds: DisplayBounds
   }>
+  readonly active: Set<Entity>
 }
 
 function clampAlpha(alpha: number): number {
@@ -48,10 +49,11 @@ function fallbackBounds(spec: EntityDisplaySpec): DisplayBounds {
 }
 
 function entityView(source: RenderSource, entity: Entity): EntityView {
-  const alpha = clampAlpha(source.alpha)
   return {
     entity,
-    alpha,
+    get alpha() {
+      return clampAlpha(source.alpha)
+    },
     get: <S extends SchemaShape>(component: ComponentDef<S>): DeepReadonly<SchemaValue<S>> | undefined =>
       source.get(entity, component),
     prev: <S extends SchemaShape>(component: ComponentDef<S>) => source.prev(entity, component),
@@ -69,6 +71,7 @@ function entityView(source: RenderSource, entity: Entity): EntityView {
       if (previous === undefined) {
         return { x: current.x, y: current.y }
       }
+      const alpha = clampAlpha(source.alpha)
       return {
         x: previous.x + (current.x - previous.x) * alpha,
         y: previous.y + (current.y - previous.y) * alpha,
@@ -100,7 +103,7 @@ export class RenderSystem<Handle> {
     if (this.destroyed) {
       throw new Error('render system is destroyed')
     }
-    this.entries.push({ binding, objects: new Map() })
+    this.entries.push({ binding, objects: new Map(), active: new Set() })
     return this
   }
 
@@ -110,6 +113,9 @@ export class RenderSystem<Handle> {
       throw new Error('render system is destroyed')
     }
     const byLayer = new Map<RenderLayer, Array<{ handle: Handle; spec: EntityDisplaySpec; entity: Entity; sortByY: boolean }>>()
+    for (const layer of RENDER_LAYERS) {
+      byLayer.set(layer, [])
+    }
     for (const entry of this.entries) {
       try {
         this.syncBinding(entry, source, byLayer, time)
@@ -120,7 +126,7 @@ export class RenderSystem<Handle> {
     for (const layer of RENDER_LAYERS) {
       const bucket = byLayer.get(layer)
       try {
-        if (bucket === undefined) {
+        if (bucket === undefined || bucket.length === 0) {
           this.adapter.order(layer, [])
           continue
         }
@@ -222,18 +228,21 @@ export class RenderSystem<Handle> {
       this.report(error)
       return
     }
-    const active = new Set(entities)
+    entry.active.clear()
+    for (const entity of entities) {
+      entry.active.add(entity)
+    }
     for (const entity of [...entry.objects.keys()]) {
-      if (!active.has(entity)) {
+      if (!entry.active.has(entity)) {
         this.remove(entry, entity)
       }
     }
     for (const entity of entities) {
-      const view = entityView(source, entity)
       let item = entry.objects.get(entity)
       let created = false
       try {
         if (item === undefined) {
+          const view = entityView(source, entity)
           const spec = entry.binding.create(view)
           const handle = this.adapter.create(spec)
           item = { handle, spec, view, bounds: fallbackBounds(spec) }
@@ -241,19 +250,21 @@ export class RenderSystem<Handle> {
           entry.objects.set(entity, item)
           this.adapter.attach(entry.binding.layer ?? 'entities', handle)
         }
-        entry.binding.update(item.spec, view)
+        entry.binding.update(item.spec, item.view)
         const handle = item.handle as Handle
         this.adapter.update(handle, item.spec, time)
         item.bounds = this.adapter.measure?.(item.spec, time) ?? fallbackBounds(item.spec)
         const layer = entry.binding.layer ?? 'entities'
-        const bucket = byLayer.get(layer) ?? []
+        const bucket = byLayer.get(layer)
+        if (bucket === undefined) {
+          throw new Error(`unknown render layer ${layer}`)
+        }
         bucket.push({
           handle,
           spec: item.spec,
           entity,
           sortByY: entry.binding.sortByY ?? layer === 'entities',
         })
-        byLayer.set(layer, bucket)
       } catch (error) {
         this.report(error)
         if (created && item !== undefined) {

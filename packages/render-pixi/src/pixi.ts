@@ -257,6 +257,12 @@ export class PixiAdapter implements RenderAdapter<Container> {
     const transform = cameraWorldTransform(this.cameraX, this.cameraY, this.zoomValue)
     this.world.scale.set(transform.scale)
     this.world.position.set(transform.x, transform.y)
+    this.tilemapValue?.setViewport({
+      x: this.cameraX,
+      y: this.cameraY,
+      width: this.virtualWidth / this.zoomValue,
+      height: this.virtualHeight / this.zoomValue,
+    })
   }
 
   private rebuildTilemap(): void {
@@ -278,7 +284,14 @@ export class PixiAdapter implements RenderAdapter<Container> {
         sprite.destroy()
       },
     })
+    this.tilemapValue.setViewport({
+      x: this.cameraX,
+      y: this.cameraY,
+      width: this.virtualWidth / this.zoomValue,
+      height: this.virtualHeight / this.zoomValue,
+    })
     this.tilemapValue.setMap(definition)
+    this.applyCamera()
   }
 
   private createTile(instance: TileInstance, base: Texture, textureId: string): Sprite {

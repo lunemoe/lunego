@@ -45,7 +45,7 @@ export function buildGameFrame(
     cues: coreFrame.cues,
     modelPatches: coreFrame.modelPatches,
     models: modelSnapshot(world, models),
-    entityCount: world.query().length,
+    entityCount: world.entityCount,
     hash: world.hash(),
   }
 }

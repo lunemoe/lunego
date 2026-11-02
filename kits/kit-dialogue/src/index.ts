@@ -61,6 +61,20 @@ export interface DialogueStep {
   readonly view?: DialogueView
 }
 
+export interface DialogueSnapshot {
+  readonly version: 1
+  readonly current: string | null
+  /** Used once-choice keys in `nodeId\u0000choiceId` form. */
+  readonly used: readonly string[]
+}
+
+function snapshotObject(value: unknown, label: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`${label} must be an object`)
+  }
+  return value as Record<string, unknown>
+}
+
 function validateCondition(condition: DialogueCondition): void {
   if (condition.key.length === 0) {
     throw new Error('dialogue condition key must not be empty')
@@ -174,6 +188,55 @@ export class DialogueRunner {
 
   get current(): DialogueNode | null {
     return this.currentId === null ? null : this.graph.nodes.get(this.currentId) ?? null
+  }
+
+  serialize(): DialogueSnapshot {
+    return {
+      version: 1,
+      current: this.currentId,
+      used: [...this.used].sort(),
+    }
+  }
+
+  /** Restores current node and once-choice usage; unknown node/choice throws. */
+  restore(snapshot: DialogueSnapshot): void {
+    const root = snapshotObject(snapshot, 'dialogue snapshot')
+    if (root['version'] !== 1) {
+      throw new Error('dialogue snapshot version must be 1')
+    }
+    const current = root['current']
+    if (current !== null && (typeof current !== 'string' || !this.graph.nodes.has(current))) {
+      throw new Error(`dialogue snapshot references unknown node ${String(current)}`)
+    }
+    if (!Array.isArray(root['used'])) {
+      throw new Error('dialogue snapshot used must be an array')
+    }
+    const used = new Set<string>()
+    for (const key of root['used']) {
+      if (typeof key !== 'string') {
+        throw new Error('dialogue snapshot used entries must be strings')
+      }
+      const separator = key.indexOf('\u0000')
+      if (separator <= 0 || separator === key.length - 1) {
+        throw new Error(`dialogue snapshot has malformed used choice ${key}`)
+      }
+      const nodeId = key.slice(0, separator)
+      const choiceId = key.slice(separator + 1)
+      const node = this.graph.nodes.get(nodeId)
+      const choice = node?.choices?.find((entry) => entry.id === choiceId)
+      if (node === undefined || choice === undefined || choice.once !== true) {
+        throw new Error(`dialogue snapshot references unknown once choice ${key}`)
+      }
+      if (used.has(key)) {
+        throw new Error(`dialogue snapshot repeats used choice ${key}`)
+      }
+      used.add(key)
+    }
+    this.currentId = current
+    this.used.clear()
+    for (const key of used) {
+      this.used.add(key)
+    }
   }
 
   start(id: string): DialogueStep {

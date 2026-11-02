@@ -257,6 +257,7 @@ export interface StoredComponentDefinition {
 export class ComponentStore<S extends SchemaShape = SchemaShape> {
   readonly def: StoredComponentDefinition
   readonly columns = new Map<string, Column>()
+  readonly hashFields: readonly { readonly name: string; readonly type: AnyTypeDef }[]
   readonly added = new Set<Entity>()
   readonly removed = new Set<Entity>()
   private present = new Uint8Array(INITIAL_COLUMN_CAPACITY)
@@ -266,6 +267,7 @@ export class ComponentStore<S extends SchemaShape = SchemaShape> {
     for (const field of Object.keys(def.schema)) {
       this.columns.set(field, createColumn(def.schema[field]))
     }
+    this.hashFields = Object.keys(def.schema).map((name) => ({ name, type: def.schema[name] }))
   }
 
   has(index: number): boolean {

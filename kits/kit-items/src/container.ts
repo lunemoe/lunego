@@ -1,5 +1,6 @@
 import {
   ItemFactory,
+  ItemIdentity,
   lookupItemDef,
   maxStack,
   sameStack,
@@ -24,26 +25,49 @@ function fail<T>(reason: ContainerFailure): ContainerResult<T> {
   return { ok: false, reason }
 }
 
+import {
+  snapshotObject,
+  uniqueItemIds,
+  validInventorySnapshot,
+  validItem,
+  type EquipmentSnapshot,
+  type InventorySnapshot,
+} from './snapshots.js'
+
+export type { EquipmentSnapshot, InventorySnapshot } from './snapshots.js'
+
 /** Fixed-slot inventory/stash with atomic add/remove/move/split/merge/transfer. */
 export class Inventory {
   readonly capacity: number
   protected readonly slots: (ItemInstance | null)[]
   protected readonly catalog: ItemDefCatalog
   protected readonly factory: ItemFactory
-  private splitSequence = 0
+  readonly identity: ItemIdentity
 
   constructor(options: {
     readonly capacity: number
     readonly catalog: ItemDefCatalog
     readonly factory?: ItemFactory
+    readonly identity?: ItemIdentity
     readonly slots?: readonly (ItemInstance | null)[]
   }) {
     if (!Number.isInteger(options.capacity) || options.capacity < 1) {
       throw new Error('inventory capacity must be a positive integer')
     }
+    if (
+      options.factory !== undefined &&
+      options.identity !== undefined &&
+      options.factory.identity !== options.identity
+    ) {
+      throw new Error('inventory factory and identity must share the same ItemIdentity')
+    }
     this.capacity = options.capacity
     this.catalog = options.catalog
-    this.factory = options.factory ?? new ItemFactory({ catalog: options.catalog })
+    this.identity = options.factory?.identity ?? options.identity ?? new ItemIdentity()
+    this.factory = options.factory ?? new ItemFactory({ catalog: options.catalog, identity: this.identity })
+    if (options.slots !== undefined && options.slots.length > options.capacity) {
+      throw new Error('inventory slots exceed capacity')
+    }
     this.slots = Array.from({ length: options.capacity }, (_, index) => options.slots?.[index] ?? null)
   }
 
@@ -57,6 +81,10 @@ export class Inventory {
 
   get factoryForKit(): ItemFactory {
     return this.factory
+  }
+
+  get identityForKit(): ItemIdentity {
+    return this.identity
   }
 
   get used(): number {
@@ -179,8 +207,7 @@ export class Inventory {
     if (destination < 0 || destination === index || this.slots[destination] !== null) {
       return fail('full')
     }
-    this.splitSequence += 1
-    const split = { ...item, id: `${item.id}.split.${this.splitSequence}`, quantity }
+    const split = { ...item, id: this.identity.nextSplitId(item.id), quantity }
     this.slots[destination] = split
     this.slots[index] = { ...item, quantity: item.quantity - quantity }
     return { ok: true, value: split }
@@ -206,26 +233,40 @@ export class Inventory {
     return this.slots.findIndex((slot) => slot?.id === id)
   }
 
-  toJSON(): readonly (ItemInstance | null)[] {
-    return this.slots.map((slot) => slot === null ? null : { ...slot })
+  toJSON(): InventorySnapshot {
+    return {
+      version: 1,
+      slots: this.slots.map((slot) => slot === null ? null : { ...slot }),
+      identity: this.identity.toJSON(),
+    }
   }
 
   static fromJSON(options: {
     readonly capacity: number
     readonly catalog: ItemDefCatalog
-    readonly slots: readonly (ItemInstance | null)[]
+    readonly snapshot: InventorySnapshot
+    readonly identity?: ItemIdentity
     readonly factory?: ItemFactory
   }): Inventory {
-    const used = options.slots.reduce((max, slot) => {
-      if (slot === null) {
-        return max
-      }
-      const suffix = Number(slot.id.slice(slot.id.lastIndexOf('#') + 1))
-      return Number.isInteger(suffix) && suffix > max ? suffix : max
-    }, 0)
+    if (!Number.isInteger(options.capacity) || options.capacity < 1) {
+      throw new Error('inventory capacity must be a positive integer')
+    }
+    const snapshot = validInventorySnapshot(options.snapshot, options.capacity, options.catalog)
+    if (
+      options.factory !== undefined &&
+      options.identity !== undefined &&
+      options.factory.identity !== options.identity
+    ) {
+      throw new Error('inventory factory and identity must share the same ItemIdentity')
+    }
+    const identity = options.factory?.identity ?? options.identity ?? ItemIdentity.fromJSON(snapshot.identity)
+    identity.restoreAtLeast(snapshot.identity)
     return new Inventory({
-      ...options,
-      factory: options.factory ?? new ItemFactory({ catalog: options.catalog, startId: used + 1 }),
+      capacity: options.capacity,
+      catalog: options.catalog,
+      ...(options.factory === undefined ? {} : { factory: options.factory }),
+      identity,
+      slots: snapshot.slots,
     })
   }
 
@@ -244,6 +285,7 @@ export interface EquipmentRules {
 /** Equipment is a named-slot container; slot names/rules are caller-owned. */
 export class Equipment {
   readonly slots: readonly string[]
+  readonly identity: ItemIdentity
   private readonly items = new Map<string, ItemInstance>()
   private readonly catalog: ItemDefCatalog
   private readonly rules: EquipmentRules
@@ -252,10 +294,16 @@ export class Equipment {
     readonly slots: readonly string[]
     readonly catalog: ItemDefCatalog
     readonly rules: EquipmentRules
+    readonly identity?: ItemIdentity
   }) {
     this.slots = [...options.slots]
     this.catalog = options.catalog
     this.rules = options.rules
+    this.identity = options.identity ?? new ItemIdentity()
+  }
+
+  get identityForKit(): ItemIdentity {
+    return this.identity
   }
 
   equip(slot: string, item: ItemInstance): ContainerResult<void> {
@@ -292,27 +340,54 @@ export class Equipment {
     return this.items.get(slot) ?? null
   }
 
-  toJSON(): Readonly<Record<string, ItemInstance>> {
-    return Object.fromEntries([...this.items.entries()].sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0))
+  toJSON(): EquipmentSnapshot {
+    return {
+      version: 1,
+      items: Object.fromEntries(
+        [...this.items.entries()].sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0),
+      ),
+      identity: this.identity.toJSON(),
+    }
   }
 
   static fromJSON(options: {
     readonly slots: readonly string[]
     readonly catalog: ItemDefCatalog
     readonly rules: EquipmentRules
-    readonly items: Readonly<Record<string, ItemInstance>>
+    readonly snapshot: EquipmentSnapshot
+    readonly identity?: ItemIdentity
   }): Equipment {
-    const equipment = new Equipment(options)
-    for (const slot of options.slots) {
-      const item = options.items[slot]
-      if (item !== undefined) {
-        const def = lookupItemDef(options.catalog, item.contentId)
-        if (def === undefined || !options.rules.canEquip(def, slot)) {
-          throw new Error(`invalid equipment snapshot at ${slot}`)
-        }
-        equipment.items.set(slot, { ...item })
-      }
+    const snapshot = snapshotObject(options.snapshot, 'equipment snapshot')
+    if (snapshot['version'] !== 1) {
+      throw new Error('equipment snapshot version must be 1')
     }
+    const items = snapshotObject(snapshot['items'], 'equipment snapshot items')
+    const snapshotIdentity = ItemIdentity.fromJSON(snapshot['identity'])
+    const identity = options.identity ?? snapshotIdentity
+    identity.restoreAtLeast(snapshotIdentity.toJSON())
+    const equipment = new Equipment({
+      slots: options.slots,
+      catalog: options.catalog,
+      rules: options.rules,
+      identity,
+    })
+    const equipped: ItemInstance[] = []
+    for (const key of Object.keys(items)) {
+      if (!options.slots.includes(key)) {
+        throw new Error(`equipment snapshot references unknown slot ${key}`)
+      }
+      const item = validItem(items[key], `equipment slot ${key}`, options.catalog)
+      if (item.quantity !== 1) {
+        throw new Error(`equipment slot ${key} must contain one item`)
+      }
+      const def = lookupItemDef(options.catalog, item.contentId)
+      if (def === undefined || !options.rules.canEquip(def, key)) {
+        throw new Error(`invalid equipment snapshot at ${key}`)
+      }
+      equipped.push(item)
+      equipment.items.set(key, { ...item })
+    }
+    uniqueItemIds(equipped)
     return equipment
   }
 }

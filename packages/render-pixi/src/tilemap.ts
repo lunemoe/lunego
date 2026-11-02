@@ -145,6 +145,13 @@ export interface TilemapTransform {
   readonly scale: number
 }
 
+export interface TilemapViewport {
+  readonly x: number
+  readonly y: number
+  readonly width: number
+  readonly height: number
+}
+
 export function cameraTransform(
   cameraX: number,
   cameraY: number,
@@ -161,6 +168,8 @@ export function cameraTransform(
 export class TilemapView<Handle> {
   private readonly sink: TileSink<Handle>
   private handles = new Map<string, Handle>()
+  private instances = new Map<string, TileInstance>()
+  private viewport: TilemapViewport | null = null
   private destroyed = false
 
   constructor(sink: TileSink<Handle>) {
@@ -171,19 +180,41 @@ export class TilemapView<Handle> {
     return this.handles.size
   }
 
+  /** Total tile cells in the current map, independent of viewport culling. */
+  get total(): number {
+    return this.instances.size
+  }
+
   setMap(definition: TilemapDefinition | null): void {
     if (this.destroyed) {
       throw new Error('tilemap view is destroyed')
     }
     if (definition === null) {
       this.clear()
+      this.instances.clear()
       return
     }
-    const instances = buildTilemap(definition)
+    const instances = new Map(buildTilemap(definition).map((instance) => [instance.key, instance]))
     this.clear()
-    for (const instance of instances) {
-      this.handles.set(instance.key, this.sink.create(instance))
+    this.instances = instances
+    this.syncVisible()
+  }
+
+  /** Only world-space tiles intersecting this viewport are materialized. */
+  setViewport(viewport: TilemapViewport | null): void {
+    if (this.destroyed) {
+      return
     }
+    if (
+      viewport !== null &&
+      (!Number.isFinite(viewport.x) || !Number.isFinite(viewport.y) ||
+        !Number.isFinite(viewport.width) || !Number.isFinite(viewport.height) ||
+        viewport.width < 0 || viewport.height < 0)
+    ) {
+      throw new Error('tilemap viewport must be finite and non-negative')
+    }
+    this.viewport = viewport
+    this.syncVisible()
   }
 
   clear(): void {
@@ -191,6 +222,36 @@ export class TilemapView<Handle> {
       this.sink.destroy(handle)
     }
     this.handles.clear()
+  }
+
+  private syncVisible(): void {
+    const next = new Set<string>()
+    for (const instance of this.instances.values()) {
+      if (this.viewport !== null && (
+        instance.x + instance.width <= this.viewport.x ||
+        instance.x >= this.viewport.x + this.viewport.width ||
+        instance.y + instance.height <= this.viewport.y ||
+        instance.y >= this.viewport.y + this.viewport.height
+      )) {
+        continue
+      }
+      next.add(instance.key)
+    }
+    for (const [key, handle] of [...this.handles.entries()]) {
+      if (!next.has(key)) {
+        this.sink.destroy(handle)
+        this.handles.delete(key)
+      }
+    }
+    for (const key of next) {
+      if (this.handles.has(key)) {
+        continue
+      }
+      const instance = this.instances.get(key)
+      if (instance !== undefined) {
+        this.handles.set(key, this.sink.create(instance))
+      }
+    }
   }
 
   destroy(): void {

@@ -38,9 +38,14 @@ export class EntityStore {
   private freeFlags = new Uint8Array(64)
   private freeHeap: number[] = []
   private highestIndex = 0
+  private aliveTotal = 0
 
   get maxIndex(): number {
     return this.highestIndex
+  }
+
+  get aliveCount(): number {
+    return this.aliveTotal
   }
 
   allocate(): Entity {
@@ -71,12 +76,14 @@ export class EntityStore {
       throw new LuneGoError('stale_entity', `entity ${entity} has an expired generation`)
     }
     this.aliveFlags[index] = 1
+    this.aliveTotal += 1
   }
 
   release(entity: Entity): void {
     const index = entityIndex(entity)
     this.assertAlive(entity)
     this.aliveFlags[index] = 0
+    this.aliveTotal = Math.max(0, this.aliveTotal - 1)
     const nextGeneration = this.generations[index] + 1
     if (nextGeneration > GENERATION_MASK) {
       this.generations[index] = GENERATION_MASK
@@ -188,6 +195,7 @@ export class EntityStore {
       seenAlive.add(index)
       this.aliveFlags[index] = 1
     }
+    this.aliveTotal = snapshot.alive.length
     const seenFree = new Set<number>()
     for (const index of snapshot.free) {
       if (

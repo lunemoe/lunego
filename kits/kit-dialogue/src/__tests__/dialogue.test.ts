@@ -60,6 +60,28 @@ describe('dialogue graph/runner', () => {
     expect(runner.choose('only').ok).toBe(false)
   })
 
+  it('restores used once choices and rejects unknown snapshot references', () => {
+    const graph = new DialogueGraph([
+      {
+        id: 'once',
+        textKey: 'once',
+        choices: [{ id: 'only', textKey: 'only', next: 'end', once: true }],
+      },
+      { id: 'end', textKey: 'end' },
+    ])
+    const first = new DialogueRunner({ graph, context: { flag: () => true } })
+    first.start('once')
+    expect(first.choose('only').ok).toBe(true)
+    const snapshot = JSON.parse(JSON.stringify(first.serialize()))
+    const restored = new DialogueRunner({ graph, context: { flag: () => true } })
+    restored.restore(snapshot)
+    expect(restored.current?.id).toBe('end')
+    expect(restored.start('once').ok).toBe(true)
+    expect(restored.view().choices[0]?.used).toBe(true)
+    expect(restored.choose('only')).toEqual({ ok: false, reason: 'unavailable' })
+    expect(() => restored.restore({ version: 1, current: null, used: ['missing\u0000choice'] })).toThrow(/unknown once choice/)
+  })
+
   it('evaluates flags/quests/counters and rejects unavailable start', () => {
     const graph = new DialogueGraph(nodes)
     const runner = new DialogueRunner({

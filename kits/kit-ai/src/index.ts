@@ -5,9 +5,13 @@ export {
 } from './perception.js'
 export type {
   AiAgent,
+  EntityValidation,
+  MemorySnapshotEntry,
   PerceptionEntry,
   PerceptionOptions,
+  PerceptionSnapshot,
   ThreatEntry,
+  ThreatTableSnapshot,
   UtilityAction,
 } from './perception.js'
 export {

@@ -1,5 +1,6 @@
 export {
   ItemFactory,
+  ItemIdentity,
   itemAffixInstances,
   itemModifiers,
   lookupItemDef,
@@ -10,6 +11,8 @@ export type {
   ItemDef,
   ItemDefCatalog,
   ItemFactoryOptions,
+  ItemIdentityOptions,
+  ItemIdentitySnapshot,
   ItemInstance,
 } from './items.js'
 export {
@@ -21,4 +24,6 @@ export type {
   ContainerFailure,
   ContainerResult,
   EquipmentRules,
+  EquipmentSnapshot,
+  InventorySnapshot,
 } from './container.js'

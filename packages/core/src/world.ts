@@ -157,6 +157,9 @@ export class World {
     return this.commands.pendingCount
   }
 
+  get entityCount(): number {
+    return this.entityStore.aliveCount
+  }
   send<C extends CommandDef>(
     command: C,
     payload: CommandPayload<C>,

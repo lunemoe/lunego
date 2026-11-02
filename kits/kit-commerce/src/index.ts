@@ -174,8 +174,8 @@ function cloneInventory(inventory: Inventory): Inventory {
   return Inventory.fromJSON({
     capacity: inventory.capacity,
     catalog: inventory.catalogForKit,
-    slots: inventory.toJSON(),
-    factory: inventory.factoryForKit,
+    snapshot: inventory.toJSON(),
+    identity: inventory.identityForKit,
   })
 }
 

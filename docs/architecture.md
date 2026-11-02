@@ -73,32 +73,43 @@ LuneGo 的做法是把"形状"和"功能"分开处理：
  Game        features/*/logic · content/*                 features/*/view
              app/world.ts (logic root)                    app/main.ts (view root)
  ──────────────────────────────────────────────────────────────────────────
- Framework   kits/* (promoted from games)                 render-pixi · ui · audio · input
+ Framework   kits/* (promoted from games)                 render-pixi · vfx · ui · i18n · audio · input
              core                  ◄── host protocol ──►  host client
  ──────────────────────────────────────────────────────────────────────────
- Tooling     cli (gen / new / check / run / replay) · testkit · eslint-plugin
+ Tooling     cli (gen / new / check / assets) · testkit · eslint-plugin
 ```
 
-### 2.1 初始包清单
+### 2.1 包与 kit 清单
 
 | 包                       | 所在侧  | 职责                                                                                           |
 | ----------------------- | ---- | -------------------------------------------------------------------------------------------- |
 | `@lunego/core`          | 两侧共享 | schema DSL、ECS、World、调度器、Command / Event / Cue / Query、RNG 与数学库、序列化与哈希、Feature 机制。零依赖，不碰 DOM |
-| `@lunego/host`          | 桥接   | 运行逻辑；逻辑与表现协议；时间模型；view loop（RAF/visibility/pause）、浏览器存档/按键/调试入口；存档读写 |
-| `@lunego/render-pixi`   | 表现   | 渲染绑定、插值、图层、相机/缩放、精灵/动画/背景、纹理注册表、瓦片地图、像素完美                                                    |
+| `@lunego/host`          | 桥接   | 运行逻辑；逻辑与表现协议；时间模型；view loop（RAF/visibility/pause）、浏览器存档/按键/调试入口；存档读写、profile store（账号/角色槽/设置）、leaderboard |
+| `@lunego/render-pixi`   | 表现   | 渲染绑定、插值、图层、相机/缩放、精灵/动画/背景、纹理注册表、瓦片地图、像素完美、资产帧消费 |
 | `@lunego/vfx`           | 表现   | pixelfx 特效层（MIT，vendor）、Cue → 特效映射、俯视角地面投影、地面/前景分层                                           |
-| `@lunego/ui`            | 表现   | Solid + solid-js/html DOM UI：bridge、主题、组件、createUiSignal、EffectOverlay（飘字/投射物/闪屏/震动） |
-| `@lunego/input`         | 表现   | 设备 → 抽象动作 → Command；键盘/指针 browser adapter，PointerState 接受 renderer.viewport |
+| `@lunego/ui`            | 表现   | Solid + solid-js/html DOM UI：bridge、主题 token、菜单栈/焦点、反馈、Tooltip、完整游戏控件、EffectOverlay、i18n/a11y 接入 |
+| `@lunego/i18n`          | 表现/工具 | 消息表、插值、注入式复数、locale fallback、profile scope LocaleStore；不读 DOM/localStorage |
+| `@lunego/input`         | 表现   | 设备 → 抽象动作 → Command；键盘/指针/手柄 browser adapter，PointerState 接受 renderer.viewport |
 | `@lunego/audio`         | 表现   | Web Audio 总线、Cue 音效、可循环 music/ambient buffer、抖动与并发上限 |
-| `@lunego/kit-space`     | 框架   | 静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希 broadphase；无玩法名词                                                  |
-| `@lunego/kit-stats`     | 框架   | 属性基础值、加法/乘法修饰器、词缀定义与聚合、上下限                                                                   |
-| `@lunego/kit-ability`   | 框架   | 能力定义、资源消耗、tick 冷却、施法校验、泛型目标选择                                                                |
-| `@lunego/kit-loot`      | 框架   | 确定性权重抽取、稀有度、词缀 roll                                                                          |
-| `@lunego/testkit`       | 工具   | testWorld、场景测试、确定性双跑、回放                                                                      |
-| `lunego`（CLI）           | 工具   | gen / new / check / run / replay                                                             |
-| `@lunego/eslint-plugin` | 工具   | LuneGo 规则的 lint 实现，附带 dependency-cruiser 配置                                                  |
+| `@lunego/kit-space`     | 框架   | 静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希 broadphase、A* 寻路；无玩法名词 |
+| `@lunego/kit-stats`     | 框架   | 属性基础值、加法/乘法修饰器、词缀定义与聚合、上下限 |
+| `@lunego/kit-ability`   | 框架   | 能力定义、资源消耗、tick 冷却、施法校验、泛型目标选择 |
+| `@lunego/kit-loot`      | 框架   | 确定性权重抽取、稀有度、词缀 roll |
+| `@lunego/kit-items`     | 框架   | 物品定义/实例、背包/仓库/装备槽、堆叠/拆分/移动/转移与序列化 |
+| `@lunego/kit-progression` | 框架 | XP/等级曲线、点数、技能/被动前置图、分配/洗点与派生效果 |
+| `@lunego/kit-quest`     | 框架   | 事件驱动任务状态机、目标计数/去重、前置/链/重复、奖励请求 |
+| `@lunego/kit-dialogue`  | 框架   | 对话图、文本 key、条件、确定性 effects、分支/仅一次选择与任务回调 |
+| `@lunego/kit-commerce`  | 框架   | vendor 买卖/修理/洗点、原子交易、配方制作、socket/gem |
+| `@lunego/kit-encounter` | 框架   | spawn table、波次/阶段、预算、leash reset、难度缩放、掉落请求 |
+| `@lunego/kit-zone`      | 框架   | zone/portal/waypoint 图、chunk 加载与实体预算、可注入地图生成、fog/minimap 状态 |
+| `@lunego/kit-ai`        | 框架   | 感知/记忆、威胁/黑名单、utility、行为树、blackboard/group、leash/phase |
+| `@lunego/kit-status`    | 框架   | 状态实例、绝对 tick 到期、stack/refresh、DoT/HoT、控制标记 |
+| `@lunego/kit-combat`    | 框架   | 伤害管线、抗性、护甲/格挡/闪避/护盾、威胁入口 |
+| `@lunego/testkit`       | 工具   | testWorld、场景测试、确定性双跑、回放 |
+| `lunego`（CLI）           | 工具   | gen / new game / check / assets（check、build、pack、import） |
+| `@lunego/eslint-plugin` | 工具   | LuneGo 规则的 lint 实现，附带 dependency-cruiser 配置 |
 
-`kits/` 当前包含空间、属性、能力与掉落四个通用 kit，均从第一款游戏的稳定实现泛化而来（第 12 节）。新包只在当前游戏确实需要时才创建。
+`kits/` 当前包含上述 14 个通用 kit，均从第一款游戏的稳定实现泛化而来（第 12 节）；kit 之间只按显式声明依赖，不 import 游戏或 content。新包/kit 只在当前游戏确实需要时才创建。
 
 ### 2.2 依赖规则 **[已定]**
 
@@ -421,14 +432,15 @@ export const spriteBinding = defineRenderBinding({
 ### 8.2 UI **[已定]**
 
 - **DOM 叠加层 + Solid**：`@lunego/ui` 用 `solid-js` + `solid-js/html`，不需要额外 JSX 构建链。游戏只能从 `@lunego/ui` 取受限原语 `createSignal/createMemo/createEffect/createRoot/onCleanup/html/createComponent`，不能直接 import solid-js。`createUiBridge(game)` 持有只读 `frame`/`models` signal，通过 host 的 `subscribeFrames` 更新；UI 只调用 `send`/`query`。
-- **组件**：`UiRoot`/theme tokens、`Panel`（九宫格 border-image，无图退回 CSS）、`Bar`（hp/mp/xp/neutral）、`Button`、`Tabs`、`InventoryGrid`/`ItemSlot`、`Tooltip`、`SkillBar`（CD 遮罩）、`KeyHint`、`Modal`、`List`；全部只做展示与回调。
+- **组件**：`UiRoot`/theme tokens、`Panel`（九宫格 border-image，无图退回 CSS）、`Bar`（hp/mp/xp/neutral）、`Button`、`Tabs`、`InventoryGrid`/`ItemSlot`、`Tooltip`、`SkillBar`（CD 遮罩）、`KeyHint`、`Modal`、`List`；完整游戏控件包括 `DragSource`/`DropTarget`/`SortableGrid`、`VirtualList`、`EquipmentSlots`、`TreeView`、`GraphView`、`Dialog`/`ChoiceList`/`PagedText`、`ShopRow`、`MinimapView`；全部只做展示与回调。
+- **本地化**：`@lunego/i18n` 提供消息表、插值、注入式复数、locale fallback 与 profile scope `LocaleStore`；UI 文案接受 `TextValue = string | { key, params? }`，字符串是显式覆盖，`{ key }` 通过 `UiRoot({ i18n })` 的 resolver 或 `setUiTextResolver` 解析，缺 key 时保留 key。框架不内置译文/语言表。
 - **菜单栈/焦点**：`UiMenuStack` 管理 push/pop/replace/current；只有栈顶 Modal 响应 Escape，`FocusScope` 负责 Tab trap、initialFocus 与关闭后焦点恢复；嵌套 Modal 不互相关闭。
 - **反馈**：`ToastQueue`/`ToastHost` 提供限时队列、`aria-live`/可关闭条目；`LoadingOverlay` 支持进度、错误态、取消与 `aria-busy`。两者文案全部由游戏传入。
 - **Tooltip**：默认 portal 到 body，`placeTooltip` 按 viewport 翻转/夹取；`aria-describedby`、键盘聚焦显示、Escape 关闭、指针长按显示；无框架色值/资产路径。
-- **无障碍与 scale**：`UiRoot` 提供 `uiScale` 与 `reducedMotion`，CSS 变量 `--lg-ui-scale` 与 `prefers-reduced-motion`/`data-reduced-motion` 生效；`EffectOverlay` 在 reduced motion 下不执行 shake/flash。
+- **无障碍与 scale**：`UiRoot` 提供 `uiScale`、`reducedMotion`、`colorblind`、`contrast`，写入 `--lg-ui-scale`/`data-reduced-motion`/`data-colorblind`/`data-contrast`；CSS 变量与 `prefers-reduced-motion` 生效。新控件使用 roving focus、`aria-label`/`aria-describedby`/`aria-expanded`/`aria-selected`，并支持键盘/指针操作；`EffectOverlay` 在 reduced motion 下不执行 shake/flash。
 - **资源无关**：九宫格/图标由游戏传入 URL；缺少资源时用纯 CSS/文字退化，不造假数据。`Panel.borderImage/borderSlice/borderWidth`、`ItemSlot.icon`、`SkillSlot.icon` 是资源注入点；框架不引用游戏资产路径。`mountUi(root, bridge, view)` 负责挂载、样式安装与销毁。
-- **行为与可访问性归框架，美学归游戏**：框架规定组件行为、焦点/菜单栈、键盘与指针交互、数据绑定、主题 token 名称，以及焦点可见、`prefers-reduced-motion`、UI scale、最低对比度和资源注入点；调色板、字体、九宫格图、图标集、间距/密度、动效、装饰和文案由游戏通过 `UiTheme`/props 提供。框架不内置游戏美术、玩法名词或强制像素风；像素对齐/最近邻只是能力，不是风格要求。
-- **主题与约束**：组件颜色、间距、字体只能通过 CSS 变量、props 或 `UiTheme`（框架拥有 token 名称，游戏全量覆盖）；`theme.ts` 只保留可被覆盖的中性 fallback。不得硬编码游戏资产路径，不得硬编码界面文案（本地化 key 由游戏提供；当前组件默认 aria/empty 文案仍是 i18n 待办）。
+- **行为与可访问性归框架，美学归游戏**：框架规定组件行为、焦点/菜单栈、键盘与指针交互、数据绑定、主题 token 名称，以及焦点可见、`prefers-reduced-motion`、UI scale、colorblind/contrast 模式、最低对比度和资源注入点；调色板、字体、九宫格图、图标集、间距/密度、动效、装饰和文案由游戏通过 `UiTheme`/props 提供。框架不内置游戏美术、玩法名词或强制像素风；像素对齐/最近邻只是能力，不是风格要求。
+- **主题与约束**：组件颜色、间距、字体只能通过 CSS 变量、props 或 `UiTheme`（框架拥有 token 名称，游戏全量覆盖）；`theme.ts` 只保留可被覆盖的中性 fallback。不得硬编码游戏资产路径，不得硬编码界面文案（本地化 key 由游戏提供；UI 已接入 resolver，缺省为空或 key）。
 - **分工**：屏幕空间的面板用 DOM；跟随实体的世界空间 UI（血条、伤害数字）仍在画布内绘制。UI 不计算游戏规则。
 
 ### 8.3 Cue 的表现映射
@@ -524,7 +536,8 @@ export const combatCues = defineCueMap({
   - 生成 feature README 中的自动段落和 `docs/generated/` 下的项目地图。
 
   生成物放在 `_generated/` 目录并提交进仓库；提交前运行 `pnpm check` 会重新生成并核对是否一致。
-- **`lunego new <kind> <name>`（脚手架）**：复制 `templates/` 中对应的模板、替换占位名，然后运行 gen。模板是唯一来源，本身也受本地 `pnpm check` 检查。
+- **`lunego new game <name>`（脚手架）**：复制 `templates/game`、替换占位名，然后运行 gen。模板是唯一来源，本身也受本地 `pnpm check` 检查。
+- **`lunego assets <check|build|pack|import>`（资产管线）**：校验 manifest/文件/尺寸/帧范围/动画列，构建图集，打包资产，导入 Aseprite/LDtk；生成类型化资源 ID 与 `AssetPack` hash，供 `lunego gen/check` 和存档内容哈希使用。
 
 ### 10.4 AI 上下文
 
@@ -614,12 +627,21 @@ lunego-workspace/            # 私有工作区
 
 | 例子 | 归属 |
 |---|---|
-| 空间哈希、静态碰撞、范围查询 | `kit-space`（已交付） |
+| 空间哈希、静态碰撞、范围查询、A* | `kit-space`（已交付） |
 | 属性、修饰器、词缀聚合 | `kit-stats`（已交付） |
 | 能力定义、资源/冷却/目标选择 | `kit-ability`（已交付） |
 | 权重抽取、稀有度、词缀 roll | `kit-loot`（已交付） |
-| 具体技能数值、装备名、掉落概率、伤害公式 | 留在游戏 |
-| 自动战斗的决策机制（行为树、效用 AI） | 当前不需要，暂不建 `kit-ai` |
+| 物品/背包/仓库/装备槽 | `kit-items`（已交付） |
+| XP/等级曲线、前置图、点数分配 | `kit-progression`（已交付） |
+| 任务状态机、目标计数、奖励请求 | `kit-quest`（已交付） |
+| 对话图、条件、effects、一次性选择 | `kit-dialogue`（已交付） |
+| vendor 买卖/修理/洗点、原子交易、制作、socket | `kit-commerce`（已交付） |
+| spawn table、波次/阶段、预算、leash | `kit-encounter`（已交付） |
+| zone/portal/waypoint、chunk 加载、fog/minimap 状态 | `kit-zone`（已交付） |
+| 感知、威胁、utility、行为树、blackboard/group | `kit-ai`（已交付机制；具体策略留在游戏） |
+| 状态实例、到期、stack/refresh、DoT/HoT、控制标记 | `kit-status`（已交付） |
+| 伤害管线、抗性、护甲/格挡/闪避/护盾 | `kit-combat`（已交付） |
+| 具体技能数值、装备名、掉落概率、伤害公式、敌人策略 | 留在游戏 |
 
 ### 12.3 生长路线
 
@@ -629,9 +651,9 @@ lunego-workspace/            # 私有工作区
 |---|---|---|
 | M0 地基 | 一个能移动的方块；存档、读档、回放都能跑通 | core、host、render-pixi 基础、input、testkit、cli（gen / new / check）、lint 规则、AGENTS.md、模板 |
 | M1 能打 | 移动、刷怪、碰撞、攻击、伤害数字 | 空间哈希、Cue 与基础特效、audio |
-| M2 能成长 | 属性、技能、装备 | 属性修饰器和技能框架先在游戏里实现 |
-| M3 能挂机 | 自动战斗、离线收益、倍速 | 时间缺口与快进、AI 决策机制 |
-| M4 能刷 | 掉落、背包界面、对外测试 | ui 组件、存档迁移与 schema 锁；M2 的成果晋升为 kit |
+| M2 能成长 | 属性、技能、装备 | `kit-stats`/`kit-ability`/`kit-loot`/`kit-items`/`kit-progression`；UI 背包/装备/技能控件 |
+| M3 能挂机 | 自动战斗、遭遇、状态与伤害结算 | `kit-ai`/`kit-encounter`/`kit-status`/`kit-combat`；AI 策略与数值仍留在游戏 |
+| M4 能刷 | 掉落、任务、对话、商店、区域、本地化 | `kit-quest`/`kit-dialogue`/`kit-commerce`/`kit-zone`、`@lunego/i18n`、UI 完整游戏控件、CLI assets、profile store/leaderboard |
 | 之后 | 联机、上 Steam | 见第 13 节 |
 
 ---
@@ -668,12 +690,12 @@ lunego-workspace/            # 私有工作区
 | 010 | 运行位置 | 先在主线程运行，协议边界不变，可切换到 Worker | 提议 |
 | 011 | 表现反馈 | 一次性反馈用 Cue，持续表现由状态驱动 | 提议 |
 | 012 | 存档 | 世界存档与玩家档案分开 | 提议 |
-| 013 | 生成器 | `lunego gen`（注册表、类型化 ID、文档）+ `lunego new`（模板） | 提议 |
+| 013 | 生成器 | `lunego gen`（注册表、类型化 ID、文档）+ `lunego new game`（模板）+ `lunego assets`（manifest/图集/导入/打包） | 已定 |
 | 014 | 生长方式 | 框架与游戏并行演进：当前需要的通用能力直接进框架，去玩法名词、补契约/测试；只做当前需要 | 已定 |
 | 015 | 特效 | pixelfx 作为 `@lunego/vfx` 特效层；只取 Cue 驱动的像素特效，俯视角投影与分层显式 | 已定 |
 | 016 | 存档透明 | 快照记录 dt/contentHash/待执行命令；`previousEvents` 例外；世界档+档案档显式合并载入 | 已定 |
 | 017 | 表现管线 | 精灵/动画/背景/瓦片地图/纹理注册表；渲染时钟显式传入；指针输入与音频总线各自独立 | 已定 |
-| 018 | UI | Solid + solid-js/html，DOM 叠加层；只读 bridge + 主题 + 动画组件（Bar/Panel/Modal/SkillBar 等） | 已定 |
+| 018 | UI | Solid + solid-js/html，DOM 叠加层；只读 bridge + 主题 + 完整游戏控件 + i18n/a11y | 已定 |
 | 019 | 框架唯一通道 | 游戏只 import @lunego/* 与自己 schema/content；平台/引擎能力由框架 API 提供，缺能力先补框架 | 已定 |
 | 020 | 资产元数据 | manifest 是资产/显示元数据的唯一来源；gen 生成 typed IDs+AssetPack hash，内容哈希/存档检测版本 | 已定 |
 

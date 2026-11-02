@@ -20,8 +20,11 @@ test('renders runtime canvas sprites, tilemap, background and pointer world spac
     backdrop: window.__luneGame?.renderer.textures.has('runtime-backdrop') ?? false,
     tiles: window.__luneGame?.renderer.textures.has('runtime-tiles') ?? false,
     tileCount: window.__luneGame?.renderer.tilemap?.count ?? 0,
+    tileTotal: window.__luneGame?.renderer.tilemap?.total ?? 0,
   }))
-  expect(assetState).toEqual({ crate: true, backdrop: true, tiles: true, tileCount: 600 })
+  expect(assetState).toMatchObject({ crate: true, backdrop: true, tiles: true, tileTotal: 600 })
+  expect(assetState.tileCount).toBeGreaterThan(0)
+  expect(assetState.tileCount).toBeLessThan(600)
 
   const canvas = page.locator('canvas:not(.vfx-layer)')
   const box = await canvas.boundingBox()

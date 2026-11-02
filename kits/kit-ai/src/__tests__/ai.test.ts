@@ -46,6 +46,40 @@ describe('ai perception and threat', () => {
     )
     expect(selected?.id).toBe('a')
   })
+
+  it('restores perception memory and seen state with explicit dead-ref failures', () => {
+    const original = new Perception({ range: 5, coneDot: -1, memoryTicks: 2 })
+    original.observe(self, { x: 1, y: 0 }, [right], 10)
+    original.observe(self, { x: 1, y: 0 }, [left], 10)
+    const snapshot = JSON.parse(JSON.stringify(original.serialize()))
+    const restored = new Perception({ range: 5, coneDot: -1, memoryTicks: 2 })
+    restored.restore(snapshot)
+    expect(restored.serialize()).toEqual({
+      version: 1,
+      memory: [
+        { entity: 2, x: 2, y: 0, lastSeenTick: 10 },
+        { entity: 3, x: -2, y: 0, lastSeenTick: 10 },
+      ],
+      seen: [2, 3],
+    })
+    expect(restored.snapshot(11).map((entry) => entry.entity)).toEqual([2, 3])
+    expect(() => restored.restore(snapshot, { isValidEntity: (entity) => entity !== 3 })).toThrow(/unknown or dead entity/)
+    expect(() => restored.restore(snapshot, { isValidEntity: () => false })).toThrow(/unknown or dead entity/)
+  })
+
+  it('restores threat values including blacklisted entries and rejects dead refs', () => {
+    const table = new ThreatTable()
+    table.add(5, 3)
+    table.add(2, 3)
+    table.blacklist(5)
+    const snapshot = JSON.parse(JSON.stringify(table.serialize()))
+    const restored = new ThreatTable()
+    restored.restore(snapshot)
+    expect(restored.ranked()).toEqual([{ entity: 2, threat: 3 }])
+    expect(restored.isBlacklisted(5)).toBe(true)
+    expect(restored.serialize()).toEqual(snapshot)
+    expect(() => restored.restore(snapshot, { isValidEntity: (entity) => entity !== 5 })).toThrow(/unknown or dead entity/)
+  })
 })
 
 describe('ai brain primitives', () => {
@@ -71,6 +105,11 @@ describe('ai brain primitives', () => {
     const board = new Blackboard({ target: 0 })
     board.set('target', 3)
     expect(board.snapshot()).toEqual({ target: 3 })
+    board.restore({ target: 7 })
+    expect(board.snapshot()).toEqual({ target: 7 })
+    const loose = new Blackboard<Record<string, unknown>>({ target: 0 })
+    expect(() => loose.restore({ other: 1 })).toThrow(/missing key target/)
+    expect(() => loose.restore({ target: 1, extra: 2 })).toThrow(/unknown key extra/)
   })
 })
 

@@ -18,7 +18,8 @@
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
     "test:e2e": "playwright test",
-    "gen:check": "node packages/cli/dist/cli.js gen --check --cwd templates/game"
+    "gen:check": "node packages/cli/dist/cli.js gen --check --cwd templates/game",
+    "bench": "pnpm build && node bench/run.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

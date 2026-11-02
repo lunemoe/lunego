@@ -1,50 +1,31 @@
-export type QuestStatus = 'available' | 'active' | 'completed' | 'turnedIn' | 'failed'
-export type ObjectiveType = 'kill' | 'collect' | 'talk' | 'reach' | 'use'
-export type RepeatMode = 'none' | 'repeatable' | 'daily'
+import { parseQuestLogSnapshot, type QuestLogSnapshot } from './snapshot.js'
 
-export interface QuestObjective {
-  readonly id: string
-  readonly type: ObjectiveType
-  readonly target: string
-  readonly required: number
-  /** Only count the same unique key once (e.g. one specific drop). */
-  readonly unique?: boolean
-}
+export type { QuestLogSnapshot } from './snapshot.js'
 
-/** Opaque reward request; the game maps it to wallet/inventory changes. */
-export interface QuestReward {
-  readonly id: string
-  readonly [key: string]: unknown
-}
-
-export interface QuestDef {
-  readonly id: string
-  readonly objectives: readonly QuestObjective[]
-  readonly prerequisites?: readonly string[]
-  readonly chain?: string
-  readonly repeat?: RepeatMode
-  readonly rewards?: readonly QuestReward[]
-  readonly tags?: readonly string[]
-}
+import type {
+  ObjectiveType,
+  QuestDef,
+  QuestObjectiveState,
+  QuestReward,
+  QuestState,
+  QuestStatus,
+} from './types.js'
+export type {
+  ObjectiveType,
+  QuestDef,
+  QuestObjective,
+  QuestObjectiveState,
+  QuestReward,
+  QuestState,
+  QuestStatus,
+  RepeatMode,
+} from './types.js'
 
 export interface QuestEvent {
   readonly type: ObjectiveType
   readonly target: string
   readonly amount?: number
   readonly uniqueKey?: string
-}
-
-export interface QuestObjectiveState {
-  readonly count: number
-  readonly seen: readonly string[]
-}
-
-export interface QuestState {
-  readonly status: QuestStatus
-  readonly progress: Readonly<Record<string, QuestObjectiveState>>
-  readonly acceptedTick: number | null
-  readonly completedTick: number | null
-  readonly dayTurnedIn: number | null
 }
 
 export interface QuestUpdate {
@@ -117,19 +98,13 @@ export class QuestLog {
       this.order.push(def.id)
     }
     this.order.sort((left, right) => left < right ? -1 : left > right ? 1 : 0)
-    for (const [id, state] of Object.entries(options.state ?? {})) {
-      if (!this.defs.has(id)) {
-        throw new Error(`state references unknown quest ${id}`)
-      }
-      const restored = freshState()
-      restored.status = state.status
-      restored.acceptedTick = state.acceptedTick
-      restored.completedTick = state.completedTick
-      restored.dayTurnedIn = state.dayTurnedIn
-      for (const [objective, progress] of Object.entries(state.progress)) {
-        restored.progress.set(objective, { count: progress.count, seen: new Set(progress.seen) })
-      }
-      this.states.set(id, restored)
+    if (options.state !== undefined) {
+      this.restore({
+        version: 1,
+        worldDayIndex: this.day,
+        tracked: [],
+        quests: options.state,
+      })
     }
   }
 
@@ -280,17 +255,27 @@ export class QuestLog {
     return this.exportState(this.ensure(def))
   }
 
-  serialize(): Readonly<Record<string, QuestState>> {
-    return Object.fromEntries(this.order.map((id) => [id, this.exportState(this.ensure(this.defs.get(id) as QuestDef))]))
+  serialize(): QuestLogSnapshot {
+    const quests: Record<string, QuestState> = {}
+    for (const id of this.order) {
+      const def = this.defs.get(id)
+      if (def !== undefined) {
+        quests[id] = this.exportState(this.ensure(def))
+      }
+    }
+    return {
+      version: 1,
+      worldDayIndex: this.day,
+      tracked: [...this.trackedSet].sort(),
+      quests,
+    }
   }
 
-  restore(state: Readonly<Record<string, QuestState>>): void {
-    this.states.clear()
-    for (const [id, value] of Object.entries(state)) {
-      const def = this.defs.get(id)
-      if (def === undefined) {
-        throw new Error(`state references unknown quest ${id}`)
-      }
+  /** Replaces day, tracking and quest states after validating the snapshot. */
+  restore(snapshot: QuestLogSnapshot): void {
+    const parsed = parseQuestLogSnapshot(snapshot, this.defs)
+    const states = new Map<string, MutableQuestState>()
+    for (const [id, value] of parsed.states) {
       const restored = freshState()
       restored.status = value.status
       restored.acceptedTick = value.acceptedTick
@@ -299,7 +284,16 @@ export class QuestLog {
       for (const [objective, progress] of Object.entries(value.progress)) {
         restored.progress.set(objective, { count: progress.count, seen: new Set(progress.seen) })
       }
-      this.states.set(id, restored)
+      states.set(id, restored)
+    }
+    this.day = parsed.worldDayIndex
+    this.states.clear()
+    for (const [id, state] of states) {
+      this.states.set(id, state)
+    }
+    this.trackedSet.clear()
+    for (const id of parsed.tracked) {
+      this.trackedSet.add(id)
     }
   }
 

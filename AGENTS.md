@@ -3,10 +3,10 @@
 面向 Web 的 2D 游戏架构框架：逻辑是确定性的状态机，表现层只读镜像并发命令。
 
 - 公开仓库：github.com/lunemoe/lunego，MIT。
-- 第一款游戏代号 p9，Hero Siege 式俯视角 ARPG，先与框架一起生长。
+- 第一款游戏代号 p9（Hero Siege 式俯视角 ARPG）：旧实现已删除，等框架完成后从模板重建。
 - 架构事实源：`docs/architecture.md`。规则清单：`docs/rules/`。
 
-当前仓库包含已实现并测试的内核、host、input、render-pixi、vfx、audio、ui、cli 与游戏模板；通用机制在 packages/ 与 kits/。
+当前仓库包含已实现并测试的内核、host、input、render-pixi、vfx、audio、ui、i18n、cli、testkit 与游戏模板；通用机制在 packages/ 与 kits/。
 
 ## 快速开始
 
@@ -23,18 +23,29 @@ pnpm check
 ```
 docs/rules/          LG001–LG016 规则页
 packages/core/       schema DSL、ECS、World、调度、命令、RNG、哈希、存档
-packages/host/       主线程运行时、时间模型、view loop（模拟 elapsed）、浏览器存档/按键/调试入口、存档/读档、回放、崩溃报告
-packages/input/      设备 → 动作 → 游戏命令；ActionContext、设置/键位、KeybindCapture、键盘/指针 browser adapter（指针接受 renderer.viewport）
+packages/host/       主线程运行时、时间模型、view loop、浏览器存档/按键/调试入口、存档/读档、回放、崩溃报告、profile store（账号/角色槽/设置）、leaderboard
+packages/input/      设备 → 动作 → 游戏命令；ActionContext、设置/键位、KeybindCapture、键盘/指针/手柄 browser adapter（指针接受 renderer.viewport）
 packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配；`renderer.viewport` 是相机/坐标单一来源，`renderSystem.anchorOf/boundsOf` 支持按 binding/layer 取锚点
 packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
 packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁、MusicController 循环音乐
-packages/ui/         Solid + solid-js/html DOM UI：桥、主题 token、菜单栈/焦点、Toast/Loading、Tooltip、受限 Solid 原语、EffectOverlay
-kits/kit-space/      静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希
+packages/ui/         Solid + solid-js/html DOM UI：bridge、主题 token、菜单栈/焦点、Toast/Loading、Tooltip、受限 Solid 原语、EffectOverlay、完整游戏控件、i18n/a11y 接入
+packages/i18n/       消息表、插值、注入式复数、locale fallback、profile scope LocaleStore；不读 DOM/localStorage
+kits/kit-space/      静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希、A* 寻路
 kits/kit-stats/      属性基础值、加法/乘法修饰器、词缀聚合
 kits/kit-ability/    能力定义、资源/冷却、施法校验、泛型目标选择
 kits/kit-loot/       确定性权重抽取、稀有度、词缀 roll
-packages/cli/        lunego gen / new game / check
-packages/eslint-plugin/  LG002 / LG012 / LG013 的可执行规则
+kits/kit-items/      物品定义/实例、背包/仓库/装备槽、堆叠拆分移动、序列化
+kits/kit-progression/ XP/等级曲线、点数、前置图、分配/洗点与派生效果
+kits/kit-quest/      事件驱动任务状态机、目标计数、前置/链/重复、奖励请求
+kits/kit-dialogue/   对话图、文本 key、条件、effects、分支/仅一次选择
+kits/kit-commerce/   vendor 买卖/修理/洗点、原子交易、配方制作、socket/gem
+kits/kit-encounter/  spawn table、波次/阶段、预算、leash、难度缩放、掉落请求
+kits/kit-zone/       zone/portal/waypoint 图、chunk 加载与实体预算、fog/minimap 状态
+kits/kit-ai/         感知/记忆、威胁、utility、行为树、blackboard/group、leash/phase
+kits/kit-status/     状态实例、绝对 tick 到期、stack/refresh、DoT/HoT、控制标记
+kits/kit-combat/     伤害管线、抗性、护甲/格挡/闪避/护盾、威胁入口
+packages/cli/        lunego gen / new game / check / assets
+packages/eslint-plugin/  LG002 / LG012 / LG013 / LG016 的可执行规则
 packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
 templates/game/      可运行俯视角模板：移动、Y 排序、相机、存档/回放
 ```

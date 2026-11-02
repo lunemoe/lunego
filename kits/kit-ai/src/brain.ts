@@ -64,6 +64,21 @@ export class Blackboard<Data extends Record<string, unknown>> {
   snapshot(): Readonly<Data> {
     return { ...this.data }
   }
+
+  /** Restores all known keys; missing or unknown keys fail explicitly. */
+  restore(snapshot: Readonly<Data>): void {
+    for (const key of Object.keys(this.data)) {
+      if (!Object.prototype.hasOwnProperty.call(snapshot, key)) {
+        throw new Error(`blackboard snapshot is missing key ${key}`)
+      }
+    }
+    for (const key of Object.keys(snapshot)) {
+      if (!Object.prototype.hasOwnProperty.call(this.data, key)) {
+        throw new Error(`blackboard snapshot has unknown key ${key}`)
+      }
+    }
+    Object.assign(this.data, snapshot)
+  }
 }
 
 export class AgentGroup<T extends { readonly entity: number }> {

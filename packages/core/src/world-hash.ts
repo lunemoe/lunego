@@ -3,7 +3,6 @@ import type { EntityStore } from './ecs/entity-store.js'
 import { entityIndex } from './ecs/entity-store.js'
 import { StateHasher, writeValue } from './hash.js'
 import { t } from './schema.js'
-import type { Entity } from './schema.js'
 import type { RngRegistry } from './rng.js'
 import type { WorldCatalog } from './catalog.js'
 import type { EmittedEvent } from './events.js'
@@ -25,15 +24,18 @@ export interface WorldHashInput {
 
 function hashEntityTable(hasher: StateHasher, table: EntityTableSnapshot): void {
   hasher.u32(table.maxIndex)
-  const aliveByIndex = new Map<number, Entity>()
+  const flags = new Uint8Array(table.maxIndex + 1)
   for (const entity of table.alive) {
-    aliveByIndex.set(entityIndex(entity), entity)
+    flags[entityIndex(entity)] = 1
   }
-  const free = new Set<number>(table.free)
+  for (const index of table.free) {
+    flags[index] = flags[index] === 1 ? 3 : 2
+  }
   for (let index = 1; index <= table.maxIndex; index += 1) {
     hasher.u16(table.generations[index])
-    hasher.u8(aliveByIndex.has(index) ? 1 : 0)
-    hasher.u8(free.has(index) ? 1 : 0)
+    const flag = flags[index] ?? 0
+    hasher.u8(flag === 1 || flag === 3 ? 1 : 0)
+    hasher.u8(flag === 2 || flag === 3 ? 1 : 0)
   }
 }
 
@@ -61,9 +63,7 @@ export function hashWorld(input: WorldHashInput): string {
 
   const storeNames = [...catalog.storesByName.keys()].sort()
   hasher.u32(storeNames.length)
-  const entities = [...table.alive].sort(
-    (left, right) => entityIndex(left) - entityIndex(right),
-  )
+  const entities = table.alive
   for (const name of storeNames) {
     const store = catalog.storesByName.get(name)
     if (store === undefined) {
@@ -74,8 +74,8 @@ export function hashWorld(input: WorldHashInput): string {
       const index = entityIndex(entity)
       if (store.has(index)) {
         hasher.u8(1)
-        for (const field of Object.keys(store.def.schema)) {
-          writeValue(hasher, store.def.schema[field], store.readField(field, index))
+        for (const field of store.hashFields) {
+          writeValue(hasher, field.type, store.readField(field.name, index))
         }
       } else {
         hasher.u8(0)

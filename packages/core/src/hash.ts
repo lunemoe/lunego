@@ -1,8 +1,10 @@
 import type { AnyTypeDef, ConcreteTypeDef } from './schema.js'
 
-const FNV_OFFSET = 0xcbf29ce484222325n
-const FNV_PRIME = 0x100000001b3n
-const MASK_64 = 0xffffffffffffffffn
+const FNV_OFFSET_HI = 0xcbf29ce4
+const FNV_OFFSET_LO = 0x84222325
+const FNV_PRIME_HI = 0x00000100
+const FNV_PRIME_LO = 0x000001b3
+const WORD = 4294967296
 
 function utf8Bytes(value: string): number[] {
   const bytes: number[] = []
@@ -42,13 +44,19 @@ function utf8Bytes(value: string): number[] {
  * encoded field-by-field from schemas, never via JSON stringification.
  */
 export class StateHasher {
-  private hash = FNV_OFFSET
+  private high = FNV_OFFSET_HI
+  private low = FNV_OFFSET_LO
   private readonly floatBuffer = new ArrayBuffer(4)
   private readonly floatView = new DataView(this.floatBuffer)
 
   byte(value: number): void {
-    this.hash ^= BigInt(value & 0xff)
-    this.hash = (this.hash * FNV_PRIME) & MASK_64
+    this.low = (this.low ^ (value & 0xff)) >>> 0
+    const lowProduct = this.low * FNV_PRIME_LO
+    const nextLow = lowProduct % WORD
+    const carry = Math.floor(lowProduct / WORD)
+    const nextHigh = (this.high * FNV_PRIME_LO + this.low * FNV_PRIME_HI + carry) % WORD
+    this.low = nextLow
+    this.high = nextHigh
   }
 
   bytes(values: readonly number[]): void {
@@ -97,7 +105,7 @@ export class StateHasher {
   }
 
   hex(): string {
-    return this.hash.toString(16).padStart(16, '0')
+    return this.high.toString(16).padStart(8, '0') + this.low.toString(16).padStart(8, '0')
   }
 }
 

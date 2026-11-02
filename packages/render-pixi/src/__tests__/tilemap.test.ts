@@ -79,6 +79,32 @@ describe('tilemap layout', () => {
     expect(view.count).toBe(1)
   })
 
+  it('materializes only tiles intersecting the viewport', () => {
+    const created: string[] = []
+    const destroyed: string[] = []
+    const view = new TilemapView<string>({
+      create: (tile) => {
+        created.push(tile.key)
+        return tile.key
+      },
+      destroy: (handle) => destroyed.push(handle),
+    })
+    const tiles = Array.from({ length: 100 * 100 }, () => 0)
+    view.setMap({ tileset, layers: [{ name: 'ground', width: 100, height: 100, tiles }] })
+    expect(view.count).toBe(10_000)
+    view.setViewport({ x: 0, y: 0, width: 32, height: 32 })
+    expect(view.count).toBe(4)
+    expect(view.total).toBe(10_000)
+    const before = created.length
+    const destroyedBefore = destroyed.length
+    view.setViewport({ x: 32, y: 0, width: 32, height: 32 })
+    expect(view.count).toBe(4)
+    expect(created.length).toBeGreaterThan(before)
+    expect(destroyed.length - destroyedBefore).toBe(4)
+    view.setViewport(null)
+    expect(view.count).toBe(10_000)
+  })
+
   it('computes camera/zoom transforms in scaled world units', () => {
     expect(cameraTransform(10, 20, 2)).toEqual({ x: -20, y: -40, scale: 2 })
     expect(cameraTransform(10.4, 20.6, 2.5)).toEqual({ x: -26, y: -52, scale: 2.5 })

@@ -69,4 +69,44 @@ describe('status set', () => {
     expect(set.active).toHaveLength(0)
     expect(stats.value('armor')).toBe(5)
   })
+
+  it('serializes/restores stacks, timers, control and modifiers transparently', () => {
+    const defs = { burn: dot, regen: hot }
+    const originalStats = new StatBlock([{ id: 'armor', base: 5 }])
+    const original = new StatusSet()
+    original.apply(dot, 'enemy:2', 10)
+    original.apply(dot, 'enemy:2', 12)
+    original.apply(hot, 'enemy:2', 10)
+    original.syncModifiers(originalStats)
+    const snapshot = JSON.parse(JSON.stringify(original.serialize()))
+    expect(snapshot.statuses).toHaveLength(2)
+
+    const restoredStats = new StatBlock([{ id: 'armor', base: 5 }])
+    const restored = new StatusSet()
+    restored.restore(snapshot, defs, restoredStats)
+    expect(restored.active).toEqual(original.active)
+    expect(restored.controls()).toEqual(['stun'])
+    expect(restoredStats.value('armor')).toBe(4)
+
+    const continuousEvents = original.tick(17).map((event) => ({ ...event }))
+    const restoredEvents = restored.tick(17).map((event) => ({ ...event }))
+    expect(restoredEvents).toEqual(continuousEvents)
+    expect(restored.active).toEqual(original.active)
+    expect(restoredStats.value('armor')).toBe(originalStats.value('armor'))
+  })
+
+  it('fails restore for unknown status ids and duplicate sources', () => {
+    const set = new StatusSet()
+    expect(() => set.restore({
+      version: 1,
+      statuses: [{ status: 'missing', source: 'a', stacks: 1, appliedTick: 0, expiresAt: 1, nextTick: null }],
+    }, { burn: dot })).toThrow(/unknown status/)
+    expect(() => set.restore({
+      version: 1,
+      statuses: [
+        { status: 'burn', source: 'a', stacks: 1, appliedTick: 0, expiresAt: 6, nextTick: 2 },
+        { status: 'burn', source: 'a', stacks: 1, appliedTick: 0, expiresAt: 6, nextTick: 2 },
+      ],
+    }, { burn: dot })).toThrow(/repeats/)
+  })
 })

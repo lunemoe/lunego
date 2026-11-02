@@ -11,9 +11,12 @@
   - `remove/removeSource/clear`：来源移除、死亡清理。
   - `controls()`：排序后的控制标记集合。
   - `syncModifiers(stats)`：通过 `@lunego/kit-stats` 的 `StatBlock.add/removeSource` 增删修饰器。
+  - `serialize()`：返回 `{ version:1, statuses:[{status,source,stacks,appliedTick,expiresAt,nextTick}] }`。
+  - `restore(snapshot, defs, stats?)`：从调用方注入的 `StatusDef` 目录重建实例；`nextTick:null` 表示无周期效果。未知 status id、重复 status/source、越界 stacks/tick 明确抛错；传入 `stats` 时先移除旧 modifier source，再重新同步。
 
 ## 不变量
 
 - 不读全局时钟/随机；所有时间参数都是显式 tick。
 - 周期次数只由 tick 差和 interval 决定，与帧大小无关。
+- 快照不静默丢弃状态：未知 id/损坏字段直接失败。
 - 不 import `features/*`、`games/*`、`content/*`；不含具体状态内容。

@@ -77,18 +77,51 @@ describe('quest log', () => {
     expect(log.fail('missing')).toBe(false)
   })
 
-  it('serializes and restores exact progress and repeat day', () => {
+  it('serializes tracked/day and restores progress without duplicating tracking', () => {
     const log = new QuestLog({ quests, worldDayIndex: 3 })
     log.accept('a', 10)
     log.record({ type: 'kill', target: 'slime' }, 11)
     log.accept('daily', 10)
     log.record({ type: 'reach', target: 'camp' }, 11)
     log.turnIn('daily')
-    const state = JSON.parse(JSON.stringify(log.serialize()))
-    const restored = new QuestLog({ quests, worldDayIndex: 3, state })
+    log.track('a')
+    const snapshot = JSON.parse(JSON.stringify(log.serialize()))
+    expect(snapshot.worldDayIndex).toBe(3)
+    expect(snapshot.tracked).toEqual(['a'])
+    const restored = new QuestLog({ quests })
+    restored.restore(snapshot)
+    expect(restored.worldDayIndex).toBe(3)
     expect(restored.state('a')).toEqual(log.state('a'))
     expect(restored.available('daily')).toBe(false)
+    restored.restore(snapshot)
+    expect(restored.tracked()).toHaveLength(1)
     restored.setWorldDayIndex(4)
     expect(restored.available('daily')).toBe(true)
+  })
+
+  it('rejects unknown quests/objectives in snapshots', () => {
+    const log = new QuestLog({ quests })
+    expect(() => log.restore({
+      version: 1,
+      worldDayIndex: 0,
+      tracked: [],
+      quests: {
+        missing: { status: 'available', progress: {}, acceptedTick: null, completedTick: null, dayTurnedIn: null },
+      },
+    })).toThrow(/unknown quest/)
+    expect(() => log.restore({
+      version: 1,
+      worldDayIndex: 0,
+      tracked: [],
+      quests: {
+        a: {
+          status: 'active',
+          progress: { missing: { count: 1, seen: [] } },
+          acceptedTick: 1,
+          completedTick: null,
+          dayTurnedIn: null,
+        },
+      },
+    })).toThrow(/unknown objective/)
   })
 })
