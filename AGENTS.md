@@ -52,6 +52,7 @@ templates/game/      可运行俯视角模板：移动、Y 排序、相机、存
 | `pnpm -r test` | 运行各包测试 |
 | `pnpm test` | Vitest workspace |
 | `pnpm lint` | 构建 eslint-plugin 后运行 ESLint |
+| `pnpm typecheck` | core 类型层契约检查（含 mutModel 可写 fixture） |
 | `pnpm depcruise` | 依赖方向检查 |
 | `pnpm test:e2e` | Playwright 浏览器冒烟 |
 | `pnpm gen:check` | 校验模板生成物 |

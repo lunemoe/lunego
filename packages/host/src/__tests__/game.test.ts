@@ -194,6 +194,38 @@ describe('host game', () => {
     expect(after).toEqual(fullHashes.slice(4))
   })
 
+  it('rebinds the view source when a save is loaded', () => {
+    const source = makeGame()
+    const entity = spawnPlayer(source)
+    void source.send(SetVelocity, { x: 2, y: 0 })
+    source.update(0.1)
+    source.update(0.1)
+    const savedPosition = source.view.get(entity, Position)
+    const save = JSON.parse(JSON.stringify(source.save())) as ReturnType<typeof source.save>
+
+    const target = makeGame()
+    spawnPlayer(target)
+    void target.send(SetVelocity, { x: -3, y: 0 })
+    target.update(0.1)
+    target.update(0.1)
+    const stalePosition = target.view.get(entity, Position)
+    expect(stalePosition?.x).not.toBe(savedPosition?.x)
+
+    target.load(save)
+    expect(target.view.get(entity, Position)).toEqual(savedPosition)
+    expect(target.view.get(entity, Position)?.x).not.toBe(stalePosition?.x)
+
+    const sourceHashes: string[] = []
+    const targetHashes: string[] = []
+    for (let tick = 0; tick < 4; tick += 1) {
+      source.update(0.1)
+      target.update(0.1)
+      sourceHashes.push(source.frame.hash)
+      targetHashes.push(target.frame.hash)
+    }
+    expect(targetHashes).toEqual(sourceHashes)
+  })
+
   it('replays a session and locates a corrupted tick with binary search', () => {
     const game = makeGame()
     spawnPlayer(game)

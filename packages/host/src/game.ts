@@ -51,7 +51,7 @@ export class Game {
   private readonly previousValues = new Map<string, ReadonlyMap<Entity, unknown>>()
   private readonly hashLog: ReplayHash[] = []
   private readonly checkpoints: ReplayCheckpoint[] = []
-  private readonly viewSource: RenderSource
+  private viewSource: RenderSource
   private worldValue: World
   private initialSnapshot: WorldSnapshot
   private accumulator = 0
@@ -269,6 +269,11 @@ export class Game {
     this.checkpoints.push({ tick: this.worldValue.tick, hash })
     this.accumulator = 0
     this.previousValues.clear()
+    this.viewSource = createRenderSource({
+      world: this.worldValue,
+      previousValues: this.previousValues,
+      alpha: () => this.alpha,
+    })
     this.crashValue = null
     this.viewErrorValue = null
     this.frameValue = buildGameFrame(

@@ -121,7 +121,7 @@ export type ConcreteTypeDef =
 export type SchemaShape = Readonly<Record<string, AnyTypeDef>>
 
 export type SchemaValue<S extends SchemaShape> = {
-  [K in keyof S]: Infer<S[K]>
+  -readonly [K in keyof S]: Infer<S[K]>
 }
 
 export type Infer<T extends AnyTypeDef> = T extends ScalarType<infer V, infer _K>
