@@ -23,12 +23,12 @@ pnpm check
 ```
 docs/rules/          LG001–LG016 规则页
 packages/core/       schema DSL、ECS、World、调度、命令、RNG、哈希、存档
-packages/host/       主线程运行时、时间模型、view loop、浏览器存档/按键/调试入口、存档/读档、回放、崩溃报告
+packages/host/       主线程运行时、时间模型、view loop（模拟 elapsed）、浏览器存档/按键/调试入口、存档/读档、回放、崩溃报告
 packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘/指针 browser adapter（指针接受 renderer.viewport）
-packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配；`renderer.viewport` 是相机/坐标单一来源，`renderSystem.anchorOf` 提供实体显示锚点
+packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配；`renderer.viewport` 是相机/坐标单一来源，`renderSystem.anchorOf/boundsOf` 支持按 binding/layer 取锚点
 packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
-packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁
-packages/ui/         Solid + solid-js/html DOM UI：桥、主题、组件、createUiSignal、EffectOverlay
+packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁、MusicController 循环音乐
+packages/ui/         Solid + solid-js/html DOM UI：桥、主题、组件、受限 Solid 原语、EffectOverlay
 kits/kit-space/      静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希
 kits/kit-stats/      属性基础值、加法/乘法修饰器、词缀聚合
 kits/kit-ability/    能力定义、资源/冷却、施法校验、泛型目标选择

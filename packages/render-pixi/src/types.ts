@@ -124,6 +124,8 @@ export interface EntityView {
 }
 
 export interface RenderBinding {
+  /** Stable name for per-binding bounds lookup (e.g. 'body', 'healthbar'). */
+  readonly name?: string
   readonly query: readonly (ComponentDef | TagDef)[]
   readonly layer?: RenderLayer
   readonly sortByY?: boolean

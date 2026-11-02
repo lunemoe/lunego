@@ -135,7 +135,10 @@ export class RenderSystem<Handle> {
     this.adapter.setCamera(x, y)
   }
 
-  boundsOf(entity: Entity): DisplayBounds | undefined {
+  boundsOf(
+    entity: Entity,
+    query: { readonly binding?: RenderBinding | string; readonly layer?: RenderLayer } = {},
+  ): DisplayBounds | undefined {
     let minX = Number.POSITIVE_INFINITY
     let minY = Number.POSITIVE_INFINITY
     let maxX = Number.NEGATIVE_INFINITY
@@ -143,6 +146,17 @@ export class RenderSystem<Handle> {
     for (const entry of this.entries) {
       const item = entry.objects.get(entity)
       if (item === undefined) {
+        continue
+      }
+      if (query.binding !== undefined) {
+        const matches = typeof query.binding === 'string'
+          ? entry.binding.name === query.binding
+          : entry.binding === query.binding
+        if (!matches) {
+          continue
+        }
+      }
+      if (query.layer !== undefined && (entry.binding.layer ?? 'entities') !== query.layer) {
         continue
       }
       minX = Math.min(minX, item.bounds.x)
@@ -155,8 +169,12 @@ export class RenderSystem<Handle> {
       : undefined
   }
 
-  anchorOf(entity: Entity, anchor: DisplayAnchor = 'feet'): { readonly x: number; readonly y: number } | undefined {
-    const bounds = this.boundsOf(entity)
+  anchorOf(
+    entity: Entity,
+    anchor: DisplayAnchor = 'feet',
+    query: { readonly binding?: RenderBinding | string; readonly layer?: RenderLayer } = {},
+  ): { readonly x: number; readonly y: number } | undefined {
+    const bounds = this.boundsOf(entity, query)
     if (bounds === undefined) {
       return undefined
     }

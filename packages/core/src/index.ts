@@ -107,6 +107,7 @@ export type {
 } from './schema.js'
 
 export { ContentRegistry, defineContentType, parseContentId } from './content.js'
+export type { AssetPackMetadata } from './content.js'
 export { createModelProxy, diffModel } from './model.js'
 export type { ModelPatch } from './model.js'
 export type { RngStateWords, RngStream } from './rng.js'

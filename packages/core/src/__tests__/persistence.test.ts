@@ -110,6 +110,19 @@ describe('snapshot transparency', () => {
     ).toThrow(/content hash/)
   })
 
+  it('rejects a snapshot from a different asset pack/version', () => {
+    const content = new ContentRegistry()
+    content.setAssetPack({ pack: 'demo', version: '1', hash: 'aaa' })
+    const world = new World({ features: [feature], content })
+    world.step()
+    const snapshot = roundTrip(world.snapshot())
+    const other = new ContentRegistry()
+    other.setAssetPack({ pack: 'demo', version: '2', hash: 'aaa' })
+    expect(() =>
+      World.fromSnapshot(snapshot, { features: [feature], schemaVersion: 1, content: other }),
+    ).toThrow(/content hash/)
+  })
+
   it('keeps pending future commands across save and load', () => {
     const full = makeWorld()
     void full.send(Hit, { amount: 3 }, { tick: 6 })

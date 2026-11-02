@@ -31,10 +31,11 @@ class FakeGame implements ViewLoopGame {
   alpha = 0
   paused = false
   updates: number[] = []
+  steps = 1
   update(delta: number): number {
     this.updates.push(delta)
-    this.frame = frame(this.frame.tick + 1)
-    return 1
+    this.frame = frame(this.frame.tick + this.steps)
+    return this.steps
   }
   pause(): void {
     this.paused = true
@@ -91,29 +92,36 @@ describe('view loop', () => {
     const game = new FakeGame()
     const scheduler = new ManualScheduler()
     const visibility = new ManualVisibility()
-    const views: number[] = []
+    const views: Array<{ tick: number; elapsed: number; dt: number }> = []
     const loop = createViewLoop({
       game,
       scheduler,
       visibility,
       maxDeltaSeconds: 0.05,
-      update: (view) => views.push(view.frame.tick),
+      update: (view) => views.push({ tick: view.frame.tick, elapsed: view.elapsed, dt: view.dt }),
     })
     scheduler.advance(1000)
     expect(game.updates).toEqual([0.05])
-    expect(views).toEqual([1])
+    expect(views).toEqual([{ tick: 1, elapsed: 1 / 60, dt: 1 / 60 }])
+    game.steps = 2
+    scheduler.advance(16)
+    expect(views[1]).toEqual({ tick: 3, elapsed: 3 / 60, dt: 2 / 60 })
     visibility.setHidden(true)
     expect(game.paused).toBe(true)
     scheduler.advance(100)
-    expect(game.updates).toHaveLength(1)
+    expect(game.updates).toHaveLength(2)
     visibility.setHidden(false)
     expect(game.paused).toBe(false)
     scheduler.advance(16)
-    expect(game.updates).toHaveLength(2)
+    expect(game.updates).toHaveLength(3)
+    expect(views.at(-1)?.dt).toBe(2 / 60)
+    const elapsed = views.at(-1)?.elapsed
+    scheduler.advance(16)
+    expect(views.at(-1)?.elapsed).toBeGreaterThan(elapsed ?? 0)
     loop.stop()
     scheduler.advance(16)
     expect(scheduler.cancelled).toHaveLength(1)
-    expect(views).toHaveLength(3)
+    expect(views).toHaveLength(5)
   })
 })
 

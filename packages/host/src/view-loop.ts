@@ -26,7 +26,7 @@ export interface ViewLoopFrame {
   readonly frame: GameFrame
   /** Wall-clock seconds since the loop started. */
   readonly elapsed: number
-  /** Seconds advanced by this animation frame, clamped. */
+  /** Simulation seconds advanced by this frame (0 while paused/hidden). */
   readonly dt: number
   readonly alpha: number
 }
@@ -85,8 +85,7 @@ export function createViewLoop(options: ViewLoopOptions): ViewLoop {
         }
   )
   const maxDelta = options.maxDeltaSeconds ?? 0.1
-  const start = scheduler.now()
-  let last = start
+  let last = scheduler.now()
   let handle = 0
   let running = true
   let pausedByVisibility = false
@@ -114,14 +113,13 @@ export function createViewLoop(options: ViewLoopOptions): ViewLoop {
     }
     const delta = Math.max(0, Math.min(maxDelta, (now - last) / 1000))
     last = now
-    if (!pausedByVisibility) {
-      options.game.update(delta)
-    }
+    const ticks = pausedByVisibility ? 0 : options.game.update(delta)
+    const frame = options.game.frame
     options.update({
       game: options.game,
-      frame: options.game.frame,
-      elapsed: (now - start) / 1000,
-      dt: delta,
+      frame,
+      elapsed: frame.elapsed,
+      dt: ticks * frame.dt,
       alpha: options.game.alpha,
     })
     handle = scheduler.request(tick)

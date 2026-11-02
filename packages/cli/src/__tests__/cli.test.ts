@@ -59,6 +59,52 @@ describe('lunego cli', () => {
     expect(templatesRoot(moduleUrl)).toBe(join(packageRoot, 'templates'))
   })
 
+  it('generates typed assets and rejects broken manifests', async () => {
+    const root = await tempDir()
+    expect((await invoke(['new', 'game', 'assets'], root)).code).toBe(0)
+    const game = join(root, 'games', 'assets')
+    await mkdir(join(game, 'assets', 'sprites'), { recursive: true })
+    await writeFile(join(game, 'assets', 'sprites', 'a.png'), 'pixel')
+    await writeFile(
+      join(game, 'assets', 'manifest.json'),
+      JSON.stringify({
+        pack: 'test-pack',
+        version: '1.2.3',
+        assets: [
+          {
+            id: 'hero',
+            file: 'sprites/a.png',
+            type: 'sprite',
+            frameWidth: 16,
+            frameHeight: 16,
+            columns: 2,
+            rows: 1,
+            frames: 2,
+            fps: 12,
+            anchor: 'bottom-center',
+            animations: [{ name: 'idle', columns: [0, 1], frames: 2 }],
+          },
+        ],
+      }),
+      'utf8',
+    )
+    expect((await invoke(['gen'], game)).code).toBe(0)
+    const generated = await readFile(join(game, 'features/_generated/assets.ts'), 'utf8')
+    expect(generated).toContain('AssetIds')
+    expect(generated).toContain('AssetPack')
+    expect((await invoke(['check'], game)).code).toBe(0)
+
+    const manifestPath = join(game, 'assets/manifest.json')
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {
+      assets: Array<Record<string, unknown>>
+    }
+    manifest.assets[0] = { ...manifest.assets[0], frames: 99 }
+    await writeFile(manifestPath, JSON.stringify(manifest), 'utf8')
+    const broken = await invoke(['check'], game)
+    expect(broken.code).toBe(1)
+    expect(broken.stderr).toContain('LG009')
+  })
+
   it('rejects game code importing the core internal capability', async () => {
     const root = await tempDir()
     expect((await invoke(['new', 'game', 'inner'], root)).code).toBe(0)

@@ -35,7 +35,14 @@ export function parseContentId<Name extends string>(
  * registry, validation and JSON round-trip; typed constant generation belongs
  * to `lunego gen`.
  */
+export interface AssetPackMetadata {
+  readonly pack: string
+  readonly version: string
+  readonly hash: string
+}
+
 export class ContentRegistry {
+  private assetPackValue: AssetPackMetadata | null = null
   private readonly types = new Map<string, ContentTypeDef<string, unknown>>()
   private readonly entries = new Map<string, Map<string, unknown>>()
 
@@ -80,6 +87,17 @@ export class ContentRegistry {
     bucket.set(id, coerced)
   }
 
+  setAssetPack(metadata: AssetPackMetadata): void {
+    if (metadata.pack.length === 0 || metadata.version.length === 0 || metadata.hash.length === 0) {
+      throw new LuneGoError('content_invalid', 'asset pack metadata needs pack/version/hash')
+    }
+    this.assetPackValue = { ...metadata }
+  }
+
+  assetPack(): AssetPackMetadata | null {
+    return this.assetPackValue
+  }
+
   has<Name extends string>(type: ContentTypeDef<Name>, id: ContentId<Name>): boolean {
     return this.entries.get(type.name)?.has(id) ?? false
   }
@@ -99,6 +117,15 @@ export class ContentRegistry {
   fingerprint(): string {
     const hasher = new StateHasher()
     hasher.string('lunego-content')
+    const pack = this.assetPackValue
+    if (pack === null) {
+      hasher.u8(0)
+    } else {
+      hasher.u8(1)
+      hasher.string(pack.pack)
+      hasher.string(pack.version)
+      hasher.string(pack.hash)
+    }
     const typeNames = [...this.types.keys()].sort()
     hasher.u32(typeNames.length)
     for (const typeName of typeNames) {

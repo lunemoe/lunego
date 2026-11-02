@@ -325,6 +325,7 @@ ctx.cue(HitCue, { at, power: 0.8 })
 - **哈希与回放**：`world.hash()` 计算状态哈希。回放文件包含种子或初始存档、命令日志和周期性的哈希检查点，可以用来校验、二分定位第一个不一致的 tick，或者停在指定 tick 检查状态。
 - **双跑**：测试时每个场景自动跑两遍并比对哈希，不确定性一出现就会被发现。
 - **时间单位**：逻辑 `tick` 是无单位整数；`ctx.time.dt`、host `GameFrame.dt/elapsed`、`RenderSystem.sync(time)`、动画 `fps`（帧/秒）和 VFX `update(dt)` 都是秒。`kit-ability.cooldownTicks` 与 audio/VFX 的 Cue 去重使用 tick，不混用秒。
+- **ViewClock**：`createViewLoop` 的 `elapsed` 来自 `GameFrame.elapsed`（tick×dt），`dt` 是本帧实际推进的模拟秒数；暂停、标签隐藏、倍速下都不会用墙钟污染动画/特效/音频。
 
 ---
 
@@ -387,7 +388,7 @@ Kit 与游戏 feature 形状相同，只是位于框架的 `kits/` 目录、不�
   类型集合按需扩充，但每加一种类型，都必须同时支持上述所有产出。
 - **内容** **[已定]**：用 TypeScript 编写，例如 `defineContentType('monster', {...})`。构建期做三件事：校验 schema、校验所有引用都存在、编译成 JSON 内容包。之后由 `lunego gen` 生成类型化 ID（如 `Monsters.slime`），禁止使用魔法字符串。
 - **Prefab**：实体模板，是一组组件的初始数据，用法为 `ctx.spawn(Prefabs.slime, overrides)`。
-- **资源**：原始文件放在 `assets/`（`.aseprite`、`.ldtk`、音频、字体）。构建管线用 Aseprite CLI 导出图集和动画，并把 LDtk 关卡导入为内容。
+- **资源**：原始文件放在 `assets/`（`.aseprite`、`.ldtk`、音频、字体）。构建管线用 Aseprite CLI 导出图集和动画，并把 LDtk 关卡导入为内容。`assets/manifest.json` 记录 pack/version/assets（文件、frameWidth/Height、columns/rows/frames、fps、anchor、animations）；`lunego gen` 生成 `features/_generated/assets.ts` 的类型化 ID/显示元数据/`AssetPack` hash，`lunego check` 校验文件存在、尺寸、帧范围、动画列和版本。
 - **资源拆分**：对逻辑有意义的数据（动画帧时长、攻击判定帧、瓦片碰撞）进入内容包，纯视觉数据只给表现层。逻辑层永远不加载图片。
 
 ---
@@ -403,7 +404,7 @@ Kit 与游戏 feature 形状相同，只是位于框架的 `kits/` 目录、不�
 - **资源**：`TextureStore` 以 id 管理 URL/ImageBitmap/Canvas/帧表，manifest 失败隔离，加载器可注入，`destroy()` 释放纹理；逻辑层不可见。显示尺寸只从 manifest/loader/帧表读取，`DisplaySpec.width/height` 仅是显式覆盖；VFX 尺寸只来自 effect meta。
 - **图层常量**：render-pixi 的 `RENDER_LAYERS`（background→tiles→entities→foreground）是唯一顺序；VFX 的 `EFFECT_LAYERS`/`EFFECT_LAYER_RENDER_TARGET` 映射 ground→tiles、front→foreground；UI 的 `UI_LAYERS` 提供 overlay/modal z-index，模板不再自写魔法数字。
 - **瓦片地图**：游戏提供 tileset + 瓦片索引/图层；框架负责帧切分、原点/间隙、`tiles`（实体后）与 `foreground`（实体前）图层、相机/缩放；地图数据不预设玩法。
-- **渲染绑定**：声明"查询 → 显示对象"的对应关系，显示对象的创建、更新、回收和插值都由框架负责。`RenderSystem.anchorOf(entity,'feet'|'center'|'top')` 给出显示后的世界锚点，游戏解析 Cue 时不再自行猜高度。
+- **渲染绑定**：声明"查询 → 显示对象"的对应关系，显示对象的创建、更新、回收和插值都由框架负责。`RenderSystem.anchorOf(entity,'feet'|'center'|'top', {binding|layer})` / `boundsOf(entity,{binding|layer})` 可按绑定名或图层取 body/血条等独立 bounds，游戏解析 Cue 时不再自行猜高度。
 - **坐标单一来源**：`PixiAdapter.viewport` 导出 `worldToScreen`/`screenToWorld`/`camera`/`zoom`/`cssScale`/`pixelSnap`；Pixi 世界变换、pointer、VFX 都使用同一取整相机。指针直接 `setViewport(renderer.viewport)`。
 
 ```ts
@@ -419,7 +420,7 @@ export const spriteBinding = defineRenderBinding({
 
 ### 8.2 UI **[已定]**
 
-- **DOM 叠加层 + Solid**：`@lunego/ui` 用 `solid-js` + `solid-js/html`，不需要额外 JSX 构建链。`createUiBridge(game)` 持有只读 `frame`/`models` signal，通过 host 的 `subscribeFrames` 更新；UI 只调用 `send`/`query`。
+- **DOM 叠加层 + Solid**：`@lunego/ui` 用 `solid-js` + `solid-js/html`，不需要额外 JSX 构建链。游戏只能从 `@lunego/ui` 取受限原语 `createSignal/createMemo/createEffect/createRoot/onCleanup/html/createComponent`，不能直接 import solid-js。`createUiBridge(game)` 持有只读 `frame`/`models` signal，通过 host 的 `subscribeFrames` 更新；UI 只调用 `send`/`query`。
 - **组件**：`UiRoot`/theme tokens、`Panel`（九宫格 border-image，无图退回 CSS）、`Bar`（hp/mp/xp/neutral）、`Button`、`Tabs`、`InventoryGrid`/`ItemSlot`、`Tooltip`、`SkillBar`（CD 遮罩）、`KeyHint`、`Modal`（Escape/backdrop 关闭）、`List`；全部只做展示与回调。
 - **资源无关**：九宫格/图标由游戏传入 URL；缺少资源时用纯 CSS/文字退化，不造假数据。`mountUi(root, bridge, view)` 负责挂载、样式安装与销毁。
 - **分工**：屏幕空间的面板用 DOM；跟随实体的世界空间 UI（血条、伤害数字）仍在画布内绘制。UI 不计算游戏规则。
@@ -450,7 +451,7 @@ export const combatCues = defineCueMap({
 
 ### 8.5 音频与输入
 
-- **音频**：`@lunego/audio` 提供 Web Audio 总线（master/sfx/music/ui）、Cue 映射、种子化的音高/音量抖动、同音效并发上限、首次手势解锁与 `destroy()`；音频上下文可注入，测试不依赖浏览器。
+- **音频**：`@lunego/audio` 提供 Web Audio 总线（master/sfx/music/ui）、Cue 映射、种子化音高/音量抖动、并发上限、手势解锁与 `destroy()`；`MusicController` 用单个循环 buffer voice 管理 music 总线的播放/淡入淡出/stop/mute/volume，游戏不再使用 HTMLAudio。
 - **输入**：设备 → 动作映射 → 游戏定义的 `toCommands(actions, pointer)` → Command。键盘支持改键；`PointerState.setViewport` 直接接受 render-pixi 的 `renderer.viewport`（cssScale/offset/camera/zoom/worldToScreen/screenToWorld），按下/释放边沿与按钮集合只存在于表现层。
 
 ---
@@ -462,6 +463,7 @@ export const combatCues = defineCueMap({
   - `previousEvents` 是"事件不进存档"的唯一例外：跨 tick 的 `{ prev: true }` 监听需要它，恢复后必须与连续运行一致。  
   - 待执行命令按 `{tick, seq}` 写进存档，读档后仍在原 tick 执行；世界档与档案档用 `World.fromSnapshots({ world, profile })` 一次显式载入，两份必须同 tick、同实体表。  
   - `persist: null` 的状态不会进档；开发模式在首次快照时给出 `snapshot-ephemeral` 告警。
+  - `ContentRegistry.setAssetPack({pack,version,hash})` 把资产包身份并入内容哈希；资产版本变化会让读档明确失败。
 - **读档透明**："连续跑 N 个 tick"与"跑 N/2 个 tick、存档、读档、再跑 N/2 个 tick"必须得到相同的哈希。
 - **迁移**：持久化 schema 带版本号和迁移函数。`schema.lock.json` 记录结构哈希，结构变了却没升版本，check 就会失败。这项从第一次对外测试开始启用，在此之前开发存档可以直接丢弃。
 - **可靠性**：原子写入、保留最近几份备份；Web 平台申请持久化存储（`navigator.storage.persist()`），并支持导出存档文件。
@@ -661,6 +663,7 @@ lunego-workspace/            # 私有工作区
 | 017 | 表现管线 | 精灵/动画/背景/瓦片地图/纹理注册表；渲染时钟显式传入；指针输入与音频总线各自独立 | 已定 |
 | 018 | UI | Solid + solid-js/html，DOM 叠加层；只读 bridge + 主题 + 动画组件（Bar/Panel/Modal/SkillBar 等） | 已定 |
 | 019 | 框架唯一通道 | 游戏只 import @lunego/* 与自己 schema/content；平台/引擎能力由框架 API 提供，缺能力先补框架 | 已定 |
+| 020 | 资产元数据 | manifest 是资产/显示元数据的唯一来源；gen 生成 typed IDs+AssetPack hash，内容哈希/存档检测版本 | 已定 |
 
 ---
 

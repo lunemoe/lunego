@@ -5,6 +5,8 @@ export {
   attachBrowserAudioUnlock,
   defineAudioCueMap,
 } from './system.js'
+export { MusicController } from './music.js'
+export type { MusicOptions } from './music.js'
 export type { UnlockTarget } from './system.js'
 export { SoundBank } from './sounds.js'
 export type { SoundManifest, SoundManifestEntry } from './sounds.js'

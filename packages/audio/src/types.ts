@@ -72,6 +72,9 @@ export interface VoiceHandle {
   readonly id: number
   readonly sound: string
   readonly bus: AudioBusName
+  setVolume(value: number): void
+  fadeTo(value: number, seconds: number): void
+  onEnded(listener: () => void): () => void
   stop(when?: number): void
 }
 

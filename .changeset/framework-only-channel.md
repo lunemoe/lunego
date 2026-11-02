@@ -5,8 +5,9 @@
 "@lunego/input": minor
 "@lunego/ui": minor
 "@lunego/vfx": patch
-"@lunego/audio": patch
-"@lunego/render-pixi": patch
+"@lunego/audio": minor
+"@lunego/render-pixi": minor
+"@lunego/core": patch
 ---
 
 Add LG016: game/template code may only use @lunego/* and its own
@@ -17,4 +18,8 @@ hard-coded binding sizes are rejected by ESLint, dependency-cruiser and
 Provide the missing compliant APIs: createViewLoop and browser save/key/debug
 adapters in host; attachBrowserInput; UI createUiSignal + EffectOverlay;
 renderer runtime canvas and container selectors; vfx mounted canvas surface;
-audio looping buffer sources. The template now uses these APIs end to end.
+audio looping buffer sources. The template now uses these APIs end to end. UI re-exports the restricted Solid
+primitives; audio adds MusicController; RenderSystem supports per-binding/layer
+bounds; gen emits typed asset IDs/display metadata/AssetPack hash from
+assets/manifest.json; ContentRegistry includes asset pack identity in its
+fingerprint; ViewClock uses simulation time.

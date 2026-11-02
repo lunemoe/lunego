@@ -9,7 +9,7 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: 'pnpm --filter @lunego/game-template dev -- --host 127.0.0.1 --port 4174',
+    command: 'pnpm --filter @lunego/game-template dev',
     url: 'http://127.0.0.1:4174',
     reuseExistingServer: false,
     timeout: 60_000,

@@ -1,3 +1,14 @@
+export {
+  createEffect,
+  createMemo,
+  createRoot,
+  createSignal,
+  onCleanup,
+  type Accessor,
+  type Setter,
+} from 'solid-js'
+export { createComponent } from 'solid-js/web'
+export { default as html } from 'solid-js/html'
 export { createUiBridge } from './bridge.js'
 export type { UiBridge, UiFrame, UiGame } from './bridge.js'
 export {

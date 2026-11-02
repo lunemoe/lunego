@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CueInstance, Frame } from '@lunego/core'
 import {
   AudioSystem,
+  MusicController,
   SoundBank,
   attachAudioUnlock,
   defineAudioCueMap,
@@ -143,6 +144,27 @@ describe('audio buses', () => {
     )
     expect(leftContext.sources[0]?.playbackRate.value).not.toBe(1)
     expect(leftContext.sources[0]?.targets[0]).toBeDefined()
+  })
+
+  it('controls one looping music voice through the music bus', () => {
+    const context = new Context()
+    const audio = new AudioSystem(context, bankWith('music'))
+    const music = new MusicController(audio, { volume: 0.4, fadeSeconds: 0.2 })
+    expect(audio.getVolume('music')).toBe(0.4)
+    expect(music.play('music')).toBe(true)
+    expect(music.playing).toBe(true)
+    expect(music.current).toBe('music')
+    expect(context.sources[0]?.loop).toBe(true)
+    expect(context.sources[0]?.playbackRate.value).toBe(1)
+    music.setVolume(0.6)
+    expect(audio.getVolume('music')).toBe(0.6)
+    music.setMuted(true)
+    expect(audio.isMuted('music')).toBe(true)
+    music.stop(0.1)
+    expect(music.playing).toBe(false)
+    expect(context.sources[0]?.stopped).toBe(true)
+    expect(music.play('missing')).toBe(false)
+    music.destroy()
   })
 
   it('supports looping buffer sources for music and ambience', () => {

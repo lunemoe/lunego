@@ -40,6 +40,10 @@ declare global {
         readonly state: string
         readonly voices: number
         readonly sampleRate: number
+        readonly musicPlaying: boolean
+        readonly musicVolume: number
+        readonly musicMuted: boolean
+        readonly musicStopped: boolean
       }
       readonly input: {
         readonly pointer: {

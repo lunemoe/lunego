@@ -29,6 +29,16 @@ describe('content registry', () => {
     expect(restored.get(Monster, slime)).toEqual({ hp: 10, tags: ['ooze'] })
   })
 
+  it('includes asset pack metadata in the fingerprint', () => {
+    const a = new ContentRegistry()
+    const b = new ContentRegistry()
+    a.setAssetPack({ pack: 'demo', version: '1', hash: 'aaa' })
+    b.setAssetPack({ pack: 'demo', version: '2', hash: 'aaa' })
+    expect(a.fingerprint()).not.toBe(b.fingerprint())
+    expect(a.assetPack()).toEqual({ pack: 'demo', version: '1', hash: 'aaa' })
+    expect(a.fingerprint()).not.toBe(new ContentRegistry().fingerprint())
+  })
+
   it('rejects duplicate ids, unknown types and invalid values', () => {
     const Monster = defineContentType('monster', { hp: t.i32 })
     const registry = new ContentRegistry()

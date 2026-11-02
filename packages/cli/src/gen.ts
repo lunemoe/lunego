@@ -1,5 +1,6 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, join, relative } from 'node:path'
+import { generateAssets } from './assets.js'
 import {
   featureDirs,
   pathExists,
@@ -174,6 +175,14 @@ export async function generate(cwd: string, check: boolean): Promise<GenResult> 
   const idsPath = join(cwd, 'features', '_generated', 'ids.ts')
   expected.set(idsPath, await collectIdSources(cwd))
   files.push(toPosix(relative(cwd, idsPath)))
+  const assets = await generateAssets(cwd)
+  if (assets !== null) {
+    errors.push(...assets.errors)
+    if (assets.errors.length === 0) {
+      expected.set(assets.path, assets.source)
+      files.push(toPosix(relative(cwd, assets.path)))
+    }
+  }
 
   for (const [path, content] of expected) {
     const exists = await pathExists(path)

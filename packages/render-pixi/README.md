@@ -28,7 +28,8 @@ texture loading and tilemap layers. No game rules.
 
 - `PixiAdapter`: `viewport`, `element`, `stage`, `worldContainer`, `background`,
   `tilemap`, `textures`, `setBackground`, `setTilemap`, `setZoom`, `layerContainer`.
-- `RenderSystem`: `add`, `sync(source, time)`, `boundsOf`, `anchorOf`,
-  `setCamera`, `destroy`.
+- `RenderSystem`: `add`, `sync(source, time)`, `boundsOf(entity,{binding|layer})`,
+  `anchorOf(entity,anchor,{binding|layer})`, `setCamera`, `destroy`. Name bindings
+  (`name: 'body'`, `'healthbar'`) to separate overlays in one system.
 - `TextureStore`, `spriteSpec`, `animatedSpec`, `backgroundSpec`, `sheetFrames`,
   `animationFrameAt`, `TilemapView`, `buildTilemap`, `cameraTransform`.

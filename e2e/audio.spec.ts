@@ -8,4 +8,8 @@ test('unlocks Web Audio and plays a cue in Chromium', async ({ page }) => {
   expect(result?.state).toBe('running')
   expect(result?.voices).toBeGreaterThan(0)
   expect(result?.sampleRate).toBeGreaterThan(0)
+  expect(result?.musicPlaying).toBe(true)
+  expect(result?.musicVolume).toBe(0.5)
+  expect(result?.musicMuted).toBe(true)
+  expect(result?.musicStopped).toBe(true)
 })

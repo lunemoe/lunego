@@ -21,6 +21,7 @@ interface BusNodes {
 interface Voice extends VoiceHandle {
   readonly source: BufferSourceLike
   readonly gain: GainNodeLike
+  readonly ended: Set<() => void>
 }
 
 function hashString(value: string): number {
@@ -118,6 +119,10 @@ export class AudioSystem {
     }
   }
 
+  get currentTime(): number {
+    return this.context.currentTime
+  }
+
   get activeVoices(): readonly VoiceHandle[] {
     return [...this.active.values()]
   }
@@ -208,6 +213,19 @@ export class AudioSystem {
       bus: busName,
       source,
       gain,
+      ended: new Set(),
+      setVolume: (value: number) => {
+        gain.gain.value = Math.max(0, value)
+      },
+      fadeTo: (value: number, seconds: number) => {
+        const now = this.context.currentTime
+        gain.gain.setValueAtTime(gain.gain.value, now)
+        gain.gain.linearRampToValueAtTime(Math.max(0, value), now + Math.max(0, seconds))
+      },
+      onEnded: (listener: () => void) => {
+        voice.ended.add(listener)
+        return () => voice.ended.delete(listener)
+      },
       stop: (when?: number) => {
         source.stop(when)
       },
@@ -286,6 +304,10 @@ export class AudioSystem {
       }
     }
     voice.gain.disconnect()
+    for (const listener of voice.ended) {
+      listener()
+    }
+    voice.ended.clear()
   }
 }
 

@@ -199,6 +199,40 @@ describe('render bindings', () => {
     expect(system.anchorOf(99)).toBeUndefined()
   })
 
+  it('separates bounds by binding name and layer', () => {
+    const source = new FakeSource()
+    source.entitiesList.splice(1)
+    source.current.set(1, { x: 0, y: 0 })
+    const adapter = new FakeAdapter()
+    const system = new RenderSystem(adapter)
+    system.add(
+      defineRenderBinding({
+        name: 'body',
+        query: [Position],
+        create: () => rectSpec(128, 32, 0xffffff),
+        update: () => undefined,
+      }),
+    )
+    system.add(
+      defineRenderBinding({
+        name: 'healthbar',
+        layer: 'foreground',
+        query: [Position],
+        create: () => rectSpec(8, 2, 0xff0000),
+        update: (object) => {
+          object.y = -4
+        },
+      }),
+    )
+    system.sync(source)
+    expect(system.boundsOf(1, { binding: 'body' })).toEqual({ x: 0, y: 0, width: 128, height: 32 })
+    expect(system.boundsOf(1, { binding: 'healthbar' })).toEqual({ x: 0, y: -4, width: 8, height: 2 })
+    expect(system.anchorOf(1, 'feet', { binding: 'healthbar' })).toEqual({ x: 4, y: -2 })
+    expect(system.anchorOf(1, 'feet', { layer: 'foreground' })).toEqual({ x: 4, y: -2 })
+    expect(system.anchorOf(1, 'feet', { binding: 'body' })).toEqual({ x: 64, y: 32 })
+    expect(system.boundsOf(1)).toEqual({ x: 0, y: -4, width: 128, height: 36 })
+  })
+
   it('orders each layer only once across multiple bindings', () => {
     const source = new FakeSource()
     source.current.set(1, { x: 0, y: 1 })
