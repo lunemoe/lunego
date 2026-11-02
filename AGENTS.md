@@ -28,13 +28,17 @@ packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘/
 packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配
 packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
 packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁
+kits/kit-space/      静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希
+kits/kit-stats/      属性基础值、加法/乘法修饰器、词缀聚合
+kits/kit-ability/    能力定义、资源/冷却、施法校验、泛型目标选择
+kits/kit-loot/       确定性权重抽取、稀有度、词缀 roll
 packages/cli/        lunego gen / new game / check
 packages/eslint-plugin/  LG002 / LG012 / LG013 的可执行规则
 packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
 templates/game/      可运行俯视角模板：移动、Y 排序、相机、存档/回放
 ```
 
-`features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；模板通过 `lunego new game <name>` 复制到 `games/`。特效来源与 MIT 许可见 `THIRD_PARTY_NOTICES.md` 与 `packages/vfx/vendor/pixelfx/`。
+`features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；模板通过 `lunego new game <name>` 复制到 `games/`。框架与游戏并行演进：当前需要的通用机制直接进 `kits/`，去掉玩法名词并补契约/测试；只做当前需要，不为想象需求预写接口。特效来源与 MIT 许可见 `THIRD_PARTY_NOTICES.md` 与 `packages/vfx/vendor/pixelfx/`。
 
 ## 设计约束（必须遵守）
 
