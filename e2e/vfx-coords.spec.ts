@@ -44,3 +44,29 @@ test('Pixi effect layer keeps known world pixels aligned at zoom 1 and 2', async
     })
   }
 })
+
+test('ground and front Pixi surfaces contain only their own layer', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForFunction(() => window.__luneGame !== undefined)
+  const { PNG } = await import('pngjs')
+  for (const layer of ['ground', 'front'] as const) {
+    const probe = await page.evaluate(
+      async ({ layer }) => {
+        const module = await import('/src/vfx-probe.ts')
+        return module.probePixiLayer(layer)
+      },
+      { layer },
+    )
+    await page.waitForTimeout(100)
+    const shot = await page.locator('#pixi-layer canvas').screenshot()
+    const png = PNG.sync.read(shot)
+    const own = (probe.ownY * png.width + probe.ownX) * 4
+    const other = (probe.otherY * png.width + probe.otherX) * 4
+    expect(png.data[own]).toBeGreaterThan(0)
+    expect(png.data[other]).toBe(0)
+    await page.evaluate(async () => {
+      const module = await import('/src/vfx-probe.ts')
+      module.cleanupPixi()
+    })
+  }
+})

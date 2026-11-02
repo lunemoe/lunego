@@ -3,6 +3,7 @@ import { Sprite, Texture } from 'pixi.js'
 import type { Container } from 'pixi.js'
 import type { CueEffectMap, VfxSystem } from './system.js'
 import { effectLayerTransform } from './projection.js'
+import { composite } from '../vendor/pixelfx/src/core/index.js'
 
 export interface PixiEffectContainers {
   /** Usually render-pixi's `tiles` layer: floor effects sit behind actors. */
@@ -94,7 +95,7 @@ export class PixiEffectRenderer {
     if (surface === undefined) {
       return
     }
-    this.system.composeAll(surface.image, cameraX, cameraY, zoom)
+    composite(this.system.compose(layer, cameraX, cameraY, zoom), surface.image.data, null)
     surface.context.putImageData(surface.image, 0, 0)
     const transform = effectLayerTransform(
       cameraX,

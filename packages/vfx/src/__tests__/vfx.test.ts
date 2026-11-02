@@ -216,6 +216,18 @@ describe('world to screen contract', () => {
     expect(hasPixel(frontAnchored.compose('front'), 20, 20)).toBe(true)
   })
 
+  it('keeps ground and front composition isolated', () => {
+    const vfx = probeSystem()
+    vfx.play({ effect: probeEffect, x: 10, y: 10, layer: 'ground' })
+    vfx.play({ effect: probeEffect, x: 40, y: 40, layer: 'front' })
+    const ground = vfx.compose('ground')
+    expect(hasPixel(ground, 10, 10)).toBe(true)
+    expect(hasPixel(ground, 40, 40)).toBe(false)
+    const front = vfx.compose('front')
+    expect(hasPixel(front, 40, 40)).toBe(true)
+    expect(hasPixel(front, 10, 10)).toBe(false)
+  })
+
   it('supports anchor center as a frame-center offset', () => {
     const centered: EffectModule = {
       ...probeEffect,

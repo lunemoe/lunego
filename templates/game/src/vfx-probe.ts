@@ -100,6 +100,52 @@ class PixiProbe {
     return { expectedX: expected.x, expectedY: expected.y }
   }
 
+  async probeLayer(layer: 'ground' | 'front'): Promise<{
+    readonly ownX: number
+    readonly ownY: number
+    readonly otherX: number
+    readonly otherY: number
+  }> {
+    this.cleanup()
+    const host = document.createElement('div')
+    host.id = 'pixi-layer'
+    host.style.position = 'fixed'
+    host.style.left = '0'
+    host.style.top = '300px'
+    host.style.width = '480px'
+    host.style.height = '270px'
+    document.body.appendChild(host)
+    this.host = host
+    this.renderer = await createPixiRenderer({ width: 480, height: 270, container: host })
+    this.system = new VfxSystem({ width: 480, height: 270 })
+    this.system.play({ effect: probeEffect, x: 100, y: 80, layer: 'ground' })
+    this.system.play({ effect: probeEffect, x: 200, y: 120, layer: 'front' })
+    const renderLayer = layer === 'ground' ? 'tiles' : 'foreground'
+    const container = this.renderer.layerContainer(renderLayer)
+    if (container === undefined) {
+      throw new Error(`missing ${renderLayer} layer`)
+    }
+    this.effects = new PixiEffectRenderer(
+      this.system,
+      layer === 'ground' ? { ground: container } : { front: container },
+    )
+    this.renderer.setCamera(10.4, 7.7)
+    this.renderer.setZoom(1)
+    const frame: Frame = { tick: 0, events: [], cues: [], modelPatches: [] }
+    this.effects.sync(frame, defineCueMap({}), 10.4, 7.7, 1)
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    )
+    const ground = effectScreenPosition(100, 80, 10.4, 7.7, 1)
+    const front = effectScreenPosition(200, 120, 10.4, 7.7, 1)
+    return {
+      ownX: layer === 'ground' ? ground.x : front.x,
+      ownY: layer === 'ground' ? ground.y : front.y,
+      otherX: layer === 'ground' ? front.x : ground.x,
+      otherY: layer === 'ground' ? front.y : ground.y,
+    }
+  }
+
   cleanup(): void {
     this.effects?.destroy()
     this.effects = null
@@ -122,6 +168,15 @@ export function probePixi(
   zoom: number,
 ): Promise<PixiProbeResult> {
   return pixiProbe.probe(worldX, worldY, cameraX, cameraY, zoom)
+}
+
+export function probePixiLayer(layer: 'ground' | 'front'): Promise<{
+  readonly ownX: number
+  readonly ownY: number
+  readonly otherX: number
+  readonly otherY: number
+}> {
+  return pixiProbe.probeLayer(layer)
 }
 
 export function cleanupPixi(): void {
