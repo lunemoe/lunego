@@ -2,3 +2,5 @@ packages:
   - packages/*
   - kits/*
   - features/*
+  - templates/*
+  - games/*

@@ -119,6 +119,10 @@ export class World {
     return this.failure !== null
   }
 
+  get pendingCommandCount(): number {
+    return this.commands.pendingCount
+  }
+
   send<C extends CommandDef>(
     command: C,
     payload: CommandPayload<C>,

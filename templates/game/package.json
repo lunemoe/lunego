@@ -1,0 +1,24 @@
+{
+  "name": "@lunego/game-template",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "gen": "lunego gen",
+    "check": "lunego check"
+  },
+  "dependencies": {
+    "@lunego/core": "workspace:*",
+    "@lunego/host": "workspace:*",
+    "@lunego/input": "workspace:*",
+    "@lunego/render-pixi": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

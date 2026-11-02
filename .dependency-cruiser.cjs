@@ -94,6 +94,16 @@ module.exports = {
       },
     },
     {
+      name: 'host-only-core',
+      severity: 'error',
+      comment: 'The host bridges core and view; it must not depend on view packages.',
+      from: { path: '^packages/host/' },
+      to: {
+        path: '^packages/',
+        pathNot: '^packages/(core|host)/',
+      },
+    },
+    {
       name: 'host-does-not-import-view',
       severity: 'error',
       comment: 'The host bridges logic and view; it does not render.',

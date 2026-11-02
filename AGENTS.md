@@ -6,7 +6,7 @@
 - 第一款游戏代号 p9，Hero Siege 式俯视角 ARPG，先与框架一起生长。
 - 架构事实源：`docs/architecture.md`。规则清单：`docs/rules/`。
 
-当前仓库只包含已实现并测试的 M0 内核包；`host`、`render-pixi`、`ui`、`input`、`audio`、`cli` 留到后续批次。
+当前仓库包含已实现并测试的 M0 内核、host、input、render-pixi、cli 与游戏模板；`ui`、`audio` 留到后续批次。
 
 ## 快速开始
 
@@ -23,11 +23,16 @@ pnpm check
 ```
 docs/rules/          LG001–LG015 规则页
 packages/core/       schema DSL、ECS、World、调度、命令、RNG、哈希、存档
+packages/host/       主线程运行时、时间模型、存档/读档、回放、崩溃报告
+packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘适配
+packages/render-pixi/ 渲染绑定生命周期、图层/Y 排序、PixiJS v8 适配
+packages/cli/        lunego gen / new game / check
 packages/eslint-plugin/  LG002 / LG012 / LG013 的可执行规则
 packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
+templates/game/      可运行俯视角模板：移动、Y 排序、相机、存档/回放
 ```
 
-`features/*`、`kits/*` 是后续游戏与 kit 的正确位置，当前不创建占位文件。
+`features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；模板通过 `lunego new game <name>` 复制到 `games/`。
 
 ## 设计约束（必须遵守）
 
@@ -47,7 +52,9 @@ packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
 | `pnpm test` | Vitest workspace |
 | `pnpm lint` | 构建 eslint-plugin 后运行 ESLint |
 | `pnpm depcruise` | 依赖方向检查 |
-| `pnpm check` | build + lint + depcruise + test |
+| `pnpm test:e2e` | Playwright 浏览器冒烟 |
+| `pnpm gen:check` | 校验模板生成物 |
+| `pnpm check` | build + lint + depcruise + test + gen:check + e2e |
 
 ## AI 作业流程
 
@@ -56,7 +63,11 @@ packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
 3. 改契约时同步改 schema、测试、README 与 changeset。
 4. 提交前跑 `pnpm check`；框架改动附带变更记录。
 5. 只通过 `schema.ts` 使用其他 feature；不调用其他 feature 的 System / Handler / 内部函数。
+6. 新增 System / Handler 文件后运行 `lunego gen`；`_generated/` 不得手改（LG014）。
+7. 新游戏用 `lunego new game <name>`，不要手抄模板。
 
 ## 规则速查
+
+模板游戏：`templates/game`，逻辑在 `features/motion`，表现只通过 host 的 Frame/只读视图与 Command 交互。生成物、schema.lock、feature README/测试由 `lunego check` 校验。
 
 LG001 DOM 隔离 · LG002 确定性 · LG003 声明 · LG004 写入路径 · LG005 写权限 · LG006 feature 边界 · LG007 逻辑/表现分离 · LG008 框架无玩法 · LG009 类型化 ID · LG010 schema 版本 · LG011 表现层规则（人工） · LG012 无杂物/无模块级可变状态/文件上限 · LG013 无临时实现 · LG014 不改生成物 · LG015 feature 契约与变更记录。

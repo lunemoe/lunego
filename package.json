@@ -12,18 +12,23 @@
     "test": "vitest run",
     "lint": "pnpm --filter @lunego/eslint-plugin build && eslint .",
     "depcruise": "depcruise packages --config .dependency-cruiser.cjs",
-    "check": "pnpm build && pnpm lint && pnpm depcruise && pnpm test",
+    "check": "pnpm build && pnpm lint && pnpm depcruise && pnpm test && pnpm gen:check && pnpm test:e2e",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "test:e2e": "playwright test",
+    "gen:check": "node packages/cli/dist/cli.js gen --check --cwd templates/game"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
     "@eslint/js": "^10.0.1",
     "@lunego/eslint-plugin": "workspace:*",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^24.0.0",
+    "@types/pngjs": "^6.0.5",
     "dependency-cruiser": "^18.7.0",
     "eslint": "^10.14.0",
+    "pngjs": "^7.0.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"

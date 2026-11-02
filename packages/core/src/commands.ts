@@ -60,6 +60,14 @@ export class CommandQueue {
     return this.sequence
   }
 
+  get pendingCount(): number {
+    let count = 0
+    for (const bucket of this.pendingByTick.values()) {
+      count += bucket.length
+    }
+    return count
+  }
+
   clear(): void {
     this.pendingByTick.clear()
     this.log.length = 0

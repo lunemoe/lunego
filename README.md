@@ -15,6 +15,6 @@ pnpm test
 pnpm check
 ```
 
-当前实现：`@lunego/core`、`@lunego/eslint-plugin`、`@lunego/testkit`。`host`、`render-pixi`、`ui`、`input`、`audio`、`cli` 在后续批次按终局形状加入。
+当前实现：`@lunego/core`、`@lunego/host`、`@lunego/input`、`@lunego/render-pixi`、`@lunego/testkit`、`lunego` CLI、`@lunego/eslint-plugin`，以及 `templates/game` 俯视角模板。`ui`、`audio` 在后续批次加入。
 
 MIT License.

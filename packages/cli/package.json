@@ -1,0 +1,32 @@
+{
+  "name": "lunego",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "files": ["dist", "templates"],
+  "bin": {
+    "lunego": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "pretest": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dependency-cruiser": "^18.7.0",
+    "typescript": "~5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.5"
+  }
+}
