@@ -29,6 +29,12 @@ export type {
   SpriteOptions,
   TextureId,
 } from './types.js'
+export { CameraController, followCamera } from './camera.js'
+export type {
+  CameraBounds,
+  CameraControllerOptions,
+  CameraPoint,
+} from './camera.js'
 export { RenderSystem } from './renderer.js'
 export { createRuntimeCanvas } from './runtime-canvas.js'
 export { cameraWorldTransform, createViewportTransform, viewportTransform } from './viewport.js'

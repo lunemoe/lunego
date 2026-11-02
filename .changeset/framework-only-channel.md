@@ -13,7 +13,10 @@
 Add LG016: game/template code may only use @lunego/* and its own
 schema/content; platform imports, globals, local camera/anchor math and
 hard-coded binding sizes are rejected by ESLint, dependency-cruiser and
-`lunego check`.
+`lunego check`; logic roots are type-checked without DOM libs, and game
+packages depend on the local `lunego` CLI. `RenderSystem` gains a
+`CameraController` for follow/clamp/zoom/pixel-snap, replacing hand-written
+camera math in the template.
 
 Provide the missing compliant APIs: createViewLoop and browser save/key/debug
 adapters in host; attachBrowserInput; UI createUiSignal + EffectOverlay;

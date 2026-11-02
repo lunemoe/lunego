@@ -12,7 +12,7 @@
     "test": "vitest run",
     "lint": "pnpm --filter @lunego/eslint-plugin build && eslint .",
     "depcruise": "depcruise . --config .dependency-cruiser.cjs",
-    "typecheck": "tsc -p packages/core/tsconfig.types.json && tsc -p templates/game/tsconfig.json --noEmit",
+    "typecheck": "tsc -p packages/core/tsconfig.types.json && tsc -p templates/game/tsconfig.json --noEmit && tsc -p templates/game/tsconfig.logic.json --noEmit",
     "check": "pnpm build && pnpm typecheck && pnpm lint && pnpm depcruise && pnpm test && pnpm gen:check && pnpm test:e2e",
     "changeset": "changeset",
     "version-packages": "changeset version",

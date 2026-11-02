@@ -38,6 +38,32 @@ export const gameConfig = tseslint.config(
     ],
   },
   {
+    files: [
+      '**/features/**/logic/**/*.ts',
+      '**/features/**/schema.ts',
+      '**/features/**/content/**/*.ts',
+      '**/games/**/logic/**/*.ts',
+      '**/games/**/schema.ts',
+      '**/games/**/content/**/*.ts',
+      '**/games/**/app/**/*.ts',
+      '**/games/**/src/app/**/*.ts',
+      '**/games/**/src/world.ts',
+      '**/games/**/src/**/logic/**/*.ts',
+      '**/features/**/app/**/*.ts',
+      '**/kits/**/src/**/*.ts',
+      '**/kits/**/schema.ts',
+      '**/kits/**/logic/**/*.ts',
+      '**/kits/**/content/**/*.ts',
+      '**/templates/**/features/**/logic/**/*.ts',
+      '**/templates/**/features/**/schema.ts',
+      '**/templates/**/features/**/content/**/*.ts',
+    ],
+    ignores: ['**/__tests__/**', '**/*.test.ts'],
+    rules: {
+      '@lunego/lg002': 'error',
+    },
+  },
+  {
     files: ['**/*.ts'],
     languageOptions: {
       parser: tseslint.parser,

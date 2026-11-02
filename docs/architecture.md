@@ -398,7 +398,7 @@ Kit 与游戏 feature 形状相同，只是位于框架的 `kits/` 目录、不�
 ### 8.1 渲染 **[已定]**
 
 - **PixiJS v8**，只把它当渲染器用。不选 Phaser，因为它的 Scene/GameObject 体系会变成事实上的架构，与 LuneGo 冲突。
-- **像素完美**：虚拟分辨率（如 480×270）、整数缩放、最近邻采样、相机像素对齐。
+- **像素完美**：虚拟分辨率（如 480×270）、整数缩放、最近邻采样、相机像素对齐。相机跟随统一走 `CameraController`（居中、边界 clamp、zoom、pixelSnap），游戏不手算 `position.x - width/2`。
 - **绘制顺序**：世界图层（背景 → 瓦片 → Y 排序的实体 → 前景）→ 世界后处理 → 整数放大 → 画布内 UI（血条、伤害数字）→ DOM UI。
 - **显示类型**：`rect`、`sprite`（单纹理/子帧）、`animated`（帧表/fps/loop/显式 frame）、`background`；统一 anchor、flipX/Y、tint、alpha、pixelSnap。动画时间由 `RenderSystem.sync(source, time)` 显式传入，逻辑 tick 与渲染时钟分离。
 - **资源**：`TextureStore` 以 id 管理 URL/ImageBitmap/Canvas/帧表，manifest 失败隔离，加载器可注入，`destroy()` 释放纹理；逻辑层不可见。显示尺寸只从 manifest/loader/帧表读取，`DisplaySpec.width/height` 仅是显式覆盖；VFX 尺寸只来自 effect meta。

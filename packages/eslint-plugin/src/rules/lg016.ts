@@ -24,6 +24,8 @@ const forbiddenGlobals: Readonly<Record<string, string>> = {
   AudioContext: 'use @lunego/audio',
   HTMLAudioElement: 'use @lunego/audio',
   Image: 'use @lunego/render-pixi textures',
+  eval: 'dynamic code evaluation is not deterministic',
+  Function: 'dynamic code evaluation is not deterministic',
   fetch: 'use @lunego content/texture loaders',
   WebSocket: 'use a @lunego network adapter',
   requestAnimationFrame: 'use createViewLoop from @lunego/host',
@@ -163,12 +165,10 @@ export const lg016 = createRule<Options, MessageIds>({
   },
   defaultOptions: [{}],
   create(context, [options]) {
-    const filename = context.filename.split('\\').join('/')
     const allowed = new Set(options.allowedImports ?? ['vitest'])
     const debugComment = options.debugComment ?? '@lunego/debug-entry'
     const comments = context.sourceCode.getAllComments()
     const debugEntry = comments.some((comment) => comment.value.includes(debugComment))
-    const isView = filename.includes('/view/') || filename.includes('/src/view/')
 
     const report = (node: TSESTree.Node, messageId: MessageIds, data: Record<string, string>): void => {
       context.report({ node, messageId, data })
@@ -176,9 +176,6 @@ export const lg016 = createRule<Options, MessageIds>({
 
     return {
       ImportDeclaration(node) {
-        if (debugEntry) {
-          return
-        }
         const source = typeof node.source.value === 'string' ? node.source.value : ''
         if (source.length === 0) {
           return
@@ -207,6 +204,19 @@ export const lg016 = createRule<Options, MessageIds>({
         }
       },
       MemberExpression(node) {
+        if (node.object.type === 'Identifier' && node.object.name === 'globalThis' && !debugEntry) {
+          const name = node.property.type === 'Identifier'
+            ? node.property.name
+            : node.property.type === 'Literal' && typeof node.property.value === 'string'
+              ? node.property.value
+              : null
+          if (name !== null) {
+            const reason = forbiddenGlobals[name]
+            if (reason !== undefined) {
+              report(node, 'forbiddenGlobal', { name: `globalThis.${name}`, reason })
+            }
+          }
+        }
         if (!debugEntry) {
           return
         }
@@ -230,10 +240,74 @@ export const lg016 = createRule<Options, MessageIds>({
       CallExpression(node) {
         if (node.callee.type === 'Identifier' && localViewportNames[node.callee.name] === true) {
           report(node, 'localViewport', { name: node.callee.name })
+          return
+        }
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'rectSpec' &&
+          insideRenderBinding(node)
+        ) {
+          for (const argument of node.arguments) {
+            if (argument.type === 'Literal' && typeof argument.value === 'number') {
+              report(argument, 'bindingSize', { field: 'rectSpec' })
+            }
+          }
+        }
+      },
+      LogicalExpression(node) {
+        if (node.operator !== '??' || !insideRenderBinding(node)) {
+          return
+        }
+        if (node.left.type === 'MemberExpression') {
+          const property = node.left.property
+          const name = property.type === 'Identifier'
+            ? property.name
+            : property.type === 'Literal' && typeof property.value === 'string'
+              ? property.value
+              : null
+          if (
+            (name === 'width' || name === 'height') &&
+            node.right.type === 'Literal' &&
+            typeof node.right.value === 'number'
+          ) {
+            report(node.right, 'bindingSize', { field: name })
+          }
+        }
+      },
+      AssignmentExpression(node) {
+        const left = node.left
+        if (debugEntry && left.type === 'MemberExpression') {
+          const root = rootIdentifier(left.object)?.name ?? null
+          if (
+            root === 'window' ||
+            root === 'document' ||
+            root === 'globalThis' ||
+            root === 'localStorage' ||
+            root === 'sessionStorage' ||
+            root === 'navigator'
+          ) {
+            report(node, 'debugMutation', { name: 'assignment' })
+          }
+        }
+        if (!insideRenderBinding(node) || left.type !== 'MemberExpression') {
+          return
+        }
+        const property = left.property
+        const name = property.type === 'Identifier'
+          ? property.name
+          : property.type === 'Literal' && typeof property.value === 'string'
+            ? property.value
+            : null
+        if (name !== 'width' && name !== 'height') {
+          return
+        }
+        const right = node.right
+        if (right.type === 'Literal' && typeof right.value === 'number') {
+          report(right, 'bindingSize', { field: name })
         }
       },
       Property(node) {
-        if (!isView || !insideRenderBinding(node)) {
+        if (!insideRenderBinding(node)) {
           return
         }
         const key = node.key.type === 'Identifier'

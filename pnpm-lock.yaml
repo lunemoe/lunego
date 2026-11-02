@@ -427,6 +427,9 @@ importers:
       '@lunego/vfx':
         specifier: workspace:*
         version: link:../../packages/vfx
+      lunego:
+        specifier: workspace:*
+        version: link:../../packages/cli
       solid-js:
         specifier: ^1.9.18
         version: 1.9.18

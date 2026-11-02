@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -10,6 +10,21 @@ import { templatesRoot } from '../new.js'
 const run = promisify(execFile)
 const cli = fileURLToPath(new URL('../../dist/cli.js', import.meta.url))
 const temporary: string[] = []
+const packagesRoot = fileURLToPath(new URL('../../../../packages', import.meta.url))
+
+async function linkFramework(gameRoot: string): Promise<void> {
+  const scope = join(gameRoot, 'node_modules', '@lunego')
+  await mkdir(scope, { recursive: true })
+  for (const name of ['core', 'host', 'input', 'render-pixi', 'ui', 'vfx', 'audio', 'testkit', 'eslint-plugin']) {
+    try {
+      await symlink(join(packagesRoot, name), join(scope, name), 'dir')
+    } catch (error) {
+      if ((error as { code?: string }).code !== 'EEXIST') {
+        throw error
+      }
+    }
+  }
+}
 
 async function tempDir(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'lunego-cli-'))
@@ -18,6 +33,9 @@ async function tempDir(): Promise<string> {
 }
 
 async function invoke(args: readonly string[], cwd: string): Promise<{ code: number; stdout: string; stderr: string }> {
+  if (args[0] === 'check') {
+    await linkFramework(cwd)
+  }
   try {
     const result = await run(process.execPath, [cli, ...args, '--cwd', cwd], { cwd })
     return { code: 0, stdout: result.stdout, stderr: result.stderr }
@@ -39,6 +57,7 @@ describe('lunego cli', () => {
     const game = join(root, 'games', 'demo')
     const packageJson = await readFile(join(game, 'package.json'), 'utf8')
     expect(packageJson).toContain('@lunego/game-demo')
+    expect(packageJson).toContain('"lunego": "workspace:*"')
     expect(await readFile(join(game, 'features/motion/README.md'), 'utf8')).toContain('motion')
     expect(await readFile(join(game, 'vitest.config.ts'), 'utf8')).toContain("name: 'demo'")
 
@@ -48,6 +67,15 @@ describe('lunego cli', () => {
     const checked = await invoke(['check'], game)
     expect(checked.code).toBe(0)
     expect(checked.stdout).toContain('check passed')
+    const bin = join(game, 'node_modules', '.bin')
+    await mkdir(bin, { recursive: true })
+    await writeFile(
+      join(bin, 'lunego'),
+      `#!/bin/sh\nexec "${process.execPath}" "${cli}" "$@"\n`,
+      { mode: 0o755 },
+    )
+    const pnpmCheck = await run('pnpm', ['check'], { cwd: game })
+    expect(pnpmCheck.stdout).toContain('check passed')
   })
 
   it('resolves templates from the package root in a node_modules layout', async () => {
@@ -129,9 +157,40 @@ describe('lunego cli', () => {
       "import { Texture } from 'pixi.js'\nrequestAnimationFrame(() => {})\nexport const texture = Texture\n",
       'utf8',
     )
+    await writeFile(
+      join(game, 'features/motion/logic/bad-logic.ts'),
+      "export const n = Math.random() + Math.sqrt(4)\nexport const dom = document.body\n",
+      'utf8',
+    )
+    await writeFile(
+      join(game, 'features/motion/schema.ts'),
+      (await readFile(join(game, 'features/motion/schema.ts'), 'utf8')) + '\nexport const badSchemaRandom = Math.random()\n',
+      'utf8',
+    )
+    await mkdir(join(game, 'features/motion/content'), { recursive: true })
+    await writeFile(
+      join(game, 'features/motion/content/bad.ts'),
+      "export const badContentRandom = Math.random()\n",
+      'utf8',
+    )
+    await mkdir(join(game, 'kits/bad/src'), { recursive: true })
+    await writeFile(
+      join(game, 'kits/bad/src/bad.ts'),
+      "export const badKitRandom = Math.random()\n",
+      'utf8',
+    )
+    await mkdir(join(game, 'app'), { recursive: true })
+    await writeFile(
+      join(game, 'app/world.ts'),
+      "export const badAppRandom = Math.random()\n",
+      'utf8',
+    )
     const result = await invoke(['check'], game)
     expect(result.code).toBe(1)
     expect(result.stderr).toContain('LG016')
+    expect(result.stderr).toContain('LG002')
+    expect(result.stderr).toContain('LG001')
+    expect(result.stderr.match(/LG002/g)?.length ?? 0).toBeGreaterThanOrEqual(5)
   })
 
   it('detects stale generated files and schema lock drift', async () => {

@@ -1,4 +1,7 @@
 import { join, relative } from 'node:path'
+import { execFile } from 'node:child_process'
+import { createRequire } from 'node:module'
+import { promisify } from 'node:util'
 import { ESLint } from 'eslint'
 import { gameConfig } from '@lunego/eslint-plugin'
 import { readFile } from 'node:fs/promises'
@@ -10,6 +13,8 @@ export interface CheckResult {
   readonly ok: boolean
   readonly messages: readonly string[]
 }
+
+const execFileAsync = promisify(execFile)
 
 const forbidden: IForbiddenRuleType[] = [
   {
@@ -122,6 +127,26 @@ async function checkEslint(cwd: string, messages: string[]): Promise<void> {
   }
 }
 
+async function checkTypeScript(cwd: string, messages: string[]): Promise<void> {
+  const logicConfig = join(cwd, 'tsconfig.logic.json')
+  const config = (await pathExists(logicConfig)) ? logicConfig : join(cwd, 'tsconfig.json')
+  if (!(await pathExists(config))) {
+    return
+  }
+  try {
+    const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc')
+    await execFileAsync(process.execPath, [tsc, '-p', config, '--noEmit'], {
+      cwd,
+      maxBuffer: 16 * 1024 * 1024,
+      timeout: 120_000,
+    })
+  } catch (error) {
+    const failure = error as { stderr?: string; stdout?: string; message?: string }
+    const detail = (failure.stderr || failure.stdout || failure.message || String(error)).trim()
+    messages.push(`LG001 TypeScript failed:\n${detail}`)
+  }
+}
+
 async function checkInternalImports(cwd: string, messages: string[]): Promise<void> {
   for (const root of ['features', 'games']) {
     if (!(await pathExists(join(cwd, root)))) {
@@ -181,6 +206,7 @@ export async function runCheck(cwd: string): Promise<CheckResult> {
     messages.push(`LG014 ${error instanceof Error ? error.message : String(error)}`)
   }
   await checkContracts(cwd, messages)
+  await checkTypeScript(cwd, messages)
   await checkInternalImports(cwd, messages)
   await checkEslint(cwd, messages)
   await checkDirections(cwd, messages)

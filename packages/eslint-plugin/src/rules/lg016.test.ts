@@ -26,6 +26,10 @@ ruleTester.run('lg016', lg016, {
       code: '// @lunego/debug-entry\nconst el = document.body',
       filename: 'games/demo/src/debug.ts',
     },
+    {
+      code: '// @lunego/debug-entry\nconst el = globalThis.document.body',
+      filename: 'games/demo/src/debug.ts',
+    },
   ],
   invalid: [
     { code: 'import { Texture } from "pixi.js"', filename: gameFile, errors: [{ messageId: 'forbiddenImport' }] },
@@ -50,6 +54,41 @@ ruleTester.run('lg016', lg016, {
       code: '// @lunego/debug-entry\ndocument.body.appendChild(node)',
       filename: 'games/demo/src/debug.ts',
       errors: [{ messageId: 'debugMutation' }],
+    },
+    {
+      code: '// @lunego/debug-entry\nimport { Texture } from "pixi.js"',
+      filename: 'games/demo/src/debug.ts',
+      errors: [{ messageId: 'forbiddenImport' }],
+    },
+    {
+      code: '// @lunego/debug-entry\nwindow.__p9 = debug',
+      filename: 'games/demo/src/debug.ts',
+      errors: [{ messageId: 'debugMutation' }],
+    },
+    { code: 'const el = globalThis.document.body', filename: gameFile, errors: [{ messageId: 'forbiddenGlobal' }] },
+    { code: 'const el = globalThis.window', filename: gameFile, errors: [{ messageId: 'forbiddenGlobal' }] },
+    { code: 'const now = globalThis.performance.now()', filename: gameFile, errors: [{ messageId: 'forbiddenGlobal' }] },
+    { code: 'globalThis.eval("1")', filename: gameFile, errors: [{ messageId: 'forbiddenGlobal' }] },
+    { code: 'const F = globalThis.Function', filename: gameFile, errors: [{ messageId: 'forbiddenGlobal' }] },
+    {
+      code: 'defineRenderBinding({ update: (object) => { object.width = 16 } })',
+      filename: viewFile,
+      errors: [{ messageId: 'bindingSize' }],
+    },
+    {
+      code: 'defineRenderBinding({ update: (object) => { object.width = 16 } })',
+      filename: gameFile,
+      errors: [{ messageId: 'bindingSize' }],
+    },
+    {
+      code: 'defineRenderBinding({ update: (object) => { object.width = object.width ?? 8 } })',
+      filename: viewFile,
+      errors: [{ messageId: 'bindingSize' }],
+    },
+    {
+      code: 'defineRenderBinding({ create: () => rectSpec(8, 8) })',
+      filename: viewFile,
+      errors: [{ messageId: 'bindingSize' }, { messageId: 'bindingSize' }],
     },
   ],
 })

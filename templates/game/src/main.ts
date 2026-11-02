@@ -19,6 +19,7 @@ import {
 } from '@lunego/ui'
 import { attachBrowserInput, createInput } from '@lunego/input'
 import {
+  CameraController,
   RenderSystem,
   backgroundSpec,
   createPixiRenderer,
@@ -194,6 +195,7 @@ async function boot(): Promise<void> {
   })
 
   const renderSystem = new RenderSystem(renderer)
+  const camera = new CameraController({ width: 480, height: 270 })
   renderSystem.add(
     defineRenderBinding({
       query: [Position, Renderable],
@@ -282,7 +284,9 @@ async function boot(): Promise<void> {
       if (player !== undefined) {
         const position = game.view.get(player, Position)
         if (position !== undefined) {
-          renderSystem.setCamera(position.x - 240, position.y - 135)
+          camera.setZoom(renderer.zoom)
+          const point = camera.follow(position)
+          renderSystem.setCamera(point.x, point.y)
         }
       }
       const viewport = renderer.viewport
