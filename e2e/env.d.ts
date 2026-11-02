@@ -1,6 +1,11 @@
 export {}
 declare global {
   interface Window {
+    __audioProbe?: {
+      readonly state: string
+      readonly voices: number
+      readonly sampleRate: number
+    }
     __luneGame?: {
       readonly game: {
         readonly frame: { readonly tick: number }
@@ -12,6 +17,11 @@ declare global {
         readonly tilemap: { readonly count: number } | null
         readonly worldContainer: { readonly scale: { readonly x: number } }
         setZoom(value: number): void
+      }
+      readonly audioProbe?: {
+        readonly state: string
+        readonly voices: number
+        readonly sampleRate: number
       }
       readonly input: {
         readonly pointer: {

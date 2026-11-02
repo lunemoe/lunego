@@ -6,7 +6,7 @@
 - 第一款游戏代号 p9，Hero Siege 式俯视角 ARPG，先与框架一起生长。
 - 架构事实源：`docs/architecture.md`。规则清单：`docs/rules/`。
 
-当前仓库包含已实现并测试的 M0 内核、host、input、render-pixi、cli 与游戏模板；`ui`、`audio` 留到后续批次。
+当前仓库包含已实现并测试的内核、host、input、render-pixi、vfx、audio、ui、cli 与游戏模板；通用机制在 packages/ 与 kits/。
 
 ## 快速开始
 
@@ -28,6 +28,7 @@ packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘/
 packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配
 packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
 packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁
+packages/ui/         Solid + solid-js/html 的 DOM UI：桥、主题、Panel/Bar/Button/Tabs/背包/技能栏/Modal/List
 kits/kit-space/      静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希
 kits/kit-stats/      属性基础值、加法/乘法修饰器、词缀聚合
 kits/kit-ability/    能力定义、资源/冷却、施法校验、泛型目标选择

@@ -1,4 +1,4 @@
-import { defineCommand, defineComponent, defineCue, defineTag, t } from '@lunego/core'
+import { defineCommand, defineComponent, defineCue, defineModel, defineTag, t } from '@lunego/core'
 
 export const Position = defineComponent(
   'Position',
@@ -17,6 +17,13 @@ export const Player = defineTag('Player', { persist: 'world' })
 export const Renderable = defineComponent(
   'Renderable',
   { width: t.f32, height: t.f32, color: t.u32, texture: t.optional(t.asset('sprite')) },
+  { persist: 'world' },
+)
+
+export const Vitals = defineModel(
+  'Vitals',
+  { hp: t.u16, maxHp: t.u16 },
+  { hp: 100, maxHp: 100 },
   { persist: 'world' },
 )
 

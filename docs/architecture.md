@@ -85,13 +85,13 @@ LuneGo 的做法是把"形状"和"功能"分开处理：
 | `@lunego/host`          | 桥接   | 运行逻辑；逻辑与表现之间的通信协议；时间模型；存档读写                                                                  |
 | `@lunego/render-pixi`   | 表现   | 渲染绑定、插值、图层、相机/缩放、精灵/动画/背景、纹理注册表、瓦片地图、像素完美                                                    |
 | `@lunego/vfx`           | 表现   | pixelfx 特效层（MIT，vendor）、Cue → 特效映射、俯视角地面投影、地面/前景分层                                           |
-| `@lunego/ui`            | 表现   | Solid 绑定、Model 镜像、基础组件                                                                       |
+| `@lunego/ui`            | 表现   | Solid + solid-js/html 的 DOM UI：只读 bridge、主题、Panel/Bar/Button/Tabs/Inventory/SkillBar/Modal/List |
 | `@lunego/input`         | 表现   | 设备 → 抽象动作 → Command                                                                          |
 | `@lunego/audio`         | 表现   | Web Audio、由 Cue 驱动的音效、发声数限制                                                                  |
-| `@lunego/kit-space`     | 框架   | 静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希 broadphase；无玩法名词 |
-| `@lunego/kit-stats`     | 框架   | 属性基础值、加法/乘法修饰器、词缀定义与聚合、上下限 |
-| `@lunego/kit-ability`   | 框架   | 能力定义、资源消耗、tick 冷却、施法校验、泛型目标选择 |
-| `@lunego/kit-loot`      | 框架   | 确定性权重抽取、稀有度、词缀 roll |
+| `@lunego/kit-space`     | 框架   | 静态瓦片碰撞、轴分离移动、圆/矩形范围查询、空间哈希 broadphase；无玩法名词                                                  |
+| `@lunego/kit-stats`     | 框架   | 属性基础值、加法/乘法修饰器、词缀定义与聚合、上下限                                                                   |
+| `@lunego/kit-ability`   | 框架   | 能力定义、资源消耗、tick 冷却、施法校验、泛型目标选择                                                                |
+| `@lunego/kit-loot`      | 框架   | 确定性权重抽取、稀有度、词缀 roll                                                                          |
 | `@lunego/testkit`       | 工具   | testWorld、场景测试、确定性双跑、回放                                                                      |
 | `lunego`（CLI）           | 工具   | gen / new / check / run / replay                                                             |
 | `@lunego/eslint-plugin` | 工具   | LuneGo 规则的 lint 实现，附带 dependency-cruiser 配置                                                  |
@@ -414,9 +414,10 @@ export const spriteBinding = defineRenderBinding({
 
 ### 8.2 UI **[已定]**
 
-- **DOM 叠加层 + Solid.js**。`useModel(Wallet)` 返回只读 signal；UI 只能调用 `game.send(...)` 和 `game.query(...)`。
-- **分工**：屏幕空间的面板用 DOM；跟随实体的世界空间 UI 可能同时有上百个（血条、伤害数字），在画布内绘制。
-- UI 只负责显示，不计算游戏规则。
+- **DOM 叠加层 + Solid**：`@lunego/ui` 用 `solid-js` + `solid-js/html`，不需要额外 JSX 构建链。`createUiBridge(game)` 持有只读 `frame`/`models` signal，通过 host 的 `subscribeFrames` 更新；UI 只调用 `send`/`query`。
+- **组件**：`UiRoot`/theme tokens、`Panel`（九宫格 border-image，无图退回 CSS）、`Bar`（hp/mp/xp/neutral）、`Button`、`Tabs`、`InventoryGrid`/`ItemSlot`、`Tooltip`、`SkillBar`（CD 遮罩）、`KeyHint`、`Modal`（Escape/backdrop 关闭）、`List`；全部只做展示与回调。
+- **资源无关**：九宫格/图标由游戏传入 URL；缺少资源时用纯 CSS/文字退化，不造假数据。`mountUi(root, bridge, view)` 负责挂载、样式安装与销毁。
+- **分工**：屏幕空间的面板用 DOM；跟随实体的世界空间 UI（血条、伤害数字）仍在画布内绘制。UI 不计算游戏规则。
 
 ### 8.3 Cue 的表现映射
 
@@ -651,6 +652,7 @@ lunego-workspace/            # 私有工作区
 | 015 | 特效 | pixelfx 作为 `@lunego/vfx` 特效层；只取 Cue 驱动的像素特效，俯视角投影与分层显式 | 已定 |
 | 016 | 存档透明 | 快照记录 dt/contentHash/待执行命令；`previousEvents` 例外；世界档+档案档显式合并载入 | 已定 |
 | 017 | 表现管线 | 精灵/动画/背景/瓦片地图/纹理注册表；渲染时钟显式传入；指针输入与音频总线各自独立 | 已定 |
+| 018 | UI | Solid + solid-js/html，DOM 叠加层；只读 bridge + 主题 + 动画组件（Bar/Panel/Modal/SkillBar 等） | 已定 |
 
 ---
 

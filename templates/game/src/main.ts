@@ -1,6 +1,17 @@
 import type { Game } from '@lunego/host'
 import type { WorldSnapshot } from '@lunego/core'
 import { createGame } from '@lunego/host'
+import { createSignal } from 'solid-js'
+import {
+  Bar,
+  Button,
+  KeyHint,
+  Modal,
+  Panel,
+  UiRoot,
+  createUiBridge,
+  mountUi,
+} from '@lunego/ui'
 import { attachKeyboard, attachPointer, createInput } from '@lunego/input'
 import {
   RenderSystem,
@@ -61,10 +72,51 @@ async function boot(): Promise<void> {
   const game = createGame({
     features: [MotionFeature],
     dt: 1 / 60,
-    schemaVersion: 3,
+    schemaVersion: 4,
     timeMode: 'realtime',
     onFrame: (frame) => vfx.consume(frame, cueMap),
   })
+
+  const uiHost = document.querySelector<HTMLElement>('#ui')
+  const bridge = createUiBridge(game)
+  const [helpOpen, setHelpOpen] = createSignal(false)
+  if (uiHost !== null) {
+    mountUi(uiHost, bridge, (ui) => {
+      const vitals = () => ui.models()['Vitals'] as { hp: number; maxHp: number } | undefined
+      return UiRoot({
+        theme: { accent: '#58c8ff', accentText: '#08121c' },
+        children: [
+          Panel({
+            title: 'Status',
+            children: [
+              Bar({
+                kind: 'hp',
+                value: () => vitals()?.hp ?? 0,
+                max: () => vitals()?.maxHp ?? 100,
+              }),
+              Button({
+                children: 'Move right',
+                onClick: () => void ui.send(MoveIntent.type, { x: 1, y: 0 }),
+              }),
+              Button({
+                children: 'Help',
+                onClick: () => setHelpOpen(true),
+              }),
+            ],
+          }),
+          Modal({
+            open: helpOpen,
+            title: 'Controls',
+            onClose: () => setHelpOpen(false),
+            children: [
+              KeyHint({ keys: ['W', 'A', 'S', 'D'] }),
+              Button({ children: 'Close', onClick: () => setHelpOpen(false) }),
+            ],
+          }),
+        ],
+      })
+    })
+  }
 
   const renderer = await createPixiRenderer({
     width: 480,

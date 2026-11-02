@@ -49,6 +49,7 @@ export class Game {
   private readonly modelDefs: readonly ModelDef[]
   private readonly interpolated: readonly ComponentDef[]
   private readonly previousValues = new Map<string, ReadonlyMap<Entity, unknown>>()
+  private readonly frameListeners = new Set<(frame: GameFrame) => void>()
   private readonly hashLog: ReplayHash[] = []
   private readonly checkpoints: ReplayCheckpoint[] = []
   private viewSource: RenderSource
@@ -118,6 +119,13 @@ export class Game {
 
   get tick(): number {
     return this.worldValue.tick
+  }
+
+  /** Read-only frame subscription for UI/view adapters. */
+  subscribeFrames(listener: (frame: GameFrame) => void): () => void {
+    this.frameListeners.add(listener)
+    listener(this.frameValue)
+    return () => { this.frameListeners.delete(listener) }
   }
 
   get paused(): boolean {
@@ -283,6 +291,9 @@ export class Game {
       false,
       this.worldValue.frame,
     )
+    for (const listener of this.frameListeners) {
+      listener(this.frameValue)
+    }
   }
 
   exportReplay(): ReplayData {
@@ -352,6 +363,9 @@ export class Game {
         this.checkpoints.push({ tick: frame.tick, hash: frame.hash })
       }
       this.frameValue = frame
+      for (const listener of this.frameListeners) {
+        listener(frame)
+      }
       if (this.onFrame !== undefined) {
         try {
           this.onFrame(frame)

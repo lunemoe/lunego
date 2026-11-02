@@ -8,6 +8,7 @@ import {
   Renderable,
   Start,
   Velocity,
+  Vitals,
 } from '../schema.js'
 
 export const MotionFeature = defineFeature({
@@ -15,6 +16,7 @@ export const MotionFeature = defineFeature({
   schema: {
     components: [Position, Velocity, Renderable],
     tags: [Player],
+    models: [Vitals],
     commands: [Start, MoveIntent],
     cues: [MoveDust],
   },

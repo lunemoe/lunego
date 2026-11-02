@@ -400,6 +400,9 @@ importers:
 
   templates/game:
     dependencies:
+      '@lunego/audio':
+        specifier: workspace:*
+        version: link:../../packages/audio
       '@lunego/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -412,9 +415,15 @@ importers:
       '@lunego/render-pixi':
         specifier: workspace:*
         version: link:../../packages/render-pixi
+      '@lunego/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@lunego/vfx':
         specifier: workspace:*
         version: link:../../packages/vfx
+      solid-js:
+        specifier: ^1.9.18
+        version: 1.9.18
     devDependencies:
       typescript:
         specifier: ~5.9.3

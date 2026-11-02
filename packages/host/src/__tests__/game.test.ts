@@ -159,6 +159,18 @@ describe('host game', () => {
     expect(paused.paused).toBe(true)
   })
 
+  it('notifies read-only frame subscribers and unsubscribes cleanly', () => {
+    const game = makeGame()
+    const ticks: number[] = []
+    const unsubscribe = game.subscribeFrames((frame) => ticks.push(frame.tick))
+    expect(ticks).toEqual([0])
+    game.update(0.1)
+    expect(ticks).toEqual([0, 1])
+    unsubscribe()
+    game.update(0.1)
+    expect(ticks).toEqual([0, 1])
+  })
+
   it('is transparent across save and load', () => {
     const full = makeGame()
     spawnPlayer(full)

@@ -24,10 +24,17 @@ export class WebSoundLoader implements SoundLoader {
   }
 }
 
-function wrapNode(node: AudioNode): AudioNodeLike {
+const RAW_AUDIO_NODE = Symbol('lunego.audio.raw')
+
+interface RawNodeCarrier {
+  readonly [RAW_AUDIO_NODE]: AudioNode
+}
+
+function wrapNode(node: AudioNode): AudioNodeLike & RawNodeCarrier {
   return {
+    [RAW_AUDIO_NODE]: node,
     connect: (destination) => {
-      node.connect(destination as AudioNode)
+      node.connect((destination as AudioNodeLike & RawNodeCarrier)[RAW_AUDIO_NODE])
     },
     disconnect: () => {
       node.disconnect()

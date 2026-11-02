@@ -22,6 +22,13 @@ body {
   border: 1px solid #243349;
   position: relative;
 }
+#game #ui {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 20;
+  width: min(320px, calc(100% - 16px));
+}
 #game .vfx-layer {
   position: absolute;
   pointer-events: none;
