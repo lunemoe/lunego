@@ -2,6 +2,7 @@ import type { Frame } from '@lunego/core'
 import { Sprite, Texture } from 'pixi.js'
 import type { Container } from 'pixi.js'
 import type { CueEffectMap, VfxSystem } from './system.js'
+import { effectLayerTransform } from './projection.js'
 
 export interface PixiEffectContainers {
   /** Usually render-pixi's `tiles` layer: floor effects sit behind actors. */
@@ -53,14 +54,20 @@ export class PixiEffectRenderer {
     }
   }
 
-  /** Plays cues from a host frame, then redraws the layers at the camera offset. */
-  sync(frame: Frame, map: CueEffectMap, cameraX: number, cameraY: number): void {
+  /** Plays cues, then redraws both screen-space buffers under the render-pixi camera. */
+  sync(
+    frame: Frame,
+    map: CueEffectMap,
+    cameraX: number,
+    cameraY: number,
+    zoom = 1,
+  ): void {
     if (this.destroyed) {
       return
     }
     this.system.consume(frame, map)
-    this.draw('ground', cameraX, cameraY)
-    this.draw('front', cameraX, cameraY)
+    this.draw('ground', cameraX, cameraY, zoom)
+    this.draw('front', cameraX, cameraY, zoom)
   }
 
   destroy(): void {
@@ -77,14 +84,28 @@ export class PixiEffectRenderer {
     this.destroyed = true
   }
 
-  private draw(layer: 'ground' | 'front', cameraX: number, cameraY: number): void {
+  private draw(
+    layer: 'ground' | 'front',
+    cameraX: number,
+    cameraY: number,
+    zoom: number,
+  ): void {
     const surface = this.surfaces[layer]
     if (surface === undefined) {
       return
     }
-    this.system.composeAll(surface.image, cameraX, cameraY)
+    this.system.composeAll(surface.image, cameraX, cameraY, zoom)
     surface.context.putImageData(surface.image, 0, 0)
-    surface.sprite.position.set(cameraX, cameraY)
+    const transform = effectLayerTransform(
+      cameraX,
+      cameraY,
+      zoom,
+      this.system.width,
+      this.system.height,
+    )
+    surface.sprite.position.set(transform.x, transform.y)
+    surface.sprite.width = transform.width
+    surface.sprite.height = transform.height
     surface.texture.source.update()
   }
 }

@@ -2,9 +2,8 @@ import type { CueInstance, Frame } from '@lunego/core'
 import * as pixelFx from '../vendor/pixelfx/src/core/index.js'
 import {
   DEFAULT_PROJECTION,
-  anchorFor,
+  effectScreenPosition,
   projectGround,
-  type ProjectedPoint,
 } from './projection.js'
 import type {
   CueResolver,
@@ -30,6 +29,8 @@ interface ActiveEffect {
   readonly frame: PixelFrame
   readonly x: number
   readonly y: number
+  readonly offsetX: number
+  readonly offsetY: number
   readonly scale: number
   readonly layer: EffectLayer
   readonly depth: number
@@ -210,6 +211,9 @@ export class VfxSystem {
       ...(request.light === undefined ? {} : { light: request.light }),
     }
     const instance = pixelFx.createFx(request.effect, options) as EffectInstance
+    const centered = request.anchor === 'center'
+    const offsetX = request.offsetX ?? (centered ? meta.size[0] / 2 - meta.origin[0] : 0)
+    const offsetY = request.offsetY ?? (centered ? meta.size[1] / 2 - meta.origin[1] : 0)
     const id = `${request.seed ?? 1}:${this.nextOrder}`
     this.active.push({
       id,
@@ -218,6 +222,8 @@ export class VfxSystem {
       frame,
       x: request.x,
       y: request.y,
+      offsetX,
+      offsetY,
       scale: request.scale ?? 1,
       layer: request.layer ?? 'front',
       depth: request.y,
@@ -235,9 +241,11 @@ export class VfxSystem {
 
   /** Plays every cue in a frame through the view's mapping. */
   consume(frame: Frame, map: CueEffectMap): void {
-    if (frame.tick <= this.lastFrameTick) {
+    if (frame.tick === this.lastFrameTick) {
       return
     }
+    // A loaded older snapshot rewinds the host tick; accept it instead of
+    // dropping every cue until the old high-water mark is reached again.
     this.lastFrameTick = frame.tick
     for (const cue of frame.cues) {
       const requests = map.resolve(cue)
@@ -265,21 +273,21 @@ export class VfxSystem {
     }
   }
 
-  /** Composited world-space pixels for one render layer. */
-  compose(layer: EffectLayer, cameraX = 0, cameraY = 0): PixelFrame {
+  /** Composited viewport pixels for one layer; camera/zoom must match render-pixi. */
+  compose(layer: EffectLayer, cameraX = 0, cameraY = 0, zoom = 1): PixelFrame {
     const scene = this.sceneFrame(layer)
     clearFrame(scene)
     const effects = this.active
       .filter((effect) => effect.layer === layer)
       .sort((left, right) => left.depth - right.depth || left.order - right.order)
     for (const effect of effects) {
-      this.drawEffect(effect, scene, cameraX, cameraY)
+      this.drawEffect(effect, scene, cameraX, cameraY, zoom)
     }
     return scene
   }
 
-  /** Ground then front into a single RGBA buffer for a simple canvas overlay. */
-  composeAll(out: ImageData, cameraX = 0, cameraY = 0): void {
+  /** Ground then front into a viewport RGBA buffer for a canvas overlay. */
+  composeAll(out: ImageData, cameraX = 0, cameraY = 0, zoom = 1): void {
     if (out.width !== this.width || out.height !== this.height) {
       throw new Error('vfx ImageData size does not match the system')
     }
@@ -291,7 +299,7 @@ export class VfxSystem {
     for (const layer of ['ground', 'front'] as const) {
       for (const effect of effects) {
         if (effect.layer === layer) {
-          this.drawEffect(effect, scene, cameraX, cameraY)
+          this.drawEffect(effect, scene, cameraX, cameraY, zoom)
         }
       }
     }
@@ -327,6 +335,7 @@ export class VfxSystem {
     scene: PixelFrame,
     cameraX: number,
     cameraY: number,
+    zoom: number,
   ): void {
     const frame = effect.frame
     clearFrame(frame)
@@ -335,8 +344,10 @@ export class VfxSystem {
     const meta = effect.module.meta
     const originX = meta.origin[0]
     const originY = meta.origin[1]
-    const anchor: ProjectedPoint = anchorFor(effect.x, effect.y, this.projection)
+    const anchor = effectScreenPosition(effect.x, effect.y, cameraX, cameraY, zoom)
     const ground = effect.layer === 'ground'
+    const project = (x: number, y: number): { x: number; y: number } =>
+      ground ? projectGround(x, y, this.projection) : { x, y }
     for (let y = 0; y < frame.h; y += 1) {
       for (let x = 0; x < frame.w; x += 1) {
         const index = y * frame.w + x
@@ -345,17 +356,22 @@ export class VfxSystem {
         if (color === 0 && light === 0) {
           continue
         }
-        const dx = (x - originX) * effect.scale
-        const dy = (y - originY) * effect.scale
-        const projected = ground ? projectGround(dx, dy, this.projection) : { x: dx, y: dy }
-        blendPixel(
-          scene,
-          Math.round(anchor.x + projected.x - cameraX),
-          Math.round(anchor.y + projected.y - cameraY),
-          color,
-          light,
-        )
+        const dx = (x - originX) * effect.scale + effect.offsetX
+        const dy = (y - originY) * effect.scale + effect.offsetY
+        const current = project(dx, dy)
+        const nextX = project(dx + effect.scale, dy)
+        const nextY = project(dx, dy + effect.scale)
+        const left = anchor.x + Math.floor(current.x * zoom)
+        const right = Math.max(left + 1, anchor.x + Math.floor(nextX.x * zoom))
+        const top = anchor.y + Math.floor(current.y * zoom)
+        const bottom = Math.max(top + 1, anchor.y + Math.floor(nextY.y * zoom))
+        for (let py = top; py < bottom; py += 1) {
+          for (let px = left; px < right; px += 1) {
+            blendPixel(scene, px, py, color, light)
+          }
+        }
       }
     }
   }
+
 }

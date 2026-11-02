@@ -5,11 +5,13 @@ import {
   DEFAULT_PROJECTION,
   anchorFor,
   angleFromFacing,
+  effectLayerTransform,
+  effectScreenPosition,
   projectGround,
 } from '../projection.js'
 import { VfxSystem, defineCueMap } from '../system.js'
 import type { CueInstance, Frame } from '@lunego/core'
-import type { PixelFrame } from '../types.js'
+import type { EffectModule, PixelFrame } from '../types.js'
 
 function system(maxEffects?: number): VfxSystem {
   return new VfxSystem({ width: 480, height: 270, maxEffects })
@@ -152,5 +154,86 @@ describe('vfx system', () => {
     expect(vfx.effectCount).toBe(0)
     expect(vfx.isDestroyed).toBe(true)
     expect(() => vfx.play({ effect: Effects.poof, x: 0, y: 0 })).toThrow(/destroyed/)
+  })
+})
+
+
+const probeEffect: EffectModule = {
+  meta: { name: 'Probe', size: [1, 1], origin: [0, 0], duration: 1 },
+  create: () => ({
+    draw(painter) {
+      ;(painter as { px(x: number, y: number, color: number): void }).px(0, 0, 0xffffffff)
+    },
+  }),
+}
+
+function hasPixel(frame: PixelFrame, x: number, y: number): boolean {
+  return x >= 0 && y >= 0 && x < frame.w && y < frame.h && frame.color[y * frame.w + x] !== 0
+}
+
+function probeSystem(): VfxSystem {
+  return new VfxSystem({ width: 64, height: 64 })
+}
+
+describe('world to screen contract', () => {
+  it('uses the render-pixi camera rounding at every zoom', () => {
+    expect(effectScreenPosition(20, 20, 3.4, 2.6, 1)).toEqual({ x: 17, y: 17 })
+    expect(effectScreenPosition(20, 20, 3.4, 2.6, 2)).toEqual({ x: 33, y: 35 })
+    expect(effectScreenPosition(20, 20, 3.4, 2.6, 3)).toEqual({ x: 50, y: 52 })
+    expect(effectLayerTransform(10.4, 20.6, 2, 480, 270)).toEqual({
+      x: 10.5,
+      y: 20.5,
+      width: 240,
+      height: 135,
+    })
+  })
+
+  it('draws a one-pixel effect at the formula position for zoom 1 and 2', () => {
+    const vfx = probeSystem()
+    vfx.play({ effect: probeEffect, x: 20, y: 20 })
+    const one = vfx.compose('front', 3.4, 2.6, 1)
+    expect(hasPixel(one, 17, 17)).toBe(true)
+    const two = vfx.compose('front', 3.4, 2.6, 2)
+    const expected = effectScreenPosition(20, 20, 3.4, 2.6, 2)
+    expect(hasPixel(two, expected.x, expected.y)).toBe(true)
+  })
+
+  it('applies request offsets before ground projection and keeps ground/front anchors', () => {
+    const front = probeSystem()
+    front.play({ effect: probeEffect, x: 20, y: 20, offsetX: 3, offsetY: -4 })
+    expect(hasPixel(front.compose('front'), 23, 16)).toBe(true)
+
+    const ground = probeSystem()
+    ground.play({ effect: probeEffect, x: 20, y: 20, offsetX: 3, offsetY: -4, layer: 'ground' })
+    const projected = projectGround(3, -4, DEFAULT_PROJECTION)
+    expect(hasPixel(ground.compose('ground'), 20 + Math.floor(projected.x), 20 + Math.floor(projected.y))).toBe(true)
+
+    const anchored = probeSystem()
+    anchored.play({ effect: probeEffect, x: 20, y: 20, layer: 'ground' })
+    expect(hasPixel(anchored.compose('ground'), 20, 20)).toBe(true)
+    const frontAnchored = probeSystem()
+    frontAnchored.play({ effect: probeEffect, x: 20, y: 20 })
+    expect(hasPixel(frontAnchored.compose('front'), 20, 20)).toBe(true)
+  })
+
+  it('supports anchor center as a frame-center offset', () => {
+    const centered: EffectModule = {
+      ...probeEffect,
+      meta: { ...probeEffect.meta, size: [4, 4] },
+    }
+    const vfx = probeSystem()
+    vfx.play({ effect: centered, x: 20, y: 20, anchor: 'center' })
+    expect(hasPixel(vfx.compose('front'), 22, 22)).toBe(true)
+  })
+
+  it('accepts a rewound frame tick after loading an older snapshot', () => {
+    const vfx = probeSystem()
+    const map = defineCueMap({
+      probe: () => [{ effect: probeEffect, x: 10, y: 10 }],
+    })
+    vfx.consume({ ...frameWith(cue('10:test:0', 'probe', {})), tick: 10 }, map)
+    expect(vfx.effectCount).toBe(1)
+    vfx.consume({ ...frameWith(cue('3:test:0', 'probe', {})), tick: 3 }, map)
+    expect(vfx.effectCount).toBe(2)
   })
 })

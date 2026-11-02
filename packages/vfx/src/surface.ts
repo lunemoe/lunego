@@ -32,11 +32,11 @@ export class CanvasEffectSurface {
     return this.canvas
   }
 
-  render(cameraX = 0, cameraY = 0): void {
+  render(cameraX = 0, cameraY = 0, zoom = 1): void {
     if (this.destroyed) {
       return
     }
-    this.system.composeAll(this.image, cameraX, cameraY)
+    this.system.composeAll(this.image, cameraX, cameraY, zoom)
     this.context.putImageData(this.image, 0, 0)
   }
 

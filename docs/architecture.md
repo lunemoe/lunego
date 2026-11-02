@@ -439,6 +439,7 @@ export const combatCues = defineCueMap({
 
 - **来源**：`@lunego/vfx` vendor [pixelfx 0.3.0](https://github.com/patch-gg/pixelfx)（MIT，commit `a841596…`），保留 LICENSE/NOTICE 与 `THIRD_PARTY_NOTICES.md`。只取代码驱动的特效层：core 图（含横版 `act`/actor 骨架模块，`core/index.js` 会导出它们）原样 vendor，但加载时拒绝任何导出 `act` 的 effect，视图从不绘制 body/target。
 - **只走 Cue**：`defineCueMap` 把每个 Cue 名映射为若干 `EffectRequest`；逻辑层不知道 pixelfx 的存在。种子由 Cue 的确定性 ID 派生，所有粒子抖动来自 pixelfx 自带的 seeded RNG，不使用 `Math.random`。
+- **坐标契约**：`EffectRequest.x/y` 是世界坐标（默认脚底锚点）；`composeAll(out, cameraX, cameraY, zoom)` 输出视口像素；`PixiEffectRenderer.sync(frame, map, cameraX, cameraY, zoom)` 必须传 render-pixi 的相机/zoom。命中/投射物用 `offsetX/offsetY` 或 `anchor:'center'` 指定身体中心，地面 AOE 保持脚底；offset 在 `projectGround` 之前应用。
 - **俯视角**：禁用横版 body/target/act；`angle` 由朝向向量决定；地面特效按 `groundScaleY`/`skewX` 投影；锚点在实体脚下（`footOffset`）；`ground` 层在角色之后、`front` 层在角色之前。
 - **协作**：`VfxSystem` 按脚下深度排序并输出 `ground`/`front` 两个像素缓冲；`CanvasEffectSurface` 用于透明叠加，`PixiEffectRenderer` 把两个缓冲挂到 render-pixi 的 `tiles`/`foreground` 容器。数量上限、帧池与 `destroy()` 由特效系统负责。
 

@@ -65,6 +65,11 @@ export interface EffectRequest {
   readonly palette?: readonly string[]
   readonly light?: number
   readonly layer?: EffectLayer
+  /** World-space offset from the feet anchor, before ground projection. */
+  readonly offsetX?: number
+  readonly offsetY?: number
+  /** Shorthand: feet keeps (0,0); center moves the effect frame center to x/y. */
+  readonly anchor?: 'feet' | 'center'
   readonly options?: Readonly<Record<string, unknown>>
 }
 

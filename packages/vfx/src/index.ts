@@ -3,8 +3,11 @@ export {
   DEFAULT_PROJECTION,
   anchorFor,
   angleFromFacing,
+  effectLayerTransform,
+  effectScreenPosition,
   projectGround,
   type ProjectedPoint,
+  type ScreenPoint,
 } from './projection.js'
 export { CanvasEffectSurface, type CanvasSurfaceOptions } from './surface.js'
 export { CueEffectMap, VfxSystem, defineCueMap, type VfxConfig } from './system.js'

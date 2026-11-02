@@ -324,7 +324,7 @@ async function boot(): Promise<void> {
         zoom: renderer.zoom,
       }),
     )
-    surface.render(cameraX, cameraY)
+    surface.render(cameraX, cameraY, renderer.zoom)
     requestAnimationFrame(frame)
   }
 

@@ -24,6 +24,51 @@ export function projectGround(
   }
 }
 
+export interface ScreenPoint {
+  readonly x: number
+  readonly y: number
+}
+
+/**
+ * World -> virtual viewport pixel for effect anchors. Render-pixi rounds both
+ * entity world positions and camera*zoom; use the same rounding so effects and
+ * actors land on the same pixel.
+ */
+export function effectScreenPosition(
+  worldX: number,
+  worldY: number,
+  cameraX: number,
+  cameraY: number,
+  zoom = 1,
+): ScreenPoint {
+  if (!Number.isFinite(zoom) || zoom <= 0) {
+    throw new Error('effect zoom must be positive')
+  }
+  return {
+    x: Math.round(Math.round(worldX) * zoom - Math.round(cameraX * zoom)),
+    y: Math.round(Math.round(worldY) * zoom - Math.round(cameraY * zoom)),
+  }
+}
+
+/** Inverse transform for a screen-space buffer sprite inside a zoomed world. */
+export function effectLayerTransform(
+  cameraX: number,
+  cameraY: number,
+  zoom: number,
+  width: number,
+  height: number,
+): { readonly x: number; readonly y: number; readonly width: number; readonly height: number } {
+  if (!Number.isFinite(zoom) || zoom <= 0) {
+    throw new Error('effect zoom must be positive')
+  }
+  return {
+    x: Math.round(cameraX * zoom) / zoom,
+    y: Math.round(cameraY * zoom) / zoom,
+    width: width / zoom,
+    height: height / zoom,
+  }
+}
+
 /** Screen-space facing angle for effects authored pointing along local +X. */
 export function angleFromFacing(dx: number, dy: number): number {
   return atan2(dy, dx)
