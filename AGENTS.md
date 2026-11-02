@@ -24,9 +24,10 @@ pnpm check
 docs/rules/          LG001–LG015 规则页
 packages/core/       schema DSL、ECS、World、调度、命令、RNG、哈希、存档
 packages/host/       主线程运行时、时间模型、存档/读档、回放、崩溃报告
-packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘适配
-packages/render-pixi/ 渲染绑定生命周期、图层/Y 排序、PixiJS v8 适配
+packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘/指针适配（指针含屏幕/世界坐标）
+packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配
 packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
+packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁
 packages/cli/        lunego gen / new game / check
 packages/eslint-plugin/  LG002 / LG012 / LG013 的可执行规则
 packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放

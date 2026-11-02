@@ -16,7 +16,7 @@ export const Player = defineTag('Player', { persist: 'world' })
 
 export const Renderable = defineComponent(
   'Renderable',
-  { width: t.f32, height: t.f32, color: t.u32 },
+  { width: t.f32, height: t.f32, color: t.u32, texture: t.optional(t.asset('sprite')) },
   { persist: 'world' },
 )
 

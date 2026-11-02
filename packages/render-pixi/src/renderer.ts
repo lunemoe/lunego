@@ -77,13 +77,13 @@ export class RenderSystem<Handle> {
     return this
   }
 
-  sync(source: RenderSource): void {
+  sync(source: RenderSource, time = 0): void {
     if (this.destroyed) {
       return
     }
     const byLayer = new Map<RenderLayer, Array<{ handle: Handle; spec: DisplaySpec; entity: Entity; sortByY: boolean }>>()
     for (const entry of this.entries) {
-      this.syncBinding(entry, source, byLayer)
+      this.syncBinding(entry, source, byLayer, time)
     }
     for (const layer of RENDER_LAYERS) {
       const bucket = byLayer.get(layer)
@@ -92,12 +92,13 @@ export class RenderSystem<Handle> {
         continue
       }
       if (bucket.some((item) => item.sortByY)) {
-        bucket.sort(
-          (left, right) =>
-            left.spec.y - right.spec.y ||
-            left.spec.x - right.spec.x ||
-            left.entity - right.entity,
-        )
+        bucket.sort((left, right) => {
+          const leftY = left.spec.kind === 'background' ? 0 : left.spec.y
+          const rightY = right.spec.kind === 'background' ? 0 : right.spec.y
+          const leftX = left.spec.kind === 'background' ? 0 : left.spec.x
+          const rightX = right.spec.kind === 'background' ? 0 : right.spec.x
+          return leftY - rightY || leftX - rightX || left.entity - right.entity
+        })
       }
       this.adapter.order(layer, bucket.map((item) => item.handle))
     }
@@ -124,6 +125,7 @@ export class RenderSystem<Handle> {
     entry: BindingEntry,
     source: RenderSource,
     byLayer: Map<RenderLayer, Array<{ handle: Handle; spec: DisplaySpec; entity: Entity; sortByY: boolean }>>,
+    time: number,
   ): void {
     const entities = source.entities(...entry.binding.query)
     const active = new Set(entities)
@@ -144,7 +146,7 @@ export class RenderSystem<Handle> {
       }
       entry.binding.update(item.spec, view)
       const handle = item.handle as Handle
-      this.adapter.update(handle, item.spec)
+      this.adapter.update(handle, item.spec, time)
       const layer = entry.binding.layer ?? 'entities'
       const bucket = byLayer.get(layer) ?? []
       bucket.push({

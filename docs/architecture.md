@@ -83,7 +83,7 @@ LuneGo 的做法是把"形状"和"功能"分开处理：
 |---|---|---|
 | `@lunego/core` | 两侧共享 | schema DSL、ECS、World、调度器、Command / Event / Cue / Query、RNG 与数学库、序列化与哈希、Feature 机制。零依赖，不碰 DOM |
 | `@lunego/host` | 桥接 | 运行逻辑；逻辑与表现之间的通信协议；时间模型；存档读写 |
-| `@lunego/render-pixi` | 表现 | 渲染绑定、插值、图层、相机、帧动画、像素完美 |
+| `@lunego/render-pixi` | 表现 | 渲染绑定、插值、图层、相机/缩放、精灵/动画/背景、纹理注册表、瓦片地图、像素完美 |
 | `@lunego/vfx` | 表现 | pixelfx 特效层（MIT，vendor）、Cue → 特效映射、俯视角地面投影、地面/前景分层 |
 | `@lunego/ui` | 表现 | Solid 绑定、Model 镜像、基础组件 |
 | `@lunego/input` | 表现 | 设备 → 抽象动作 → Command |
@@ -392,6 +392,9 @@ Kit 与游戏 feature 形状相同，只是位于框架的 `kits/` 目录、不�
 - **PixiJS v8**，只把它当渲染器用。不选 Phaser，因为它的 Scene/GameObject 体系会变成事实上的架构，与 LuneGo 冲突。
 - **像素完美**：虚拟分辨率（如 480×270）、整数缩放、最近邻采样、相机像素对齐。
 - **绘制顺序**：世界图层（背景 → 瓦片 → Y 排序的实体 → 前景）→ 世界后处理 → 整数放大 → 画布内 UI（血条、伤害数字）→ DOM UI。
+- **显示类型**：`rect`、`sprite`（单纹理/子帧）、`animated`（帧表/fps/loop/显式 frame）、`background`；统一 anchor、flipX/Y、tint、alpha、pixelSnap。动画时间由 `RenderSystem.sync(source, time)` 显式传入，逻辑 tick 与渲染时钟分离。
+- **资源**：`TextureStore` 以 id 管理 URL/ImageBitmap/Canvas/帧表，manifest 失败隔离，加载器可注入，`destroy()` 释放纹理；逻辑层不可见。
+- **瓦片地图**：游戏提供 tileset + 瓦片索引/图层；框架负责帧切分、原点/间隙、`tiles`（实体后）与 `foreground`（实体前）图层、相机/缩放；地图数据不预设玩法。
 - **渲染绑定**：声明"查询 → 显示对象"的对应关系，显示对象的创建、更新、回收和插值都由框架负责。
 
 ```ts
@@ -436,8 +439,8 @@ export const combatCues = defineCueMap({
 
 ### 8.5 音频与输入
 
-- **音频**：Web Audio，按总线分组；音效由 Cue 触发，音高可以随机变化；同一音效同时播放的数量有上限，避免几百个敌人同时受击时声音糊成一片。
-- **输入**：设备 → 动作映射 → 游戏定义的 `toCommands(actions)` → Command。支持改键。
+- **音频**：`@lunego/audio` 提供 Web Audio 总线（master/sfx/music/ui）、Cue 映射、种子化的音高/音量抖动、同音效并发上限、首次手势解锁与 `destroy()`；音频上下文可注入，测试不依赖浏览器。
+- **输入**：设备 → 动作映射 → 游戏定义的 `toCommands(actions, pointer)` → Command。键盘支持改键；`PointerState` 提供屏幕/世界坐标（viewport 含 offset/scale/camera/zoom）、按下/释放边沿与按钮集合，只存在于表现层。
 
 ---
 
@@ -641,6 +644,7 @@ lunego-workspace/            # 私有工作区
 | 014 | 生长方式 | 功能先在游戏里实现，被第二处需要时再晋升到框架 | 提议 |
 | 015 | 特效 | pixelfx 作为 `@lunego/vfx` 特效层；只取 Cue 驱动的像素特效，俯视角投影与分层显式 | 已定 |
 | 016 | 存档透明 | 快照记录 dt/contentHash/待执行命令；`previousEvents` 例外；世界档+档案档显式合并载入 | 已定 |
+| 017 | 表现管线 | 精灵/动画/背景/瓦片地图/纹理注册表；渲染时钟显式传入；指针输入与音频总线各自独立 | 已定 |
 
 ---
 

@@ -12,7 +12,7 @@ export default defineHandler(Start, {
     })
     ctx.spawn({
       Position: { x: 320, y: 220 },
-      Renderable: { width: 28, height: 18, color: 0xd88a4a },
+      Renderable: { width: 16, height: 16, color: 0xd88a4a, texture: 'runtime-crate' },
     })
     return ok()
   },
