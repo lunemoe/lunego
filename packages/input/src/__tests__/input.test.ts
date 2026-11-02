@@ -97,6 +97,38 @@ describe('input mapping', () => {
   })
 })
 
+function viewport(options: {
+  cssScale?: number
+  offsetX?: number
+  offsetY?: number
+  cameraX?: number
+  cameraY?: number
+  zoom?: number
+} = {}) {
+  const cssScale = options.cssScale ?? 1
+  const offsetX = options.offsetX ?? 0
+  const offsetY = options.offsetY ?? 0
+  const zoom = options.zoom ?? 1
+  const cameraX = (options.cameraX ?? 0)
+  const cameraY = (options.cameraY ?? 0)
+  return {
+    cssScale,
+    scale: cssScale * zoom,
+    offsetX,
+    offsetY,
+    cameraX,
+    cameraY,
+    camera: { x: cameraX, y: cameraY },
+    zoom,
+    pixelSnap: true,
+    worldToScreen: (x: number, y: number) => ({ x, y }),
+    screenToWorld: (x: number, y: number) => ({
+      x: cameraX + x / zoom,
+      y: cameraY + y / zoom,
+    }),
+  }
+}
+
 class FakePointerTarget implements PointerTarget {
   readonly listeners = new Map<string, Array<(event: PointerEventLike) => void>>()
 
@@ -140,13 +172,13 @@ describe('pointer input', () => {
 
   it('maps screen coordinates through viewport offset, zoom and camera', () => {
     const pointer = new PointerState()
-    pointer.setViewport({ scale: 2, offsetX: 40, offsetY: 10, cameraX: 100, cameraY: 50 })
+    pointer.setViewport(viewport({ cssScale: 2, offsetX: 40, offsetY: 10, cameraX: 100, cameraY: 50 }))
     pointer.handleMove({ clientX: 60, clientY: 30 })
     expect(pointer.worldPosition).toEqual({ x: 110, y: 60 })
-    pointer.setCamera(200, 100)
+    pointer.setViewport(viewport({ cssScale: 2, offsetX: 40, offsetY: 10, cameraX: 200, cameraY: 100 }))
     expect(pointer.worldPosition).toEqual({ x: 210, y: 110 })
     expect(pointer.screenToWorld({ x: 0, y: 0 })).toEqual({ x: 180, y: 95 })
-    expect(() => pointer.setViewport({ scale: 0 })).toThrow(/scale/)
+    expect(() => pointer.setViewport(viewport({ cssScale: 0 }))).toThrow(/cssScale/)
   })
 
   it('passes pointer state to command mapping and detaches cleanly', () => {

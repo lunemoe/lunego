@@ -8,6 +8,8 @@ import type {
   Vec2,
 } from '@lunego/core'
 import type {
+  DisplayAnchor,
+  DisplayBounds,
   EntityDisplaySpec,
   EntityView,
   RenderAdapter,
@@ -19,7 +21,12 @@ import { RENDER_LAYERS } from './types.js'
 
 interface BindingEntry {
   readonly binding: RenderBinding
-  readonly objects: Map<Entity, { handle: unknown; spec: EntityDisplaySpec; view: EntityView }>
+  readonly objects: Map<Entity, {
+    handle: unknown
+    spec: EntityDisplaySpec
+    view: EntityView
+    bounds: DisplayBounds
+  }>
 }
 
 function clampAlpha(alpha: number): number {
@@ -27,6 +34,17 @@ function clampAlpha(alpha: number): number {
     return 1
   }
   return alpha < 0 ? 0 : alpha > 1 ? 1 : alpha
+}
+
+function fallbackBounds(spec: EntityDisplaySpec): DisplayBounds {
+  const width = 'width' in spec && spec.width !== undefined ? spec.width : 0
+  const height = 'height' in spec && spec.height !== undefined ? spec.height : 0
+  const anchorX = spec.anchorX ?? 0
+  const anchorY = spec.anchorY ?? 0
+  const snap = spec.pixelSnap ?? true
+  const x = snap ? Math.round(spec.x - width * anchorX) : spec.x - width * anchorX
+  const y = snap ? Math.round(spec.y - height * anchorY) : spec.y - height * anchorY
+  return { x, y, width, height }
 }
 
 function entityView(source: RenderSource, entity: Entity): EntityView {
@@ -86,6 +104,7 @@ export class RenderSystem<Handle> {
     return this
   }
 
+  /** `time` is seconds, shared by animated sprites; logic ticks stay separate. */
   sync(source: RenderSource, time = 0): void {
     if (this.destroyed) {
       throw new Error('render system is destroyed')
@@ -114,6 +133,41 @@ export class RenderSystem<Handle> {
 
   setCamera(x: number, y: number): void {
     this.adapter.setCamera(x, y)
+  }
+
+  boundsOf(entity: Entity): DisplayBounds | undefined {
+    let minX = Number.POSITIVE_INFINITY
+    let minY = Number.POSITIVE_INFINITY
+    let maxX = Number.NEGATIVE_INFINITY
+    let maxY = Number.NEGATIVE_INFINITY
+    for (const entry of this.entries) {
+      const item = entry.objects.get(entity)
+      if (item === undefined) {
+        continue
+      }
+      minX = Math.min(minX, item.bounds.x)
+      minY = Math.min(minY, item.bounds.y)
+      maxX = Math.max(maxX, item.bounds.x + item.bounds.width)
+      maxY = Math.max(maxY, item.bounds.y + item.bounds.height)
+    }
+    return Number.isFinite(minX)
+      ? { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+      : undefined
+  }
+
+  anchorOf(entity: Entity, anchor: DisplayAnchor = 'feet'): { readonly x: number; readonly y: number } | undefined {
+    const bounds = this.boundsOf(entity)
+    if (bounds === undefined) {
+      return undefined
+    }
+    const centerX = bounds.x + bounds.width / 2
+    if (anchor === 'center') {
+      return { x: centerX, y: bounds.y + bounds.height / 2 }
+    }
+    if (anchor === 'top') {
+      return { x: centerX, y: bounds.y }
+    }
+    return { x: centerX, y: bounds.y + bounds.height }
   }
 
   destroy(): void {
@@ -148,13 +202,14 @@ export class RenderSystem<Handle> {
       if (item === undefined) {
         const spec = entry.binding.create(view)
         const handle = this.adapter.create(spec)
-        item = { handle, spec, view }
+        item = { handle, spec, view, bounds: fallbackBounds(spec) }
         entry.objects.set(entity, item)
         this.adapter.attach(entry.binding.layer ?? 'entities', handle)
       }
       entry.binding.update(item.spec, view)
       const handle = item.handle as Handle
       this.adapter.update(handle, item.spec, time)
+      item.bounds = this.adapter.measure?.(item.spec, time) ?? fallbackBounds(item.spec)
       const layer = entry.binding.layer ?? 'entities'
       const bucket = byLayer.get(layer) ?? []
       bucket.push({

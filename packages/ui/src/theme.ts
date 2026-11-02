@@ -1,3 +1,5 @@
+export const UI_LAYERS = { overlay: 20, modal: 100 } as const
+
 export interface UiTheme {
   readonly accent?: string
   readonly accentText?: string
@@ -30,6 +32,8 @@ export function themeVariables(theme: UiTheme = {}): Record<string, string> {
 
 export const UI_STYLES = `
 .lg-ui {
+  --lg-ui-z: ${UI_LAYERS.overlay};
+  --lg-modal-z: ${UI_LAYERS.modal};
   --lg-accent: #58c8ff;
   --lg-accent-text: #08121c;
   --lg-bg: rgba(8, 14, 24, 0.88);
@@ -83,7 +87,7 @@ export const UI_STYLES = `
 .lg-slot img { width: 100%; height: 100%; image-rendering: pixelated; object-fit: contain; }
 .lg-slot__count { position: absolute; right: 2px; bottom: 1px; font-size: 10px; text-shadow: 0 1px 0 #000; }
 .lg-tooltip { position: relative; display: inline-flex; }
-.lg-tooltip__content { position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); z-index: 20; min-width: 120px; max-width: 260px; padding: 6px 8px; background: var(--lg-bg); border: 1px solid var(--lg-border); border-radius: var(--lg-radius); font-size: 11px; white-space: pre-wrap; pointer-events: none; opacity: 0; }
+.lg-tooltip__content { position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); z-index: var(--lg-ui-z); min-width: 120px; max-width: 260px; padding: 6px 8px; background: var(--lg-bg); border: 1px solid var(--lg-border); border-radius: var(--lg-radius); font-size: 11px; white-space: pre-wrap; pointer-events: none; opacity: 0; }
 .lg-tooltip:hover .lg-tooltip__content, .lg-tooltip:focus-within .lg-tooltip__content { opacity: 1; }
 .lg-skillbar { display: flex; gap: 4px; }
 .lg-skill { position: relative; width: 40px; height: 40px; background: #0b1420; border: 1px solid var(--lg-border); border-radius: 4px; overflow: hidden; padding: 0; cursor: pointer; }
@@ -92,7 +96,7 @@ export const UI_STYLES = `
 .lg-skill__key { position: absolute; right: 2px; bottom: 1px; font-size: 9px; color: var(--lg-muted); }
 .lg-keyhint { display: inline-flex; gap: 3px; align-items: center; }
 .lg-keyhint kbd { background: #0b1420; border: 1px solid var(--lg-border); border-bottom-width: 2px; border-radius: 3px; padding: 1px 4px; font: inherit; font-size: 10px; }
-.lg-modal__backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 100; }
+.lg-modal__backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: var(--lg-modal-z); }
 .lg-modal { min-width: 240px; max-width: 560px; max-height: 80vh; overflow: auto; }
 .lg-modal__head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 8px; }
 .lg-modal__title { margin: 0; font-size: 13px; color: var(--lg-accent); }

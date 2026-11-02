@@ -20,7 +20,6 @@ import {
   defineRenderBinding,
   rectSpec,
   spriteSpec,
-  viewportTransform,
 } from '@lunego/render-pixi'
 import {
   CanvasEffectSurface,
@@ -310,20 +309,9 @@ async function boot(): Promise<void> {
     const canvas = renderer.element
     overlay.style.width = canvas.style.width
     overlay.style.height = canvas.style.height
-    const bounds = canvas.getBoundingClientRect()
     overlay.style.left = `${canvas.offsetLeft}px`
     overlay.style.top = `${canvas.offsetTop}px`
-    input.pointer.setViewport(
-      viewportTransform({
-        cssWidth: bounds.width > 0 ? bounds.width : 480,
-        virtualWidth: 480,
-        offsetX: bounds.left,
-        offsetY: bounds.top,
-        cameraX,
-        cameraY,
-        zoom: renderer.zoom,
-      }),
-    )
+    input.pointer.setViewport(renderer.viewport)
     surface.render(cameraX, cameraY, renderer.zoom)
     requestAnimationFrame(frame)
   }

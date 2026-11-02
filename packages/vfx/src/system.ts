@@ -5,6 +5,7 @@ import {
   effectScreenPosition,
   projectGround,
 } from './projection.js'
+import { EFFECT_LAYERS } from './types.js'
 import type {
   CueResolver,
   EffectInstance,
@@ -259,6 +260,7 @@ export class VfxSystem {
     }
   }
 
+  /** `dt` is seconds; effect durations/fps are also authored in seconds. */
   update(dt: number): void {
     if (!Number.isFinite(dt) || dt < 0) {
       throw new Error('vfx dt must be a non-negative finite number')
@@ -296,7 +298,7 @@ export class VfxSystem {
     const effects = [...this.active].sort(
       (left, right) => left.depth - right.depth || left.order - right.order,
     )
-    for (const layer of ['ground', 'front'] as const) {
+    for (const layer of EFFECT_LAYERS) {
       for (const effect of effects) {
         if (effect.layer === layer) {
           this.drawEffect(effect, scene, cameraX, cameraY, zoom)

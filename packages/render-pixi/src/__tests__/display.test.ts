@@ -115,6 +115,32 @@ class FakeLoader implements TextureLoader<FakeTexture> {
 }
 
 describe('display specs', () => {
+  it('uses adapter-measured bounds for anchors when sprite size is implicit', () => {
+    const source = new Source()
+    source.values.set(1, { x: 10, y: 20 })
+    class Measured extends Recorder {
+      measure(): { x: number; y: number; width: number; height: number } {
+        return { x: 10, y: 20, width: 32, height: 48 }
+      }
+    }
+    const adapter = new Measured()
+    const system = new RenderSystem(adapter)
+    system.add(
+      defineRenderBinding({
+        query: [Position],
+        create: () => spriteSpec('hero'),
+        update: (object, view) => {
+          const position = view.lerp(Position)
+          object.x = position.x
+          object.y = position.y
+        },
+      }),
+    )
+    system.sync(source)
+    expect(system.boundsOf(1)).toEqual({ x: 10, y: 20, width: 32, height: 48 })
+    expect(system.anchorOf(1, 'feet')).toEqual({ x: 26, y: 68 })
+  })
+
   it('carries sprite anchor, flip, tint and render clock through the binding', () => {
     const source = new Source()
     source.values.set(1, { x: 10, y: 20 })

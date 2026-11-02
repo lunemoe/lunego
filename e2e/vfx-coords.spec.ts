@@ -70,3 +70,57 @@ test('ground and front Pixi surfaces contain only their own layer', async ({ pag
     })
   }
 })
+
+test('renderer viewport, pointer and vfx agree on one world-to-screen pixel', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForFunction(() => window.__luneGame !== undefined)
+  const cases = [
+    { zoom: 1, camera: [10.4, 7.7], world: [100, 80], screen: [90, 72] },
+    { zoom: 2, camera: [10.4, 7.7], world: [100, 80], screen: [179, 145] },
+    { zoom: 1, camera: [0, 0], world: [1, 1], screen: [1, 1] },
+    { zoom: 2, camera: [0, 0], world: [239, 134], screen: [478, 268] },
+  ] as const
+  const results = await page.evaluate(async (cases) => {
+    const renderer = window.__luneGame?.renderer
+    const input = window.__luneGame?.input
+    if (renderer === undefined || input === undefined) {
+      throw new Error('missing game hooks')
+    }
+    const module = await import('/src/vfx-probe.ts')
+    return cases.map((entry) => {
+      renderer.setCamera(entry.camera[0], entry.camera[1])
+      renderer.setZoom(entry.zoom)
+      const viewport = renderer.viewport
+      const screen = viewport.worldToScreen(entry.world[0], entry.world[1])
+      input.pointer.setViewport(viewport)
+      window.dispatchEvent(
+        new PointerEvent('pointermove', {
+          clientX: viewport.offsetX + screen.x * viewport.cssScale,
+          clientY: viewport.offsetY + screen.y * viewport.cssScale,
+          buttons: 0,
+        }),
+      )
+      return {
+        screen,
+        vfx: module.screenPosition(
+          entry.world[0],
+          entry.world[1],
+          viewport.cameraX,
+          viewport.cameraY,
+          viewport.zoom,
+        ),
+        world: input.pointer.worldPosition,
+        camera: viewport.camera,
+        zoom: viewport.zoom,
+      }
+    })
+  }, cases)
+  results.forEach((result, index) => {
+    const expected = cases[index]
+    expect(result.screen).toEqual({ x: expected.screen[0], y: expected.screen[1] })
+    expect(result.vfx).toEqual(result.screen)
+    expect(result.zoom).toBe(expected.zoom)
+    expect(result.world.x).toBeCloseTo(expected.world[0], 1)
+    expect(result.world.y).toBeCloseTo(expected.world[1], 1)
+  })
+})

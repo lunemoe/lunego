@@ -2,6 +2,7 @@ import type { Frame } from '@lunego/core'
 import { Sprite, Texture } from 'pixi.js'
 import type { Container } from 'pixi.js'
 import type { CueEffectMap, VfxSystem } from './system.js'
+import type { EffectLayer } from './types.js'
 import { effectLayerTransform } from './projection.js'
 import { composite } from '../vendor/pixelfx/src/core/index.js'
 
@@ -42,7 +43,7 @@ function createSurface(width: number, height: number, container: Container): Lay
  */
 export class PixiEffectRenderer {
   private readonly system: VfxSystem
-  private readonly surfaces: Partial<Record<'ground' | 'front', LayerSurface>> = {}
+  private readonly surfaces: Partial<Record<EffectLayer, LayerSurface>> = {}
   private destroyed = false
 
   constructor(system: VfxSystem, containers: PixiEffectContainers) {

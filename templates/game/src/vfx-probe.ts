@@ -1,5 +1,6 @@
 import {
   CanvasEffectSurface,
+  EFFECT_LAYER_RENDER_TARGET,
   VfxSystem,
   defineCueMap,
   effectScreenPosition,
@@ -16,6 +17,16 @@ const probeEffect: EffectModule = {
       ;(painter as { px(x: number, y: number, color: number): void }).px(0, 0, 0xffffffff)
     },
   }),
+}
+
+export function screenPosition(
+  worldX: number,
+  worldY: number,
+  cameraX: number,
+  cameraY: number,
+  zoom: number,
+): { readonly x: number; readonly y: number } {
+  return effectScreenPosition(worldX, worldY, cameraX, cameraY, zoom)
 }
 
 export interface VfxProbeResult {
@@ -120,7 +131,7 @@ class PixiProbe {
     this.system = new VfxSystem({ width: 480, height: 270 })
     this.system.play({ effect: probeEffect, x: 100, y: 80, layer: 'ground' })
     this.system.play({ effect: probeEffect, x: 200, y: 120, layer: 'front' })
-    const renderLayer = layer === 'ground' ? 'tiles' : 'foreground'
+    const renderLayer = EFFECT_LAYER_RENDER_TARGET[layer]
     const container = this.renderer.layerContainer(renderLayer)
     if (container === undefined) {
       throw new Error(`missing ${renderLayer} layer`)

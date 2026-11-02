@@ -7,28 +7,23 @@ import {
   TextureSource as PixiTextureSource,
 } from 'pixi.js'
 import type {
-  AnimatedDisplaySpec,
   BackgroundDisplaySpec,
+  DisplayBounds,
   EntityDisplaySpec,
-  RectDisplaySpec,
   RenderAdapter,
   RenderLayer,
-  SpriteDisplaySpec,
-  SpriteFrame,
 } from './types.js'
-import {
-  animationFrameAt,
-  RENDER_LAYERS,
-} from './types.js'
+import { RENDER_LAYERS } from './types.js'
 import { TextureStore, type TextureManifest } from './textures.js'
 import {
   TilemapView,
-  cameraTransform,
   type TileInstance,
   type TilemapDefinition,
 } from './tilemap.js'
 import { PixiTextureLoader } from './pixi-textures.js'
 import { FrameTextureCache } from './pixi-frames.js'
+import { measureDisplay, updateGraphics, updateSpriteDisplay } from './pixi-displays.js'
+import { cameraWorldTransform, createViewportTransform, type ViewportTransform } from './viewport.js'
 
 export interface PixiRendererOptions {
   readonly width: number
@@ -40,10 +35,6 @@ export interface PixiRendererOptions {
   readonly ownsTextures?: boolean
   /** Whether dispose() should destroy the injected Pixi Application. */
   readonly ownsApp?: boolean
-}
-
-function snapped(value: number, pixelSnap: boolean): number {
-  return pixelSnap ? Math.round(value) : value
 }
 
 /**
@@ -104,6 +95,24 @@ export class PixiAdapter implements RenderAdapter<Container> {
 
   get element(): HTMLCanvasElement {
     return this.app.canvas
+  }
+
+  measure(spec: EntityDisplaySpec, time = 0): DisplayBounds {
+    return measureDisplay(spec, time, this.textures)
+  }
+
+  get viewport(): ViewportTransform {
+    const rect = this.app.canvas.getBoundingClientRect()
+    return createViewportTransform({
+      cssWidth: rect.width > 0 ? rect.width : this.virtualWidth,
+      virtualWidth: this.virtualWidth,
+      offsetX: rect.left,
+      offsetY: rect.top,
+      cameraX: this.cameraX,
+      cameraY: this.cameraY,
+      zoom: this.zoomValue,
+      pixelSnap: true,
+    })
   }
 
   get stage(): Container {
@@ -171,12 +180,12 @@ export class PixiAdapter implements RenderAdapter<Container> {
   }
 
   update(handle: Container, spec: EntityDisplaySpec, time = 0): void {
-    if (handle instanceof Graphics) {
-      this.updateRect(handle, spec as RectDisplaySpec)
+    if (handle instanceof Graphics && spec.kind === 'rect') {
+      updateGraphics(handle, spec)
       return
     }
     if (handle instanceof Sprite && (spec.kind === 'sprite' || spec.kind === 'animated')) {
-      this.updateSprite(handle, spec, time)
+      updateSpriteDisplay(handle, spec, time, this.textures, this.frameTextures)
     }
   }
 
@@ -238,61 +247,8 @@ export class PixiAdapter implements RenderAdapter<Container> {
     this.world.destroy({ children: true })
   }
 
-  private updateRect(graphics: Graphics, spec: RectDisplaySpec): void {
-    const anchorX = spec.anchorX ?? 0
-    const anchorY = spec.anchorY ?? 0
-    graphics.clear()
-    graphics.rect(0, 0, spec.width, spec.height).fill(spec.color)
-    graphics.position.set(
-      snapped(spec.x - spec.width * anchorX, spec.pixelSnap ?? true),
-      snapped(spec.y - spec.height * anchorY, spec.pixelSnap ?? true),
-    )
-    graphics.visible = spec.visible
-    graphics.alpha = spec.alpha
-  }
-
-  private updateSprite(
-    sprite: Sprite,
-    spec: SpriteDisplaySpec | AnimatedDisplaySpec,
-    time: number,
-  ): void {
-    const loaded = this.textures.get(spec.texture)
-    const frame = spec.kind === 'animated' ? this.animatedFrame(spec, loaded?.frames, time) : spec.frame
-    const texture = frame === undefined
-      ? loaded?.texture
-      : this.frameTextures.get(spec.texture, frame, loaded?.texture)
-    if (texture === undefined) {
-      sprite.texture = Texture.EMPTY
-      sprite.visible = false
-      return
-    }
-    sprite.texture = texture
-    const width = spec.width ?? frame?.width ?? loaded?.width ?? texture.width
-    const height = spec.height ?? frame?.height ?? loaded?.height ?? texture.height
-    sprite.width = width
-    sprite.height = height
-    sprite.scale.x = Math.abs(sprite.scale.x) * (spec.flipX === true ? -1 : 1)
-    sprite.scale.y = Math.abs(sprite.scale.y) * (spec.flipY === true ? -1 : 1)
-    sprite.anchor.set(spec.anchorX ?? 0, spec.anchorY ?? 0)
-    sprite.position.set(
-      snapped(spec.x - width * (spec.anchorX ?? 0), spec.pixelSnap ?? true),
-      snapped(spec.y - height * (spec.anchorY ?? 0), spec.pixelSnap ?? true),
-    )
-    sprite.tint = spec.tint ?? 0xffffff
-    sprite.alpha = spec.alpha
-    sprite.visible = spec.visible
-  }
-
-  private animatedFrame(
-    spec: AnimatedDisplaySpec,
-    registered: readonly SpriteFrame[] | undefined,
-    time: number,
-  ): SpriteFrame | undefined {
-    return animationFrameAt(spec, spec.frames ?? registered ?? [], time)
-  }
-
   private applyCamera(): void {
-    const transform = cameraTransform(this.cameraX, this.cameraY, this.zoomValue)
+    const transform = cameraWorldTransform(this.cameraX, this.cameraY, this.zoomValue)
     this.world.scale.set(transform.scale)
     this.world.position.set(transform.x, transform.y)
   }

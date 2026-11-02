@@ -23,14 +23,25 @@ export interface PointerPosition {
   readonly y: number
 }
 
+/**
+ * Structural match for @lunego/render-pixi's ViewportTransform. Keeping it
+ * structural avoids a view-package dependency while letting the renderer's
+ * object be passed through unchanged.
+ */
 export interface ViewportTransform {
-  /** CSS pixels per virtual/world pixel. */
+  /** CSS pixels per virtual pixel. */
+  readonly cssScale: number
+  /** CSS pixels per world pixel (cssScale * zoom). */
   readonly scale: number
-  /** Canvas top-left in client coordinates. */
   readonly offsetX: number
   readonly offsetY: number
   readonly cameraX: number
   readonly cameraY: number
+  readonly camera: PointerPosition
+  readonly zoom: number
+  readonly pixelSnap: boolean
+  worldToScreen(worldX: number, worldY: number): PointerPosition
+  screenToWorld(screenX: number, screenY: number): PointerPosition
 }
 
 /**
@@ -40,13 +51,7 @@ export interface ViewportTransform {
 export class PointerState {
   private screen: PointerPosition = { x: 0, y: 0 }
   private world: PointerPosition = { x: 0, y: 0 }
-  private transform: ViewportTransform = {
-    scale: 1,
-    offsetX: 0,
-    offsetY: 0,
-    cameraX: 0,
-    cameraY: 0,
-  }
+  private transform: ViewportTransform = identityViewport()
   private readonly down = new Set<number>()
   private readonly pressed = new Set<number>()
   private readonly released = new Set<number>()
@@ -63,30 +68,24 @@ export class PointerState {
     return this.transform
   }
 
-  setViewport(transform: Partial<ViewportTransform>): void {
-    const scale = transform.scale ?? this.transform.scale
-    if (!Number.isFinite(scale) || scale <= 0) {
-      throw new Error('pointer scale must be positive')
+  setViewport(transform: ViewportTransform): void {
+    if (!Number.isFinite(transform.cssScale) || transform.cssScale <= 0) {
+      throw new Error('pointer cssScale must be positive')
     }
-    this.transform = {
-      scale,
-      offsetX: transform.offsetX ?? this.transform.offsetX,
-      offsetY: transform.offsetY ?? this.transform.offsetY,
-      cameraX: transform.cameraX ?? this.transform.cameraX,
-      cameraY: transform.cameraY ?? this.transform.cameraY,
+    if (
+      typeof transform.worldToScreen !== 'function' ||
+      typeof transform.screenToWorld !== 'function'
+    ) {
+      throw new Error('pointer viewport must provide worldToScreen/screenToWorld')
     }
+    this.transform = transform
     this.world = this.screenToWorld(this.screen)
   }
 
-  setCamera(x: number, y: number): void {
-    this.setViewport({ cameraX: x, cameraY: y })
-  }
-
   screenToWorld(position: PointerPosition): PointerPosition {
-    return {
-      x: this.transform.cameraX + (position.x - this.transform.offsetX) / this.transform.scale,
-      y: this.transform.cameraY + (position.y - this.transform.offsetY) / this.transform.scale,
-    }
+    const screenX = (position.x - this.transform.offsetX) / this.transform.cssScale
+    const screenY = (position.y - this.transform.offsetY) / this.transform.cssScale
+    return this.transform.screenToWorld(screenX, screenY)
   }
 
   isDown(button = 0): boolean {
@@ -155,5 +154,21 @@ export class PointerState {
   private moveTo(event: PointerEventLike): void {
     this.screen = { x: event.clientX, y: event.clientY }
     this.world = this.screenToWorld(this.screen)
+  }
+}
+
+function identityViewport(): ViewportTransform {
+  return {
+    cssScale: 1,
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0,
+    cameraX: 0,
+    cameraY: 0,
+    camera: { x: 0, y: 0 },
+    zoom: 1,
+    pixelSnap: true,
+    worldToScreen: (x, y) => ({ x, y }),
+    screenToWorld: (x, y) => ({ x, y }),
   }
 }

@@ -1,3 +1,6 @@
+import { cameraWorldOffset, screenToWorldPoint, worldToScreenPixel } from '@lunego/core'
+import type { Vec2 } from '@lunego/core'
+
 export interface ViewportTransformInput {
   readonly cssWidth: number
   readonly virtualWidth: number
@@ -6,34 +9,82 @@ export interface ViewportTransformInput {
   readonly cameraX: number
   readonly cameraY: number
   readonly zoom: number
+  readonly pixelSnap?: boolean
 }
 
+/**
+ * One authoritative camera mapping for renderer, pointer input and effects.
+ * `worldToScreen`/`screenToWorld` use virtual viewport pixels; CSS conversion
+ * is expressed by `cssScale` plus `offsetX/offsetY`.
+ */
 export interface ViewportTransform {
+  readonly cssScale: number
+  /** CSS pixels per world pixel (cssScale * zoom), kept for older callers. */
   readonly scale: number
   readonly offsetX: number
   readonly offsetY: number
   readonly cameraX: number
   readonly cameraY: number
+  readonly camera: Vec2
+  readonly zoom: number
+  readonly pixelSnap: boolean
+  worldToScreen(worldX: number, worldY: number): Vec2
+  screenToWorld(screenX: number, screenY: number): Vec2
 }
 
-/**
- * Shared screen -> world mapping. The Pixi camera rounds camera*zoom to whole
- * virtual pixels; pointer coordinates must use the same rounded camera divided
- * back by zoom, so a click lands exactly on the rendered pixel.
- */
-export function viewportTransform(input: ViewportTransformInput): ViewportTransform {
-  if (!Number.isFinite(input.zoom) || input.zoom <= 0) {
-    throw new Error('viewport zoom must be positive')
+function requirePositive(value: number, label: string): void {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${label} must be a positive finite number`)
   }
-  if (!Number.isFinite(input.cssWidth) || input.cssWidth <= 0) {
-    throw new Error('viewport cssWidth must be positive')
-  }
-  const cssPerVirtual = input.cssWidth / input.virtualWidth
+}
+
+export function createViewportTransform(input: ViewportTransformInput): ViewportTransform {
+  requirePositive(input.zoom, 'viewport zoom')
+  requirePositive(input.cssWidth, 'viewport cssWidth')
+  requirePositive(input.virtualWidth, 'viewport virtualWidth')
+  const pixelSnap = input.pixelSnap ?? true
+  const cssScale = input.cssWidth / input.virtualWidth
+  const roundedCamera = screenToWorldPoint(0, 0, input.cameraX, input.cameraY, input.zoom)
+  const cameraX = roundedCamera.x
+  const cameraY = roundedCamera.y
   return {
-    scale: cssPerVirtual * input.zoom,
+    cssScale,
+    scale: cssScale * input.zoom,
     offsetX: input.offsetX,
     offsetY: input.offsetY,
-    cameraX: Math.round(input.cameraX * input.zoom) / input.zoom,
-    cameraY: Math.round(input.cameraY * input.zoom) / input.zoom,
+    cameraX,
+    cameraY,
+    camera: { x: cameraX, y: cameraY },
+    zoom: input.zoom,
+    pixelSnap,
+    worldToScreen(worldX: number, worldY: number): Vec2 {
+      return worldToScreenPixel(worldX, worldY, input.cameraX, input.cameraY, input.zoom, pixelSnap)
+    },
+    screenToWorld(screenX: number, screenY: number): Vec2 {
+      return screenToWorldPoint(screenX, screenY, input.cameraX, input.cameraY, input.zoom)
+    },
   }
+}
+
+export interface CameraWorldTransform {
+  readonly x: number
+  readonly y: number
+  readonly scale: number
+}
+
+/** The exact transform applied to the Pixi world container. */
+export function cameraWorldTransform(
+  cameraX: number,
+  cameraY: number,
+  zoom: number,
+  pixelSnap = true,
+): CameraWorldTransform {
+  requirePositive(zoom, 'camera zoom')
+  const offset = cameraWorldOffset(cameraX, cameraY, zoom, pixelSnap)
+  return { x: offset.x, y: offset.y, scale: offset.scale }
+}
+
+/** Backward-compatible alias for the old helper name. */
+export function viewportTransform(input: ViewportTransformInput): ViewportTransform {
+  return createViewportTransform(input)
 }

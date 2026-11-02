@@ -1,4 +1,5 @@
 import { atan2 } from '@lunego/core/math'
+import { cameraWorldOffset, worldToScreenPixel } from '@lunego/core'
 import type { TopDownProjection } from './types.js'
 
 export const DEFAULT_PROJECTION: TopDownProjection = {
@@ -44,10 +45,7 @@ export function effectScreenPosition(
   if (!Number.isFinite(zoom) || zoom <= 0) {
     throw new Error('effect zoom must be positive')
   }
-  return {
-    x: Math.round(Math.round(worldX) * zoom - Math.round(cameraX * zoom)),
-    y: Math.round(Math.round(worldY) * zoom - Math.round(cameraY * zoom)),
-  }
+  return worldToScreenPixel(worldX, worldY, cameraX, cameraY, zoom)
 }
 
 /** Inverse transform for a screen-space buffer sprite inside a zoomed world. */
@@ -61,9 +59,10 @@ export function effectLayerTransform(
   if (!Number.isFinite(zoom) || zoom <= 0) {
     throw new Error('effect zoom must be positive')
   }
+  const offset = cameraWorldOffset(cameraX, cameraY, zoom)
   return {
-    x: Math.round(cameraX * zoom) / zoom,
-    y: Math.round(cameraY * zoom) / zoom,
+    x: -offset.x / zoom,
+    y: -offset.y / zoom,
     width: width / zoom,
     height: height / zoom,
   }

@@ -22,6 +22,18 @@ declare global {
           readonly scale: { readonly x: number }
           readonly position: { readonly x: number; readonly y: number }
         }
+        readonly viewport: {
+          readonly cssScale: number
+          readonly offsetX: number
+          readonly offsetY: number
+          readonly cameraX: number
+          readonly cameraY: number
+          readonly camera: { readonly x: number; readonly y: number }
+          readonly zoom: number
+          readonly pixelSnap: boolean
+          worldToScreen(x: number, y: number): { readonly x: number; readonly y: number }
+          screenToWorld(x: number, y: number): { readonly x: number; readonly y: number }
+        }
         setZoom(value: number): void
       }
       readonly audioProbe?: {

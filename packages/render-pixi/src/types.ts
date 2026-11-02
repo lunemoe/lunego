@@ -91,6 +91,15 @@ export type EntityDisplaySpec =
 /** Backward-compatible name for entity display specs; backgrounds are separate. */
 export type DisplaySpec = EntityDisplaySpec
 
+export interface DisplayBounds {
+  readonly x: number
+  readonly y: number
+  readonly width: number
+  readonly height: number
+}
+
+export type DisplayAnchor = 'feet' | 'center' | 'top'
+
 export interface RenderSource {
   readonly alpha: number
   entities(...args: QueryArg[]): readonly Entity[]
@@ -131,6 +140,8 @@ export interface RenderAdapter<Handle> {
   detach(handle: Handle): void
   order(layer: RenderLayer, handles: readonly Handle[]): void
   setCamera(x: number, y: number): void
+  /** Resolved world-space AABB after `update`; used for anchors and bounds. */
+  measure?(spec: EntityDisplaySpec, time?: number): DisplayBounds
 }
 
 export function defineRenderBinding(binding: RenderBinding): RenderBinding {

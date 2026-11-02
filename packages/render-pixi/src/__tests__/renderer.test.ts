@@ -174,6 +174,31 @@ describe('render bindings', () => {
     expect(adapter.orders.get('entities')).toEqual([])
   })
 
+  it('exposes entity bounds and feet/center/top anchors from the last update', () => {
+    const source = new FakeSource()
+    source.entitiesList.splice(1)
+    source.current.set(1, { x: 5, y: 10 })
+    const adapter = new FakeAdapter()
+    const system = new RenderSystem(adapter)
+    system.add(
+      defineRenderBinding({
+        query: [Position],
+        create: () => rectSpec(8, 8, 0xffffff),
+        update: (object, view) => {
+          const position = view.lerp(Position)
+          object.x = position.x
+          object.y = position.y
+        },
+      }),
+    )
+    system.sync(source)
+    expect(system.boundsOf(1)).toEqual({ x: 5, y: 10, width: 8, height: 8 })
+    expect(system.anchorOf(1, 'feet')).toEqual({ x: 9, y: 18 })
+    expect(system.anchorOf(1, 'center')).toEqual({ x: 9, y: 14 })
+    expect(system.anchorOf(1, 'top')).toEqual({ x: 9, y: 10 })
+    expect(system.anchorOf(99)).toBeUndefined()
+  })
+
   it('orders each layer only once across multiple bindings', () => {
     const source = new FakeSource()
     source.current.set(1, { x: 0, y: 1 })

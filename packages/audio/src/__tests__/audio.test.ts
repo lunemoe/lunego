@@ -175,6 +175,19 @@ describe('audio buses', () => {
     expect(() => new AudioSystem(context, bankWith(), { maxConcurrent: 0 })).toThrow(/concurrency/)
   })
 
+  it('accepts a rewound frame tick and can stop all voices on reload', () => {
+    const context = new Context()
+    const audio = new AudioSystem(context, bankWith())
+    const map = defineAudioCueMap({ 'test.hit': () => [{ sound: 'hit' }] })
+    audio.consume(frame(10, cue('10:test:0', 'test.hit')), map)
+    expect(audio.voiceCount).toBe(1)
+    audio.consume(frame(3, cue('3:test:0', 'test.hit')), map)
+    expect(audio.voiceCount).toBe(2)
+    audio.stopAll()
+    expect(audio.voiceCount).toBe(0)
+    expect(context.sources.every((source) => source.stopped)).toBe(true)
+  })
+
   it('unlocks on the first gesture and detaches', async () => {
     const context = new Context()
     const audio = new AudioSystem(context, bankWith())

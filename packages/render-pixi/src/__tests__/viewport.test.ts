@@ -3,23 +3,27 @@ import { viewportTransform } from '../viewport.js'
 
 describe('viewport transform', () => {
   it('combines CSS scale, zoom and the renderer-rounded camera', () => {
-    expect(
-      viewportTransform({
-        cssWidth: 960,
-        virtualWidth: 480,
-        offsetX: 10,
-        offsetY: 20,
-        cameraX: 100.3,
-        cameraY: 50.2,
-        zoom: 2,
-      }),
-    ).toEqual({
+    const viewport = viewportTransform({
+      cssWidth: 960,
+      virtualWidth: 480,
+      offsetX: 10,
+      offsetY: 20,
+      cameraX: 100.3,
+      cameraY: 50.2,
+      zoom: 2,
+    })
+    expect(viewport).toMatchObject({
       scale: 4,
+      cssScale: 2,
+      zoom: 2,
       offsetX: 10,
       offsetY: 20,
       cameraX: 100.5,
       cameraY: 50,
+      camera: { x: 100.5, y: 50 },
     })
+    expect(viewport.worldToScreen(190, 105)).toEqual({ x: 179, y: 110 })
+    expect(viewport.screenToWorld(179, 110)).toEqual({ x: 190, y: 105 })
   })
 
   it('rejects invalid zoom and width', () => {

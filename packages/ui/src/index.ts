@@ -37,5 +37,5 @@ export type {
 } from './components.js'
 export { mountUi } from './mount.js'
 export type { MountedUi, UiView } from './mount.js'
-export { UI_STYLES, installUiStyles, themeVariables } from './theme.js'
+export { UI_LAYERS, UI_STYLES, installUiStyles, themeVariables } from './theme.js'
 export type { UiTheme } from './theme.js'

@@ -322,6 +322,7 @@ ctx.cue(HitCue, { at, power: 0.8 })
 - **随机数**：带种子的 PRNG，按名称分流，例如 `ctx.rng('loot')`、`ctx.rng('ai')`。各条流互不影响，RNG 状态也写进存档。
 - **哈希与回放**：`world.hash()` 计算状态哈希。回放文件包含种子或初始存档、命令日志和周期性的哈希检查点，可以用来校验、二分定位第一个不一致的 tick，或者停在指定 tick 检查状态。
 - **双跑**：测试时每个场景自动跑两遍并比对哈希，不确定性一出现就会被发现。
+- **时间单位**：逻辑 `tick` 是无单位整数；`ctx.time.dt`、host `GameFrame.dt/elapsed`、`RenderSystem.sync(time)`、动画 `fps`（帧/秒）和 VFX `update(dt)` 都是秒。`kit-ability.cooldownTicks` 与 audio/VFX 的 Cue 去重使用 tick，不混用秒。
 
 ---
 
@@ -397,9 +398,11 @@ Kit 与游戏 feature 形状相同，只是位于框架的 `kits/` 目录、不�
 - **像素完美**：虚拟分辨率（如 480×270）、整数缩放、最近邻采样、相机像素对齐。
 - **绘制顺序**：世界图层（背景 → 瓦片 → Y 排序的实体 → 前景）→ 世界后处理 → 整数放大 → 画布内 UI（血条、伤害数字）→ DOM UI。
 - **显示类型**：`rect`、`sprite`（单纹理/子帧）、`animated`（帧表/fps/loop/显式 frame）、`background`；统一 anchor、flipX/Y、tint、alpha、pixelSnap。动画时间由 `RenderSystem.sync(source, time)` 显式传入，逻辑 tick 与渲染时钟分离。
-- **资源**：`TextureStore` 以 id 管理 URL/ImageBitmap/Canvas/帧表，manifest 失败隔离，加载器可注入，`destroy()` 释放纹理；逻辑层不可见。
+- **资源**：`TextureStore` 以 id 管理 URL/ImageBitmap/Canvas/帧表，manifest 失败隔离，加载器可注入，`destroy()` 释放纹理；逻辑层不可见。显示尺寸只从 manifest/loader/帧表读取，`DisplaySpec.width/height` 仅是显式覆盖；VFX 尺寸只来自 effect meta。
+- **图层常量**：render-pixi 的 `RENDER_LAYERS`（background→tiles→entities→foreground）是唯一顺序；VFX 的 `EFFECT_LAYERS`/`EFFECT_LAYER_RENDER_TARGET` 映射 ground→tiles、front→foreground；UI 的 `UI_LAYERS` 提供 overlay/modal z-index，模板不再自写魔法数字。
 - **瓦片地图**：游戏提供 tileset + 瓦片索引/图层；框架负责帧切分、原点/间隙、`tiles`（实体后）与 `foreground`（实体前）图层、相机/缩放；地图数据不预设玩法。
-- **渲染绑定**：声明"查询 → 显示对象"的对应关系，显示对象的创建、更新、回收和插值都由框架负责。
+- **渲染绑定**：声明"查询 → 显示对象"的对应关系，显示对象的创建、更新、回收和插值都由框架负责。`RenderSystem.anchorOf(entity,'feet'|'center'|'top')` 给出显示后的世界锚点，游戏解析 Cue 时不再自行猜高度。
+- **坐标单一来源**：`PixiAdapter.viewport` 导出 `worldToScreen`/`screenToWorld`/`camera`/`zoom`/`cssScale`/`pixelSnap`；Pixi 世界变换、pointer、VFX 都使用同一取整相机。指针直接 `setViewport(renderer.viewport)`。
 
 ```ts
 export const spriteBinding = defineRenderBinding({
@@ -446,7 +449,7 @@ export const combatCues = defineCueMap({
 ### 8.5 音频与输入
 
 - **音频**：`@lunego/audio` 提供 Web Audio 总线（master/sfx/music/ui）、Cue 映射、种子化的音高/音量抖动、同音效并发上限、首次手势解锁与 `destroy()`；音频上下文可注入，测试不依赖浏览器。
-- **输入**：设备 → 动作映射 → 游戏定义的 `toCommands(actions, pointer)` → Command。键盘支持改键；`PointerState` 提供屏幕/世界坐标（viewport 含 offset/scale/camera/zoom）、按下/释放边沿与按钮集合，只存在于表现层。
+- **输入**：设备 → 动作映射 → 游戏定义的 `toCommands(actions, pointer)` → Command。键盘支持改键；`PointerState.setViewport` 直接接受 render-pixi 的 `renderer.viewport`（cssScale/offset/camera/zoom/worldToScreen/screenToWorld），按下/释放边沿与按钮集合只存在于表现层。
 
 ---
 

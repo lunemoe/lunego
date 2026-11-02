@@ -226,7 +226,7 @@ export class AudioSystem {
   }
 
   consume(frame: Frame, map: AudioCueMap): void {
-    if (frame.tick <= this.lastFrameTick) {
+    if (frame.tick === this.lastFrameTick) {
       return
     }
     this.lastFrameTick = frame.tick
@@ -238,15 +238,20 @@ export class AudioSystem {
     }
   }
 
-  destroy(): void {
-    if (this.destroyed) {
-      return
-    }
+  stopAll(): void {
     for (const voice of [...this.active.values()]) {
       this.stopVoice(voice)
     }
     this.active.clear()
     this.bySound.clear()
+  }
+
+  destroy(): void {
+    if (this.destroyed) {
+      return
+    }
+    this.stopAll()
+    this.lastFrameTick = -1
     for (const bus of Object.values(this.buses)) {
       bus.gain.disconnect()
     }

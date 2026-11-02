@@ -70,6 +70,12 @@ export type {
 
 export type { LogEntry, LogLevel, LogService, MathService } from './context-types.js'
 export { LOGIC_MATH } from './math-service.js'
+export {
+  cameraWorldOffset,
+  screenToWorldPoint,
+  worldToScreenPixel,
+} from './viewport-math.js'
+export type { CameraWorldOffset } from './viewport-math.js'
 export { isNumericKind, t } from './schema.js'
 export { cloneDeep, coerceValue } from './schema-coerce.js'
 export type {

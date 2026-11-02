@@ -36,14 +36,20 @@ export interface EffectModule {
 
 export interface EffectInstance {
   readonly meta: EffectMeta
+  /** Seconds, matching effect meta duration/fps. */
   update(dt: number): void
   draw(frame: PixelFrame, layer: 'back' | 'front'): void
   stop(): void
   done(): boolean
 }
 
-/** Which render-pixi layer an effect belongs to; ground sits behind actors. */
-export type EffectLayer = 'ground' | 'front'
+/** VFX layers; map to render-pixi tiles/foreground at the adapter boundary. */
+export const EFFECT_LAYERS = ['ground', 'front'] as const
+export type EffectLayer = (typeof EFFECT_LAYERS)[number]
+export const EFFECT_LAYER_RENDER_TARGET: Readonly<Record<EffectLayer, 'tiles' | 'foreground'>> = {
+  ground: 'tiles',
+  front: 'foreground',
+}
 
 export interface TopDownProjection {
   /** Vertical squash for effects lying on the floor plane. */

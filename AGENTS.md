@@ -25,7 +25,7 @@ docs/rules/          LG001–LG015 规则页
 packages/core/       schema DSL、ECS、World、调度、命令、RNG、哈希、存档
 packages/host/       主线程运行时、时间模型、存档/读档、回放、崩溃报告
 packages/input/      设备 → 动作 → 游戏命令；纯映射层 + 键盘/指针适配（指针含屏幕/世界坐标）
-packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配
+packages/render-pixi/ 渲染绑定生命周期、精灵/动画/背景/瓦片地图、纹理注册表、图层/Y 排序、PixiJS v8 适配；`renderer.viewport` 是相机/坐标单一来源，`renderSystem.anchorOf` 提供实体显示锚点
 packages/vfx/        俯视角特效：pixelfx（MIT，vendor）、Cue 映射、地面投影、图层与画布/Pixi 输出
 packages/audio/      Web Audio 总线、Cue 映射、抖动、并发上限、手势解锁
 packages/ui/         Solid + solid-js/html 的 DOM UI：桥、主题、Panel/Bar/Button/Tabs/背包/技能栏/Modal/List
@@ -43,7 +43,7 @@ templates/game/      可运行俯视角模板：移动、Y 排序、相机、存
 
 ## 设计约束（必须遵守）
 
-1. 逻辑层 `(state, commands) -> (state', events)`，不碰 DOM、时钟、随机源。
+1. 逻辑层 `(state, commands) -> (state', events)`，不碰 DOM、时钟、随机源。时间单位固定：tick 为整数，dt/动画/VFX 为秒，cooldownTicks 与 Cue 去重为 tick。
 2. 唯一写入路径：System / Handler；外部只发 Command。
 3. 结构性变更在 flush 生效；查询按实体索引升序。
 4. 形状一次到位，功能按需生长；不写临时实现、TODO、`any`、`@ts-ignore`、`as unknown as`。

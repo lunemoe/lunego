@@ -1,4 +1,5 @@
 import type { RenderLayer, SpriteFrame, TextureId } from './types.js'
+import { cameraWorldTransform } from './viewport.js'
 
 export interface TilesetDefinition {
   readonly texture: TextureId
@@ -150,16 +151,7 @@ export function cameraTransform(
   zoom: number,
   pixelSnap = true,
 ): TilemapTransform {
-  if (!Number.isFinite(zoom) || zoom <= 0) {
-    throw new Error('zoom must be a positive finite number')
-  }
-  const scaledX = cameraX * zoom
-  const scaledY = cameraY * zoom
-  return {
-    x: pixelSnap ? -Math.round(scaledX) : -scaledX,
-    y: pixelSnap ? -Math.round(scaledY) : -scaledY,
-    scale: zoom,
-  }
+  return cameraWorldTransform(cameraX, cameraY, zoom, pixelSnap)
 }
 
 /**

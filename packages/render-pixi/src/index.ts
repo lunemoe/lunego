@@ -12,6 +12,8 @@ export type {
   AnimatedDisplaySpec,
   AnimationOptions,
   BackgroundDisplaySpec,
+  DisplayAnchor,
+  DisplayBounds,
   DisplaySpec,
   EntityDisplaySpec,
   DisplayTransform,
@@ -28,8 +30,12 @@ export type {
   TextureId,
 } from './types.js'
 export { RenderSystem } from './renderer.js'
-export { viewportTransform } from './viewport.js'
-export type { ViewportTransform, ViewportTransformInput } from './viewport.js'
+export { cameraWorldTransform, createViewportTransform, viewportTransform } from './viewport.js'
+export type {
+  CameraWorldTransform,
+  ViewportTransform,
+  ViewportTransformInput,
+} from './viewport.js'
 export {
   TilemapView,
   buildTilemap,
