@@ -66,6 +66,12 @@ describe('content registry', () => {
     expect(a.fingerprint()).not.toBe(b.fingerprint())
     expect(a.assetPack()).toEqual({ pack: 'demo', version: '1', hash: 'aaa' })
     expect(a.fingerprint()).not.toBe(new ContentRegistry().fingerprint())
+
+    const generated = { pack: 'demo', version: 2, hash: 'aaa' } as const
+    const numeric = new ContentRegistry()
+    numeric.setAssetPack(generated)
+    expect(numeric.assetPack()).toEqual(generated)
+    expect(numeric.fingerprint()).not.toBe(a.fingerprint())
   })
 
   it('rejects duplicate ids, unknown types and invalid values', () => {

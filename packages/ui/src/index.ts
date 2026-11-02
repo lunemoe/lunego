@@ -96,6 +96,23 @@ export type {
   MinimapViewProps,
   MinimapViewport,
 } from './minimap.js'
+export {
+  FontLoader,
+  createBrowserFontLoader,
+} from './fonts.js'
+export type {
+  FontAssetCollection,
+  FontAssetEntry,
+  FontAssetMetadata,
+  FontDisplay,
+  FontFaceOptions,
+  FontFaceFactory,
+  FontFaceLike,
+  FontLoadFailure,
+  FontLoaderOptions,
+  FontLoadReport,
+  FontSetLike,
+} from './fonts.js'
 export { mountUi } from './mount.js'
 export type { MountedUi, UiView } from './mount.js'
 export {

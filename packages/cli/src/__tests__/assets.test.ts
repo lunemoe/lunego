@@ -168,6 +168,67 @@ describe('asset manifest validation', () => {
     expect(errors).toContain('range 1..4 exceeds 2 frames')
   })
 
+  it('accepts font and audio assets and emits their display metadata', async () => {
+    const root = await tempDir()
+    await mkdir(join(root, 'assets', 'fonts'), { recursive: true })
+    await mkdir(join(root, 'assets', 'sounds'), { recursive: true })
+    await writeFile(join(root, 'assets', 'fonts', 'ui.woff2'), Buffer.from('font'))
+    await writeFile(join(root, 'assets', 'sounds', 'hit.wav'), Buffer.from('wav'))
+    await writeManifest(
+      root,
+      baseManifest([
+        { id: 'uiFont', file: 'fonts/ui.woff2', type: 'font' },
+        { id: 'hit', file: 'sounds/hit.wav', type: 'audio' },
+      ]),
+    )
+    const result = await generateAssets(root)
+    expect(result?.errors).toEqual([])
+    expect(result?.source).toContain('"type": "font"')
+    expect(result?.source).toContain('"type": "audio"')
+  })
+
+  it('fails assets check for missing font/audio files and animations without frames', async () => {
+    const root = await tempDir()
+    await writeAsset(root, 'hero.png', 16, 16)
+    await writeManifest(
+      root,
+      baseManifest([
+        { id: 'font', file: 'fonts/missing.woff2', type: 'font' },
+        { id: 'sound', file: 'sounds/missing.wav', type: 'audio' },
+        {
+          id: 'hero',
+          file: 'hero.png',
+          type: 'sprite',
+          animations: [{ name: 'idle', columns: [0], frames: 1 }],
+        },
+      ]),
+    )
+    const result = await generateAssets(root)
+    const errors = result?.errors.join('\n') ?? ''
+    expect(errors).toContain('file is missing: assets/fonts/missing.woff2')
+    expect(errors).toContain('file is missing: assets/sounds/missing.wav')
+    expect(errors).toContain('animations require frame metadata')
+    expect(await runAssets(root, ['check'])).toBe(1)
+  })
+
+  it('rejects unsupported font and audio extensions', async () => {
+    const root = await tempDir()
+    await mkdir(join(root, 'assets', 'fonts'), { recursive: true })
+    await mkdir(join(root, 'assets', 'sounds'), { recursive: true })
+    await writeFile(join(root, 'assets', 'fonts', 'ui.bin'), Buffer.from('font'))
+    await writeFile(join(root, 'assets', 'sounds', 'hit.txt'), Buffer.from('wav'))
+    await writeManifest(
+      root,
+      baseManifest([
+        { id: 'font', file: 'fonts/ui.bin', type: 'font' },
+        { id: 'sound', file: 'sounds/hit.txt', type: 'audio' },
+      ]),
+    )
+    const errors = (await generateAssets(root))?.errors.join('\n') ?? ''
+    expect(errors).toContain('font must be .woff')
+    expect(errors).toContain('audio must be a supported audio file')
+  })
+
   it('enforces optional palette and transparent-border limits', async () => {
     const root = await tempDir()
     await writeAsset(root, 'hero.png', 4, 4)

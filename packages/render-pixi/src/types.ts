@@ -71,6 +71,8 @@ export interface AnimatedDisplaySpec extends DisplayTransform {
   height?: number
   fps: number
   loop: boolean
+  /** Per-frame durations in seconds; takes precedence over fps when present. */
+  durations?: readonly number[]
   /** Explicit frame override, usually set from a component field. */
   frame?: number
 }
@@ -203,6 +205,7 @@ export function spriteSpec(texture: TextureId, options: SpriteOptions = {}): Spr
 
 export interface AnimationOptions extends Omit<SpriteOptions, 'frame'> {
   readonly frames?: readonly SpriteFrame[]
+  readonly durations?: readonly number[]
   readonly fps?: number
   readonly loop?: boolean
   readonly frame?: number
@@ -222,6 +225,7 @@ export function animatedSpec(
     fps: options.fps ?? 10,
     loop: options.loop ?? true,
     ...(options.frames === undefined ? {} : { frames: options.frames }),
+    ...(options.durations === undefined ? {} : { durations: options.durations }),
     ...(options.frame === undefined ? {} : { frame: options.frame }),
     ...(options.width === undefined ? {} : { width: options.width }),
     ...(options.height === undefined ? {} : { height: options.height }),
@@ -287,6 +291,37 @@ export function animationFrameAt(
   }
   if (spec.frame !== undefined) {
     return frames[Math.max(0, Math.min(frames.length - 1, Math.floor(spec.frame)))]
+  }
+  if (spec.durations !== undefined) {
+    if (spec.durations.length !== frames.length) {
+      throw new Error(
+        `animated durations length ${spec.durations.length} must match ${frames.length} frames`,
+      )
+    }
+    let total = 0
+    for (const duration of spec.durations) {
+      if (!Number.isFinite(duration) || duration <= 0) {
+        throw new Error('animated durations must be positive finite seconds')
+      }
+      total += duration
+    }
+    if (!Number.isFinite(total) || total <= 0) {
+      throw new Error('animated durations must have a positive total')
+    }
+    const elapsed = Math.max(0, time)
+    if (!spec.loop && elapsed >= total) {
+      return frames[frames.length - 1]
+    }
+    const cursor = spec.loop ? elapsed % total : elapsed
+    const tolerance = Math.max(1e-9, total * 1e-12)
+    let boundary = 0
+    for (let index = 0; index < spec.durations.length; index += 1) {
+      boundary += spec.durations[index]!
+      if (cursor < boundary - tolerance) {
+        return frames[index]
+      }
+    }
+    return frames[frames.length - 1]
   }
   const rate = Number.isFinite(spec.fps) && spec.fps > 0 ? spec.fps : 1
   const raw = Math.floor(Math.max(0, time) * rate)

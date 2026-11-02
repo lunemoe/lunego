@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   animationFrames,
   assetAnchor,
+  assetAnimationDurations,
   assetFrames,
   textureEntryFromAsset,
   textureManifestFromAssets,
@@ -75,10 +76,34 @@ describe('asset manifest frames', () => {
     expect(assetAnchor('bottom-center')).toEqual({ x: 0.5, y: 1 })
     expect(assetAnchor({ x: 0.25, y: 0.75 })).toEqual({ x: 0.25, y: 0.75 })
     expect(assetAnchor('moon')).toBeUndefined()
+    expect(assetAnimationDurations({ name: 'idle', durations: [100, 250] })).toEqual([0.1, 0.25])
+    expect(assetAnimationDurations({ name: 'idle' })).toBeUndefined()
   })
 })
 
 describe('texture manifest from generated assets', () => {
+  it('loads generated Assets through textureManifestFromAssets without Pixi', async () => {
+    const loadedSources: string[] = []
+    const store = new TextureStore({
+      load: async (source) => {
+        loadedSources.push(String(source))
+        return { texture: { disposed: false }, width: 36, height: 12 }
+      },
+      dispose: () => undefined,
+    })
+    const manifest = textureManifestFromAssets({
+      hero: explicit,
+      body: { file: 'fonts/body.woff2', type: 'font' },
+      hit: { file: 'sounds/hit.wav', type: 'audio' },
+    }, (file, id) => `/assets/${id}/${file}`)
+    expect(Object.keys(manifest)).toEqual(['hero'])
+    const report = await store.loadManifest(manifest)
+    expect(report).toEqual({ loaded: ['hero'], failed: [] })
+    expect(loadedSources).toEqual(['/assets/hero/atlas.png'])
+    expect(store.get('hero')?.frames).toEqual(explicit.frames)
+    store.destroy()
+  })
+
   it('keeps explicit frames through TextureStore loading', async () => {
     const loader: TextureLoader<{ disposed: boolean }> = {
       load: async (_source: TextureSource) => ({ texture: { disposed: false }, width: 36, height: 12 }),

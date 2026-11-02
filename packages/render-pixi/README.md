@@ -33,3 +33,44 @@ texture loading and tilemap layers. No game rules.
   (`name: 'body'`, `'healthbar'`) to separate overlays in one system.
 - `TextureStore`, `spriteSpec`, `animatedSpec`, `backgroundSpec`, `sheetFrames`,
   `animationFrameAt`, `TilemapView`, `buildTilemap`, `cameraTransform`.
+- Asset bridge: `textureManifestFromAssets`, `textureEntryFromAsset`,
+  `assetFrames`, `animationFrames`, `assetAnchor`, `assetAnimationDurations`.
+
+## Generated assets → textures
+
+`lunego gen` emits `Assets` and `AssetPack` in `features/_generated/assets.ts`.
+The renderer consumes the same metadata without importing game files:
+
+```ts
+import { Assets } from '../features/_generated/assets.js'
+import { TextureStore, PixiTextureLoader, textureManifestFromAssets } from '@lunego/render-pixi'
+
+const textures = new TextureStore(new PixiTextureLoader())
+await textures.loadManifest(
+  textureManifestFromAssets(Assets, (file, id) => `/assets/${id}/${file}`),
+)
+```
+
+`textureManifestFromAssets` also works with any fake/injected `TextureLoader`, so
+frame/layout tests do not need Pixi or a DOM. Explicit `frames` from packed
+atlases and legacy grid metadata both become `SpriteFrame[]` in the store.
+
+## Animation durations
+
+`AnimatedDisplaySpec.durations` is an optional per-frame **seconds** array; when
+present it takes precedence over `fps` and selects frames by cumulative time.
+`assetAnimationDurations(animation)` converts the Aseprite importer's
+milliseconds to seconds:
+
+```ts
+const idle = asset.animations?.find((animation) => animation.name === 'idle')
+animatedSpec(id, {
+  frames: animationFrames(asset, idle),
+  durations: assetAnimationDurations(idle),
+  fps: idle.fps ?? 10,
+  loop: idle.loop ?? true,
+})
+```
+
+Invalid durations (length mismatch, zero/negative, non-finite total) throw; specs
+without `durations` keep the original `fps` behavior.

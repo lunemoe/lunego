@@ -38,6 +38,8 @@ export interface PerceptionOptions {
   /** Minimum normalized dot product for the vision cone; default -1 (360°). */
   readonly coneDot?: number
   readonly memoryTicks?: number
+  /** Optional game-injected visibility check; false blocks this candidate. */
+  readonly lineOfSight?: (self: AiAgent, candidate: AiAgent) => boolean
 }
 
 interface MemoryEntry {
@@ -71,6 +73,7 @@ export class Perception {
   private readonly rangeSq: number
   private readonly coneDot: number
   private readonly memoryTicks: number
+  private readonly lineOfSight: ((self: AiAgent, candidate: AiAgent) => boolean) | undefined
   private readonly memory = new Map<number, MemoryEntry>()
   private readonly listeners = new Set<number>()
 
@@ -81,6 +84,7 @@ export class Perception {
     this.rangeSq = options.range * options.range
     this.coneDot = options.coneDot ?? -1
     this.memoryTicks = options.memoryTicks ?? 0
+    this.lineOfSight = options.lineOfSight
   }
 
   /** Observe candidates and return visible + remembered entries by entity id. */
@@ -105,6 +109,9 @@ export class Perception {
         ? 1
         : (dx * facing.x + dy * facing.y) / (sqrt(distanceSq) * facingLength)
       if (dot < this.coneDot) {
+        continue
+      }
+      if (this.lineOfSight !== undefined && !this.lineOfSight(self, candidate)) {
         continue
       }
       this.memory.set(candidate.entity, { x: candidate.x, y: candidate.y, lastSeenTick: tick })

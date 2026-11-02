@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { RngStream } from '@lunego/core'
+import type { RngStateWords, RngStream } from '@lunego/core'
 import { EncounterRuntime, type EncounterDef } from '../index.js'
 
 function rng(seed: number): RngStream {
@@ -15,6 +15,29 @@ function rng(seed: number): RngStream {
     float: (min, max) => min + next() * (max - min),
     chance: (probability) => next() < probability,
     pick: (items) => items[Math.floor(next() * items.length)] as never,
+  }
+}
+
+function statefulRng(seed: number): RngStream & {
+  state(): RngStateWords
+  restore(state: RngStateWords): void
+} {
+  let state = seed >>> 0
+  const next = (): number => {
+    state = (state * 1664525 + 1013904223) >>> 0
+    return state / 4294967296
+  }
+  return {
+    next,
+    uint32: () => Math.floor(next() * 4294967296) >>> 0,
+    int: (min, max) => min + Math.floor(next() * (max - min + 1)),
+    float: (min, max) => min + next() * (max - min),
+    chance: (probability) => next() < probability,
+    pick: (items) => items[Math.floor(next() * items.length)] as never,
+    state: () => [state, 0, 0, 1],
+    restore: (words) => {
+      state = words[0] >>> 0
+    },
   }
 }
 
@@ -100,6 +123,79 @@ describe('encounter runtime', () => {
     expect(restored.serialize()).toEqual(runtime.serialize())
     expect(restored.phase).toBe('enraged')
     expect(restored.spawned).toHaveLength(runtime.spawned.length)
+  })
+
+  it('restores spawn RNG state so N/2 saves continue the exact spawn sequence', () => {
+    const full = new EncounterRuntime({
+      def,
+      rng: statefulRng(21),
+      spawnPoints: points,
+    })
+    const fullResults = [
+      full.start(),
+      full.nextWave(),
+      full.spawnCurrentWave(),
+      full.transitionPhase(0.4),
+    ]
+
+    const split = new EncounterRuntime({
+      def,
+      rng: statefulRng(21),
+      spawnPoints: points,
+    })
+    split.start()
+    split.nextWave()
+    const state = JSON.parse(JSON.stringify(split.serialize()))
+    expect(state.rngState).toHaveLength(4)
+
+    const restored = new EncounterRuntime({
+      def,
+      rng: statefulRng(21),
+      spawnPoints: points,
+      state,
+    })
+    const rest = [restored.spawnCurrentWave(), restored.transitionPhase(0.4)]
+    expect(rest).toEqual(fullResults.slice(2))
+    expect(restored.spawned).toEqual(full.spawned)
+    expect(restored.serialize()).toEqual(full.serialize())
+  })
+
+  it('accepts an externally restored state or requires an explicit restore hook', () => {
+    const stateOnly = (words: RngStateWords): RngStream => ({
+      ...rng(1),
+      state: () => words,
+    })
+    const runtime = new EncounterRuntime({
+      def,
+      rng: stateOnly([9, 9, 9, 9]),
+      spawnPoints: points,
+    })
+    runtime.start()
+    const state = runtime.serialize()
+    expect(state.rngState).toEqual([9, 9, 9, 9])
+    expect(() => new EncounterRuntime({
+      def,
+      rng: stateOnly([1, 2, 3, 4]),
+      spawnPoints: points,
+      state,
+    })).toThrow(/restoreRngState/)
+    expect(new EncounterRuntime({
+      def,
+      rng: stateOnly([9, 9, 9, 9]),
+      spawnPoints: points,
+      state,
+    }).serialize().rngState).toEqual([9, 9, 9, 9])
+    let applied: RngStateWords | null = null
+    new EncounterRuntime({
+      def,
+      rng: rng(1),
+      spawnPoints: points,
+      state,
+      restoreRngState: (value) => {
+        applied = value
+      },
+    })
+    expect(applied).toEqual([9, 9, 9, 9])
   })
 
   it('applies injected difficulty scaling', () => {

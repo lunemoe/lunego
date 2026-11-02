@@ -34,6 +34,28 @@ function isSafeRelative(file: string): boolean {
   )
 }
 
+const FONT_EXTENSIONS: Readonly<Record<string, true>> = {
+  '.woff': true,
+  '.woff2': true,
+  '.ttf': true,
+  '.otf': true,
+}
+
+const AUDIO_EXTENSIONS: Readonly<Record<string, true>> = {
+  '.wav': true,
+  '.mp3': true,
+  '.ogg': true,
+  '.m4a': true,
+  '.aac': true,
+  '.flac': true,
+  '.opus': true,
+}
+
+function extension(file: string): string {
+  const dot = file.lastIndexOf('.')
+  return dot === -1 ? '' : file.slice(dot).toLowerCase()
+}
+
 function validateLimits(limits: unknown, errors: string[]): void {
   if (limits === undefined) {
     return
@@ -67,6 +89,13 @@ async function readImage(
   if (!(await pathExists(filePath))) {
     errors.push(`LG009 asset ${entry.id ?? index} file is missing: assets/${entry.file}`)
     return undefined
+  }
+  const suffix = extension(entry.file)
+  if (entry.type === 'font' && FONT_EXTENSIONS[suffix] !== true) {
+    errors.push(`LG009 asset ${entry.id ?? index} font must be .woff/.woff2/.ttf/.otf`)
+  }
+  if (entry.type === 'audio' && AUDIO_EXTENSIONS[suffix] !== true) {
+    errors.push(`LG009 asset ${entry.id ?? index} audio must be a supported audio file`)
   }
   if (!isImageType(entry.type)) {
     return undefined
@@ -125,6 +154,9 @@ function validateAnimations(
   if (!Array.isArray(entry.animations)) {
     errors.push(`LG009 asset[${entry.id}].animations must be an array`)
     return
+  }
+  if (frameCount === undefined) {
+    errors.push(`LG009 asset ${entry.id} animations require frame metadata`)
   }
   const names = new Set<string>()
   for (const animation of entry.animations) {

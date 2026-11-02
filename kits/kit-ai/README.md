@@ -4,7 +4,7 @@
 
 ## 公共接口
 
-- `Perception`：视野范围 + 视野锥 + tick 记忆；结果按 entity index 升序。`serialize()` 保存 memory/seen，`restore(snapshot, { isValidEntity? })` 恢复；未知/死亡 entity 明确抛错。
+- `Perception`：视野范围 + 视野锥 + tick 记忆；结果按 entity index 升序。可选 `lineOfSight(self, candidate)` 由游戏注入墙体/空间查询，返回 false 的候选不更新记忆；不传时保持距离/视锥行为。`serialize()` 保存 memory/seen，`restore(snapshot, { isValidEntity? })` 恢复；未知/死亡 entity 明确抛错。
 - `ThreatTable`：威胁值、黑名单；排名 threat 降序、entity 升序。`serialize()`/`restore(snapshot, { isValidEntity? })` 保留黑名单目标的威胁值。
 - `selectUtility`：候选 action 按分数降序，平局按 action id 代码点。
 - `btSequence` / `btSelector` / `btCondition` / `btAction`：同步行为树节点。

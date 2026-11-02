@@ -1,39 +1,20 @@
 import type { QuestStatus } from '@lunego/kit-quest'
+import { validateNode } from './validation.js'
 
-export interface DialogueCondition {
-  readonly kind: 'flag' | 'quest' | 'counter'
-  readonly key: string
-  readonly value?: string | number | boolean
-  readonly op?: 'eq' | 'gte' | 'lte'
-}
+import type {
+  DialogueChoice,
+  DialogueCondition,
+  DialogueEffect,
+  DialogueNode,
+} from './types.js'
 
-export type DialogueEffectKind = 'flag' | 'quest' | 'event'
-
-export interface DialogueEffect {
-  readonly kind: DialogueEffectKind
-  readonly key: string
-  readonly value?: unknown
-}
-
-export interface DialogueChoice {
-  readonly id: string
-  readonly textKey: string
-  readonly next?: string
-  readonly conditions?: readonly DialogueCondition[]
-  readonly effects?: readonly DialogueEffect[]
-  /** A once choice can never be selected again after it is used. */
-  readonly once?: boolean
-}
-
-export interface DialogueNode {
-  readonly id: string
-  /** Localization key, not transient UI copy. */
-  readonly textKey: string
-  readonly next?: string
-  readonly conditions?: readonly DialogueCondition[]
-  readonly effects?: readonly DialogueEffect[]
-  readonly choices?: readonly DialogueChoice[]
-}
+export type {
+  DialogueChoice,
+  DialogueCondition,
+  DialogueEffect,
+  DialogueEffectKind,
+  DialogueNode,
+} from './types.js'
 
 export interface DialogueContext {
   flag(key: string): boolean
@@ -75,29 +56,6 @@ function snapshotObject(value: unknown, label: string): Record<string, unknown> 
   return value as Record<string, unknown>
 }
 
-function validateCondition(condition: DialogueCondition): void {
-  if (condition.key.length === 0) {
-    throw new Error('dialogue condition key must not be empty')
-  }
-}
-
-function validateNode(node: DialogueNode): void {
-  if (node.id.length === 0 || node.textKey.length === 0) {
-    throw new Error('dialogue node id/textKey must not be empty')
-  }
-  for (const condition of node.conditions ?? []) {
-    validateCondition(condition)
-  }
-  for (const choice of node.choices ?? []) {
-    if (choice.id.length === 0 || choice.textKey.length === 0) {
-      throw new Error(`dialogue node ${node.id} has an invalid choice`)
-    }
-    for (const condition of choice.conditions ?? []) {
-      validateCondition(condition)
-    }
-  }
-}
-
 /** Deterministic dialogue graph runner; definitions are static localization keys. */
 export class DialogueGraph {
   readonly nodes: ReadonlyMap<string, DialogueNode>
@@ -119,31 +77,110 @@ export class DialogueGraph {
       }
     }
     this.detectCycles(map)
+    this.validateReachability(map)
     this.nodes = map
   }
 
   private detectCycles(nodes: ReadonlyMap<string, DialogueNode>): void {
-    const state = new Map<string, 'visiting' | 'done'>()
+    const indices = new Map<string, number>()
+    const lowLinks = new Map<string, number>()
+    const stack: string[] = []
+    const onStack = new Set<string>()
+    let nextIndex = 0
     const visit = (id: string): void => {
-      if (state.get(id) === 'visiting') {
-        throw new Error(`dialogue graph cycle at ${id}`)
-      }
-      if (state.get(id) === 'done') {
-        return
-      }
-      state.set(id, 'visiting')
+      indices.set(id, nextIndex)
+      lowLinks.set(id, nextIndex)
+      nextIndex += 1
+      stack.push(id)
+      onStack.add(id)
       const node = nodes.get(id)
-      if (node !== undefined) {
-        for (const target of [node.next, ...(node.choices ?? []).map((choice) => choice.next)]) {
-          if (target !== undefined) {
-            visit(target)
-          }
+      for (const target of node === undefined
+        ? []
+        : [node.next, ...(node.choices ?? []).map((choice) => choice.next)]) {
+        if (target === undefined) {
+          continue
+        }
+        if (!indices.has(target)) {
+          visit(target)
+          lowLinks.set(id, Math.min(lowLinks.get(id) ?? 0, lowLinks.get(target) ?? 0))
+        } else if (onStack.has(target)) {
+          lowLinks.set(id, Math.min(lowLinks.get(id) ?? 0, indices.get(target) ?? 0))
         }
       }
-      state.set(id, 'done')
+      if (lowLinks.get(id) !== indices.get(id)) {
+        return
+      }
+      const component: string[] = []
+      for (;;) {
+        const member = stack.pop()
+        if (member === undefined) {
+          break
+        }
+        onStack.delete(member)
+        component.push(member)
+        if (member === id) {
+          break
+        }
+      }
+      const selfNode = nodes.get(id)
+      const selfLoop = selfNode !== undefined &&
+        [selfNode.next, ...(selfNode.choices ?? []).map((choice) => choice.next)].includes(id)
+      if (component.length === 1 && !selfLoop) {
+        return
+      }
+      if (!component.some((member) => nodes.get(member)?.hub === true)) {
+        throw new Error(
+          `dialogue graph cycle ${component.sort().join(' -> ')} must include a hub node`,
+        )
+      }
     }
     for (const id of [...nodes.keys()].sort()) {
-      visit(id)
+      if (!indices.has(id)) {
+        visit(id)
+      }
+    }
+  }
+
+  private validateReachability(nodes: ReadonlyMap<string, DialogueNode>): void {
+    const incoming = new Map<string, number>()
+    for (const id of nodes.keys()) {
+      incoming.set(id, 0)
+    }
+    for (const node of nodes.values()) {
+      for (const target of [node.next, ...(node.choices ?? []).map((choice) => choice.next)]) {
+        if (target !== undefined) {
+          incoming.set(target, (incoming.get(target) ?? 0) + 1)
+        }
+      }
+    }
+    const roots = [...nodes.keys()]
+      .filter((id) => (incoming.get(id) ?? 0) === 0)
+      .sort()
+    if (roots.length === 0) {
+      throw new Error('dialogue graph has no entry node')
+    }
+    const reachable = new Set<string>()
+    const stack = [...roots]
+    while (stack.length > 0) {
+      const id = stack.pop()
+      if (id === undefined || reachable.has(id)) {
+        continue
+      }
+      reachable.add(id)
+      const node = nodes.get(id)
+      if (node === undefined) {
+        continue
+      }
+      for (const target of [node.next, ...(node.choices ?? []).map((choice) => choice.next)]) {
+        if (target !== undefined) {
+          stack.push(target)
+        }
+      }
+    }
+    for (const id of [...nodes.keys()].sort()) {
+      if (!reachable.has(id)) {
+        throw new Error(`dialogue node ${id} is unreachable from an entry node`)
+      }
     }
   }
 }
@@ -169,21 +206,34 @@ export function evaluateCondition(
   return actual === expected
 }
 
+export interface DialogueRunnerOptions {
+  readonly graph: DialogueGraph
+  readonly context: DialogueContext
+  readonly hooks?: DialogueHooks
+  /** Maximum accepted transitions in one conversation; default 256. */
+  readonly maxSteps?: number
+}
+
 export class DialogueRunner {
   private readonly graph: DialogueGraph
   private readonly context: DialogueContext
   private readonly hooks: DialogueHooks
+  private readonly maxSteps: number
   private currentId: string | null = null
-  private readonly used = new Set<string>()
+  private used = new Set<string>()
+  private stepCount = 0
 
-  constructor(options: {
-    readonly graph: DialogueGraph
-    readonly context: DialogueContext
-    readonly hooks?: DialogueHooks
-  }) {
+  constructor(options: DialogueRunnerOptions) {
+    if (
+      options.maxSteps !== undefined &&
+      (!Number.isInteger(options.maxSteps) || options.maxSteps < 1)
+    ) {
+      throw new Error('dialogue maxSteps must be a positive integer')
+    }
     this.graph = options.graph
     this.context = options.context
     this.hooks = options.hooks ?? {}
+    this.maxSteps = options.maxSteps ?? 256
   }
 
   get current(): DialogueNode | null {
@@ -233,10 +283,8 @@ export class DialogueRunner {
       used.add(key)
     }
     this.currentId = current
-    this.used.clear()
-    for (const key of used) {
-      this.used.add(key)
-    }
+    this.used = used
+    this.stepCount = 0
   }
 
   start(id: string): DialogueStep {
@@ -248,6 +296,7 @@ export class DialogueRunner {
       return { ok: false, reason: 'unavailable' }
     }
     this.currentId = id
+    this.stepCount = 0
     this.emit(node.effects)
     return { ok: true, view: this.view(node) }
   }
@@ -265,6 +314,10 @@ export class DialogueRunner {
     if ((choice.once === true && this.used.has(key)) || !this.allows(choice.conditions)) {
       return { ok: false, reason: 'unavailable' }
     }
+    if (this.stepCount >= this.maxSteps) {
+      throw new Error(`dialogue exceeded maxSteps ${this.maxSteps}`)
+    }
+    this.stepCount += 1
     if (choice.once === true) {
       this.used.add(key)
     }

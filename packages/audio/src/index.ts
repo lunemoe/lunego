@@ -10,6 +10,16 @@ export type { MusicOptions } from './music.js'
 export type { UnlockTarget } from './system.js'
 export { SoundBank } from './sounds.js'
 export type { SoundManifest, SoundManifestEntry } from './sounds.js'
+export {
+  registerAssetSounds,
+  soundManifestFromAssets,
+} from './assets.js'
+export type {
+  AudioAssetCollection,
+  AudioAssetEntry,
+  AudioAssetMetadata,
+  AudioSourceFor,
+} from './assets.js'
 export { WebSoundLoader, createWebAudio } from './web.js'
 export type { WebAudio, WebAudioOptions } from './web.js'
 export type {

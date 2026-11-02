@@ -181,6 +181,36 @@ describe('display specs', () => {
     expect(animationFrameAt({ ...animated, frame: 1 }, RUN, 0)?.x).toBe(16)
   })
 
+  it('selects frames by cumulative durations and keeps fps as fallback', () => {
+    const timed = animatedSpec('run', {
+      frames: RUN,
+      fps: 100,
+      durations: [0.1, 0.2, 0.3, 0.4],
+      loop: true,
+    })
+    expect(animationFrameAt(timed, RUN, 0)?.x).toBe(0)
+    expect(animationFrameAt(timed, RUN, 0.05)?.x).toBe(0)
+    expect(animationFrameAt(timed, RUN, 0.1)?.x).toBe(16)
+    expect(animationFrameAt(timed, RUN, 0.29)?.x).toBe(16)
+    expect(animationFrameAt(timed, RUN, 0.3)?.y).toBe(24)
+    expect(animationFrameAt(timed, RUN, 0.6)?.x).toBe(16)
+    expect(animationFrameAt(timed, RUN, 1)?.x).toBe(0)
+    expect(animationFrameAt({ ...timed, loop: false }, RUN, 99)?.x).toBe(16)
+    expect(animationFrameAt({ ...timed, frame: 2 }, RUN, 0)?.y).toBe(24)
+  })
+
+  it('rejects invalid duration arrays', () => {
+    const base = animatedSpec('run', { frames: RUN })
+    expect(() => animationFrameAt({ ...base, durations: [0.1] }, RUN, 0)).toThrow(/length/)
+    expect(() => animationFrameAt({ ...base, durations: [0.1, 0.2, 0, 0.4] }, RUN, 0)).toThrow(/positive/)
+    expect(() => animationFrameAt({ ...base, durations: [0.1, -0.2, 0.3, 0.4] }, RUN, 0)).toThrow(/positive/)
+    expect(() => animationFrameAt({ ...base, durations: [0, 0, 0, 0] }, RUN, 0)).toThrow(/positive/)
+    expect(() => animationFrameAt({
+      ...base,
+      durations: [Number.MAX_VALUE, Number.MAX_VALUE, 0.3, 0.4],
+    }, RUN, 0)).toThrow(/positive total/)
+  })
+
   it('slices sheets in row-major order with margin and spacing', () => {
     const frames = sheetFrames({
       frameWidth: 8,

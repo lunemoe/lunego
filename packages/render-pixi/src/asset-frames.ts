@@ -38,6 +38,7 @@ export interface AssetAnimationSpec {
   readonly from?: number
   readonly fps?: number | null
   readonly loop?: boolean
+  /** Per-frame milliseconds, as emitted by the Aseprite importer. */
   readonly durations?: readonly number[]
 }
 
@@ -158,6 +159,16 @@ export function assetFrames(
   return frames
 }
 
+/** Converts Aseprite-style per-frame milliseconds to display seconds. */
+export function assetAnimationDurations(
+  animation: AssetAnimationSpec,
+): readonly number[] | undefined {
+  if (animation.durations === undefined) {
+    return undefined
+  }
+  return animation.durations.map((duration) => duration / 1000)
+}
+
 /** Resolves one animation tag to frame rects using the same frame list. */
 export function animationFrames(
   asset: AssetMetadata,
@@ -209,9 +220,18 @@ export function textureEntryFromAsset(
   }
 }
 
-/**
- * Converts generated `Assets` metadata into a `TextureStore` manifest. The game
- * supplies URL construction; the framework owns frame slicing.
+const IMAGE_TYPE_BY_NAME: Readonly<Record<string, true>> = {
+  sprite: true,
+  sheet: true,
+  spritesheet: true,
+  tileset: true,
+  atlas: true,
+  image: true,
+}
+
+/** Converts generated `Assets` metadata into a `TextureStore` manifest. The game
+ * supplies URL construction; the framework owns frame slicing. Audio/font and
+ * other non-texture assets are skipped.
  */
 export function textureManifestFromAssets(
   assets: Readonly<Record<string, AssetMetadata>>,
@@ -219,6 +239,9 @@ export function textureManifestFromAssets(
 ): TextureManifest {
   const manifest: Record<string, TextureManifestEntry> = {}
   for (const [id, asset] of Object.entries(assets)) {
+    if (asset.type !== undefined && IMAGE_TYPE_BY_NAME[asset.type] !== true) {
+      continue
+    }
     if (asset.file === undefined) {
       throw new Error(`asset ${id} has no file`)
     }

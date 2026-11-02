@@ -13,7 +13,8 @@
   - `checkLeash` 越界 reset
   - `phaseAt/transitionPhase`：Boss phase 阈值
   - `lootRequests`：只返回 loot table 名称请求，不生成物品
-  - `serialize/restore`
+  - `serialize/restore`：若注入的 `RngStream` 暴露 `state()`，`EncounterState.rngState` 保存 spawn RNG 状态；`restore` 优先用流自身的 `restore(state)`，否则用 `restoreRngState` 回调，若二者都没有但流当前状态已等于快照则接受（调用方已先恢复 registry），否则明确抛错。
+  - 没有 `state()` 的流不会写入 `rngState`；此时调用方必须在读档前自行恢复 RNG，`restore` 不伪造随机状态。
 - 难度通过 `DifficultyScaling.scaleCount/scaleCost` 注入。
 
 ## 不变量

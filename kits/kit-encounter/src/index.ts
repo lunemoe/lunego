@@ -1,4 +1,4 @@
-import type { RngStream } from '@lunego/core'
+import type { RngStateWords, RngStream } from '@lunego/core'
 import { weightedPick, type LootTable } from '@lunego/kit-loot'
 
 export interface Point {
@@ -74,6 +74,8 @@ export interface EncounterState {
   readonly phase: string | null
   readonly spawned: readonly SpawnedEntity[]
   readonly spent: number
+  /** Spawn RNG state when the injected stream exposes one. */
+  readonly rngState?: RngStateWords
 }
 
 export interface EncounterRuntimeOptions {
@@ -81,6 +83,42 @@ export interface EncounterRuntimeOptions {
   readonly rng: RngStream
   readonly spawnPoints: readonly SpawnPoint[]
   readonly state?: EncounterState
+  /** Applies `EncounterState.rngState` when the stream has no restore method. */
+  readonly restoreRngState?: (state: RngStateWords) => void
+}
+
+interface StatefulRngStream extends RngStream {
+  state?(): RngStateWords
+  restore?(state: RngStateWords): void
+}
+
+function isRngState(value: unknown): value is RngStateWords {
+  if (!Array.isArray(value) || value.length !== 4) {
+    return false
+  }
+  let nonZero = false
+  for (const word of value) {
+    if (typeof word !== 'number' || !Number.isInteger(word) || word < 0 || word > 0xffffffff) {
+      return false
+    }
+    nonZero = nonZero || word !== 0
+  }
+  return nonZero
+}
+
+function captureRngState(rng: RngStream): RngStateWords | undefined {
+  // RngStream is the minimal public interface; core's concrete stream adds state().
+  const stateful = rng as Partial<StatefulRngStream>
+  return typeof stateful.state === 'function' ? stateful.state() : undefined
+}
+
+function restorerOf(rng: RngStream): ((state: RngStateWords) => void) | undefined {
+  const stateful = rng as Partial<StatefulRngStream>
+  return typeof stateful.restore === 'function' ? stateful.restore.bind(rng) : undefined
+}
+
+function sameRngState(left: RngStateWords, right: RngStateWords): boolean {
+  return left.length === right.length && left.every((word, index) => word === right[index])
 }
 
 function validateWave(wave: EncounterWave): void {
@@ -106,6 +144,7 @@ function entryAllowed(entry: SpawnEntry, tags: readonly string[] | undefined): b
 export class EncounterRuntime {
   readonly def: EncounterDef
   private readonly rng: RngStream
+  private readonly restoreRngState: ((state: RngStateWords) => void) | undefined
   private readonly spawnPoints: readonly SpawnPoint[]
   private waveIndexValue = 0
   private phaseValue: string | null = null
@@ -122,6 +161,7 @@ export class EncounterRuntime {
       validateWave(wave)
     }
     this.rng = options.rng
+    this.restoreRngState = options.restoreRngState
     this.spawnPoints = [...options.spawnPoints]
     if (options.state !== undefined) {
       this.restore(options.state)
@@ -262,17 +302,35 @@ export class EncounterRuntime {
   }
 
   serialize(): EncounterState {
+    const rngState = captureRngState(this.rng)
     return {
       waveIndex: this.waveIndexValue,
       phase: this.phaseValue,
       spawned: this.spawnedValue.map((entity) => ({ ...entity })),
       spent: this.spentValue,
+      ...(rngState === undefined ? {} : { rngState }),
     }
   }
 
   restore(state: EncounterState): void {
     if (!Number.isInteger(state.waveIndex) || state.waveIndex < 0 || state.waveIndex >= this.def.waves.length) {
       throw new Error('invalid encounter wave index')
+    }
+    if (state.rngState !== undefined) {
+      if (!isRngState(state.rngState)) {
+        throw new Error('invalid encounter rng state')
+      }
+      const restore = this.restoreRngState ?? restorerOf(this.rng)
+      if (restore !== undefined) {
+        restore(state.rngState)
+      } else {
+        const current = captureRngState(this.rng)
+        if (current === undefined || !sameRngState(current, state.rngState)) {
+          throw new Error(
+            'encounter rng state cannot be restored; inject a stateful RngStream, restore the registry first, or pass restoreRngState',
+          )
+        }
+      }
     }
     this.waveIndexValue = state.waveIndex
     this.phaseValue = state.phase

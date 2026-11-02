@@ -3,12 +3,15 @@ import type { QuestDef, QuestObjectiveState, QuestState, QuestStatus } from './t
 export interface QuestLogSnapshot {
   readonly version: 1
   readonly worldDayIndex: number
+  /** Optional for snapshots written before weekly quests existed. */
+  readonly worldWeekIndex?: number
   readonly tracked: readonly string[]
   readonly quests: Readonly<Record<string, QuestState>>
 }
 
 export interface ParsedQuestSnapshot {
   readonly worldDayIndex: number
+  readonly worldWeekIndex: number
   readonly tracked: readonly string[]
   readonly states: ReadonlyMap<string, QuestState>
 }
@@ -81,12 +84,17 @@ function questState(value: unknown, def: QuestDef, label: string): QuestState {
       }
     }
   }
+  const rawWeekTurnedIn = state['weekTurnedIn']
+  const weekTurnedIn = rawWeekTurnedIn === undefined
+    ? null
+    : nullableInteger(rawWeekTurnedIn, `${label}.weekTurnedIn`)
   return {
     status: status as QuestStatus,
     progress,
     acceptedTick: nullableInteger(state['acceptedTick'], `${label}.acceptedTick`),
     completedTick: nullableInteger(state['completedTick'], `${label}.completedTick`),
     dayTurnedIn: nullableInteger(state['dayTurnedIn'], `${label}.dayTurnedIn`),
+    weekTurnedIn,
   }
 }
 
@@ -102,6 +110,13 @@ export function parseQuestLogSnapshot(
   const worldDayIndex = integerValue(root['worldDayIndex'], 'quest snapshot worldDayIndex')
   if (worldDayIndex < 0) {
     throw new Error('quest snapshot worldDayIndex must be non-negative')
+  }
+  const rawWeekIndex = root['worldWeekIndex']
+  const worldWeekIndex = rawWeekIndex === undefined
+    ? 0
+    : integerValue(rawWeekIndex, 'quest snapshot worldWeekIndex')
+  if (worldWeekIndex < 0) {
+    throw new Error('quest snapshot worldWeekIndex must be non-negative')
   }
   if (!Array.isArray(root['tracked'])) {
     throw new Error('quest snapshot tracked must be an array')
@@ -127,6 +142,7 @@ export function parseQuestLogSnapshot(
   }
   return {
     worldDayIndex,
+    worldWeekIndex,
     tracked: [...tracked].sort(),
     states,
   }

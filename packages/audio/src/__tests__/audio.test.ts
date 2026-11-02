@@ -7,6 +7,8 @@ import {
   SoundBank,
   attachAudioUnlock,
   defineAudioCueMap,
+  registerAssetSounds,
+  soundManifestFromAssets,
   type AudioBufferLike,
   type AudioContextLike,
   type AudioNodeLike,
@@ -104,6 +106,74 @@ function bankWith(id = 'hit'): SoundBank {
   bank.register(id, { duration: 0.5 })
   return bank
 }
+
+class AssetLoader implements SoundLoader {
+  readonly sources: (string | ArrayBuffer)[] = []
+
+  async load(source: string | ArrayBuffer): Promise<AudioBufferLike> {
+    this.sources.push(source)
+    return { duration: 1 }
+  }
+}
+
+describe('audio asset registration', () => {
+  it('builds and loads a SoundBank manifest from generated audio assets', async () => {
+    const assets = {
+      hit: { file: 'sounds/hit.wav', type: 'audio' },
+      music: { file: 'sounds/theme.ogg', type: 'audio' },
+      hero: { file: 'sprites/hero.png', type: 'sprite' },
+    }
+    expect(soundManifestFromAssets(assets, (file, id) => `/${id}/${file}`)).toEqual({
+      hit: { source: '/hit/sounds/hit.wav' },
+      music: { source: '/music/sounds/theme.ogg' },
+    })
+    const loader = new AssetLoader()
+    const bank = new SoundBank(loader)
+    const report = await registerAssetSounds(bank, assets, (file, id) => `/${id}/${file}`)
+    expect(report).toEqual({ loaded: ['hit', 'music'], failed: [] })
+    expect(loader.sources).toEqual(['/hit/sounds/hit.wav', '/music/sounds/theme.ogg'])
+    expect(bank.has('hit')).toBe(true)
+    expect(bank.has('hero')).toBe(false)
+  })
+
+  it('accepts ArrayBuffer sources for decoded WAV data', async () => {
+    const loader = new AssetLoader()
+    const bank = new SoundBank(loader)
+    const buffer = new ArrayBuffer(8)
+    const report = await registerAssetSounds(bank, [{ id: 'wav', file: 'wav/inline', type: 'audio' }], () => buffer)
+    expect(report.loaded).toEqual(['wav'])
+    expect(loader.sources[0]).toBe(buffer)
+  })
+
+  it('fails clearly for missing files, duplicate keys and existing bank ids', async () => {
+    const bank = new SoundBank(new AssetLoader())
+    await expect(registerAssetSounds(bank, { bad: { type: 'audio' } })).rejects.toThrow(/no file/)
+    await expect(registerAssetSounds(bank, [
+      { id: 'dup', file: 'a.wav', type: 'audio' },
+      { id: 'dup', file: 'b.wav', type: 'audio' },
+    ])).rejects.toThrow(/duplicated/)
+    await registerAssetSounds(bank, [{ id: 'hit', file: 'hit.wav', type: 'audio' }])
+    await expect(registerAssetSounds(bank, [{ id: 'hit', file: 'hit.wav', type: 'audio' }]))
+      .rejects.toThrow(/already registered/)
+  })
+
+  it('reports loader failures per asset', async () => {
+    class FailingLoader implements SoundLoader {
+      async load(source: string | ArrayBuffer): Promise<AudioBufferLike> {
+        if (source === 'bad.wav') {
+          throw new Error('decode failed')
+        }
+        return { duration: 1 }
+      }
+    }
+    const report = await registerAssetSounds(new SoundBank(new FailingLoader()), {
+      bad: { file: 'bad.wav', type: 'audio' },
+      good: { file: 'good.wav', type: 'audio' },
+    })
+    expect(report.loaded).toEqual(['good'])
+    expect(report.failed.map((entry) => entry.id)).toEqual(['bad'])
+  })
+})
 
 function cue(id: string, type: string): CueInstance {
   return { id, type, tick: 1, sequence: 0, source: 'test', payload: undefined }

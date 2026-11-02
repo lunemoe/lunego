@@ -61,6 +61,7 @@ export { TextureStore } from './textures.js'
 export {
   animationFrames,
   assetAnchor,
+  assetAnimationDurations,
   assetFrames,
   textureEntryFromAsset,
   textureManifestFromAssets,

@@ -100,6 +100,92 @@ describe('dialogue graph/runner', () => {
     })
   })
 
+  it('allows hub back-edges, keeps once choices across loops and restores them', () => {
+    const graph = new DialogueGraph([
+      { id: 'entry', textKey: 'entry', choices: [{ id: 'enter', textKey: 'enter', next: 'hub' }] },
+      {
+        id: 'hub',
+        textKey: 'hub',
+        hub: true,
+        choices: [
+          { id: 'branch', textKey: 'branch', next: 'branch' },
+          { id: 'leave', textKey: 'leave', next: 'end' },
+        ],
+      },
+      {
+        id: 'branch',
+        textKey: 'branch',
+        choices: [
+          { id: 'back', textKey: 'back', next: 'hub' },
+          { id: 'once', textKey: 'once', next: 'hub', once: true },
+        ],
+      },
+      { id: 'end', textKey: 'end' },
+    ])
+    const runner = new DialogueRunner({ graph, context: { flag: () => true } })
+    expect(runner.start('entry').ok).toBe(true)
+    expect(runner.choose('enter').view?.node.id).toBe('hub')
+    expect(runner.choose('branch').view?.node.id).toBe('branch')
+    expect(runner.choose('once').ok).toBe(true)
+    expect(runner.current?.id).toBe('hub')
+    expect(runner.choose('branch').ok).toBe(true)
+    expect(runner.choose('once')).toEqual({ ok: false, reason: 'unavailable' })
+
+    const snapshot = JSON.parse(JSON.stringify(runner.serialize()))
+    const restored = new DialogueRunner({ graph, context: { flag: () => true } })
+    restored.restore(snapshot)
+    expect(restored.current?.id).toBe('branch')
+    expect(restored.view().choices.find((choice) => choice.id === 'once')?.used).toBe(true)
+    expect(restored.choose('back').ok).toBe(true)
+    expect(restored.current?.id).toBe('hub')
+    expect(restored.choose('branch').ok).toBe(true)
+    expect(restored.choose('once')).toEqual({ ok: false, reason: 'unavailable' })
+  })
+
+  it('guards runaway hub loops with a configurable deterministic step limit', () => {
+    const graph = new DialogueGraph([
+      {
+        id: 'entry',
+        textKey: 'entry',
+        choices: [{ id: 'enter', textKey: 'enter', next: 'hub' }],
+      },
+      {
+        id: 'hub',
+        textKey: 'hub',
+        hub: true,
+        choices: [{ id: 'again', textKey: 'again', next: 'hub' }],
+      },
+    ])
+    const runner = new DialogueRunner({
+      graph,
+      context: { flag: () => true },
+      maxSteps: 2,
+    })
+    expect(runner.start('entry').ok).toBe(true)
+    expect(runner.choose('enter').ok).toBe(true)
+    expect(runner.choose('again').ok).toBe(true)
+    expect(() => runner.choose('again')).toThrow(/maxSteps 2/)
+    expect(runner.current?.id).toBe('hub')
+    expect(() => new DialogueRunner({
+      graph,
+      context: { flag: () => true },
+      maxSteps: 0,
+    })).toThrow(/positive integer/)
+  })
+
+  it('rejects unreachable components and graphs without entry nodes', () => {
+    expect(() => new DialogueGraph([
+      { id: 'entry', textKey: 'entry', next: 'end' },
+      { id: 'end', textKey: 'end' },
+      { id: 'h1', textKey: 'h1', hub: true, next: 'h2' },
+      { id: 'h2', textKey: 'h2', next: 'h1' },
+    ])).toThrow(/unreachable/)
+    expect(() => new DialogueGraph([
+      { id: 'h1', textKey: 'h1', hub: true, next: 'h2' },
+      { id: 'h2', textKey: 'h2', next: 'h1' },
+    ])).toThrow(/no entry node/)
+  })
+
   it('rejects cycles and unknown targets', () => {
     expect(() => new DialogueGraph([
       { id: 'a', textKey: 'a', next: 'b' },

@@ -65,7 +65,7 @@ export function defineContent<
  */
 export interface AssetPackMetadata {
   readonly pack: string
-  readonly version: string
+  readonly version: string | number
   readonly hash: string
 }
 
@@ -116,7 +116,12 @@ export class ContentRegistry {
   }
 
   setAssetPack(metadata: AssetPackMetadata): void {
-    if (metadata.pack.length === 0 || metadata.version.length === 0 || metadata.hash.length === 0) {
+    if (
+      metadata.pack.length === 0 ||
+      (typeof metadata.version === 'number' && !Number.isFinite(metadata.version)) ||
+      String(metadata.version).length === 0 ||
+      metadata.hash.length === 0
+    ) {
       throw new LuneGoError('content_invalid', 'asset pack metadata needs pack/version/hash')
     }
     this.assetPackValue = { ...metadata }
@@ -151,7 +156,7 @@ export class ContentRegistry {
     } else {
       hasher.u8(1)
       hasher.string(pack.pack)
-      hasher.string(pack.version)
+      hasher.string(String(pack.version))
       hasher.string(pack.hash)
     }
     const typeNames = [...this.types.keys()].sort()

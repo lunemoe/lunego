@@ -26,6 +26,21 @@ describe('ai perception and threat', () => {
     expect(perception.snapshot(13)).toEqual([])
   })
 
+  it('applies an injected line-of-sight callback without changing range/cone rules', () => {
+    const blocked = { entity: 4, x: 1, y: 0 }
+    const visible = { entity: 2, x: 1, y: 0 }
+    const perception = new Perception({
+      range: 10,
+      coneDot: 0,
+      lineOfSight: (_self, candidate) => candidate.entity !== blocked.entity,
+    })
+    expect(perception.observe(self, { x: 1, y: 0 }, [blocked, visible], 1).map((entry) => entry.entity)).toEqual([2])
+    expect(perception.snapshot(1).map((entry) => entry.entity)).toEqual([2])
+
+    const open = new Perception({ range: 10, coneDot: 0 })
+    expect(open.observe(self, { x: 1, y: 0 }, [blocked, visible], 1).map((entry) => entry.entity)).toEqual([2, 4])
+  })
+
   it('ranks threat descending then entity ascending and hides blacklisted', () => {
     const table = new ThreatTable()
     table.add(5, 3)
@@ -102,6 +117,10 @@ describe('ai brain primitives', () => {
     group.add({ entity: 1, x: 5, y: 5 })
     expect(group.values().map((member) => member.entity)).toEqual([1, 3])
     expect(group.nearest({ x: 0, y: 0 })?.entity).toBe(3)
+    const tied = new AgentGroup<{ entity: number; x: number; y: number }>()
+    tied.add({ entity: 3, x: -1, y: 0 })
+    tied.add({ entity: 2, x: 1, y: 0 })
+    expect(tied.nearest({ x: 0, y: 0 })?.entity).toBe(2)
     const board = new Blackboard({ target: 0 })
     board.set('target', 3)
     expect(board.snapshot()).toEqual({ target: 3 })

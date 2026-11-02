@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { QuestLog, type QuestDef } from '../index.js'
+import { QuestLog, escortProgress, type QuestDef, type QuestObjective } from '../index.js'
 
 const quests: readonly QuestDef[] = [
   {
@@ -25,6 +25,23 @@ const quests: readonly QuestDef[] = [
   {
     id: 'unique',
     objectives: [{ id: 'collect', type: 'collect', target: 'gem', required: 2, unique: true }],
+  },
+  {
+    id: 'escort',
+    objectives: [{
+      id: 'escort',
+      type: 'escort',
+      target: 'escort-target',
+      escortId: 'refugee',
+      required: 1,
+      destination: { x: 10, y: 0 },
+      radius: 2,
+    }],
+  },
+  {
+    id: 'weekly',
+    repeat: 'weekly',
+    objectives: [{ id: 'reach', type: 'reach', target: 'shrine', required: 1 }],
   },
 ]
 
@@ -97,6 +114,77 @@ describe('quest log', () => {
     expect(restored.tracked()).toHaveLength(1)
     restored.setWorldDayIndex(4)
     expect(restored.available('daily')).toBe(true)
+  })
+
+  it('evaluates escort progress purely from position and alive state', () => {
+    const objective = quests.find((quest) => quest.id === 'escort')?.objectives[0] as QuestObjective
+    expect(escortProgress(objective, { x: 10, y: 0, alive: true })).toEqual({
+      status: 'arrived',
+      distance: 0,
+    })
+    expect(escortProgress(objective, { x: 10, y: 2, alive: true })).toEqual({
+      status: 'arrived',
+      distance: 2,
+    })
+    expect(escortProgress(objective, { x: 10, y: 2.5, alive: true })).toEqual({
+      status: 'active',
+      distance: 2.5,
+    })
+    expect(escortProgress(objective, { x: 10, y: 0, alive: false })).toEqual({
+      status: 'failed',
+      distance: 0,
+    })
+    expect(() => escortProgress(objective, { x: Number.NaN, y: 0, alive: true })).toThrow(/finite/)
+  })
+
+  it('completes escort quests on arrival and fails when the escort dies', () => {
+    const log = new QuestLog({ quests })
+    expect(log.accept('escort', 1)).toBe(true)
+    expect(log.recordEscort('refugee', { x: 0, y: 0, alive: true }, 2)).toEqual([])
+    expect(log.status('escort')).toBe('active')
+    const arrived = log.recordEscort('refugee', { x: 10, y: 0, alive: true }, 3)
+    expect(arrived).toEqual([{ quest: 'escort', objective: 'escort', count: 1, completed: true }])
+    expect(log.status('escort')).toBe('completed')
+    expect(log.recordEscort('refugee', { x: 0, y: 0, alive: true }, 4)).toEqual([])
+    expect(log.status('escort')).toBe('completed')
+
+    const failed = new QuestLog({ quests })
+    failed.accept('escort', 1)
+    expect(failed.recordEscort('refugee', { x: 4, y: 0, alive: false }, 2)).toEqual([
+      { quest: 'escort', objective: 'escort', count: 0, completed: false, failed: true },
+    ])
+    expect(failed.status('escort')).toBe('failed')
+    expect(failed.accept('escort', 3)).toBe(false)
+  })
+
+  it('resets weekly quests from an injected tick length and restores weekly state', () => {
+    const log = new QuestLog({ quests, weekLengthTicks: 100, tick: 0 })
+    expect(log.worldWeekIndex).toBe(0)
+    log.accept('weekly', 1)
+    log.record({ type: 'reach', target: 'shrine' }, 2)
+    expect(log.turnIn('weekly').ok).toBe(true)
+    expect(log.available('weekly')).toBe(false)
+    log.setTick(99)
+    expect(log.worldWeekIndex).toBe(0)
+    expect(log.available('weekly')).toBe(false)
+    log.setTick(100)
+    expect(log.worldWeekIndex).toBe(1)
+    expect(log.available('weekly')).toBe(true)
+
+    log.accept('weekly', 101)
+    log.record({ type: 'reach', target: 'shrine' }, 102)
+    expect(log.turnIn('weekly').ok).toBe(true)
+    const snapshot = JSON.parse(JSON.stringify(log.serialize()))
+    expect(snapshot.worldWeekIndex).toBe(1)
+    expect(snapshot.quests.weekly.weekTurnedIn).toBe(1)
+    const restored = new QuestLog({ quests, weekLengthTicks: 100 })
+    restored.restore(snapshot)
+    expect(restored.worldWeekIndex).toBe(1)
+    expect(restored.available('weekly')).toBe(false)
+    restored.setTick(200)
+    expect(restored.worldWeekIndex).toBe(2)
+    expect(restored.available('weekly')).toBe(true)
+    expect(() => new QuestLog({ quests }).setTick(100)).toThrow(/weekLengthTicks/)
   })
 
   it('rejects unknown quests/objectives in snapshots', () => {

@@ -35,6 +35,26 @@ Panel({
 - `message(key, params?)` 构造引用；`resolveText`/`textOf`/`resolveChild` 暴露给需要自定义渲染的调用方。
 - 组件不内置中文/英文文案、译文或本地化表；`@lunego/i18n` 只提供消息表运行时、插值和注入式复数规则。
 
+## 字体资源
+
+字体族仍只通过 `UiTheme.font`/`--lg-font` 使用；字体文件加载是显式注入点，不在组件里硬编码路径：
+
+```ts
+import { createBrowserFontLoader } from '@lunego/ui'
+import { Assets } from '../features/_generated/assets.js'
+
+const fonts = createBrowserFontLoader({
+  sourceFor: (file, id) => `/assets/${id}/${file}`,
+})
+const report = await fonts.loadAssets(Assets) // 只处理 type === 'font'
+```
+
+- `FontLoader` 接受可注入的 `FontSetLike`（`document.fonts` 适配器）与
+  `FontFaceFactory`，测试/非浏览器环境不需要 `FontFace`。
+- `loadAssets` 过滤 `type === 'font'`，按资产 id 加载；缺 file、重复 id 在加载前抛错，单个 `FontFace.load()` 失败进入 `report.failed`。
+- `family` 缺省使用 asset id；`weight/style/display` 原样传给 `FontFace`。
+- `createBrowserFontLoader` 使用 `document.fonts` 与 `FontFace`；缺失时明确抛错。
+
 ## 无障碍
 
 - 所有新控件使用原生 button 或 roving focus，并有 `aria-label`/`aria-selected`/`aria-expanded`/`aria-describedby`/`role`；`TreeView`/`GraphView`/`Dialog`/`ShopRow`/`MinimapView`/`VirtualList`/`DragSource`/`DropTarget`/`SortableGrid` 接受调用方的 `describedBy` id。
@@ -66,6 +86,6 @@ Panel({
 ## 待办
 
 - 实际翻译内容、复数规则（按语言注入 `pluralRule`）与消息表由各游戏/内容包提供；本仓库只有契约与测试样例。
-- 字体图集/位图字体仍由游戏资源管线提供；框架只消费 `theme.font`/`--lg-font`。
+- 字体图集/位图字体仍由游戏资源管线提供；`FontLoader` 只负责浏览器 `FontFace` 字体文件，不解释图集格式。
 - 图标/九宫格目前是调用方 URL；与资产 manifest 的 `AssetId` 注入将在资产管线批次统一。
 - 新包 `@lunego/i18n` 的 workspace 依赖与 lockfile 由统一集成批次更新（当前 UI 通过结构性 resolver 接入，无运行时依赖）。
