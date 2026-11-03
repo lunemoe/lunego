@@ -8,10 +8,13 @@ export type {
   RuntimeProgressionDef,
   RuntimeRecipeDef,
   RuntimeVendorDef,
+  RuntimeItemDef,
 } from './content.js'
 export { createRuntimeFeature, RuntimeQueries } from './feature.js'
 export type { EquipmentData, InventoryData, RuntimeFeatureOptions, RuntimeHooks } from './types.js'
 export {
+  AbilityCooldowns,
+  AbilityUsed,
   ActorControllable,
   ActorFacing,
   ActorSpawned,
@@ -22,7 +25,9 @@ export {
   AiState,
   AttackTarget,
   BuyItem,
+  SellItem,
   EncounterPhaseChanged,
+  EncounterCompleted,
   CombatDead,
   CombatDefenses,
   CombatHealth,
@@ -61,8 +66,11 @@ export {
   StatusState,
   TurnInQuest,
   UsePortal,
+  UseItem,
   WalletState,
   ZoneChanged,
   ZoneDefContent,
   ZoneStateModel,
 } from './schema.js'
+
+export { parseItemSnapshot as readGroundItem } from './state-bridge.js'

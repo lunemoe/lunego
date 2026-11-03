@@ -1,5 +1,5 @@
 {
-  "name": "@lunego/game-template",
+  "name": "@lunego/game-p9",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -17,11 +17,11 @@
     "@lunego/render-pixi": "workspace:*",
     "@lunego/ui": "workspace:*",
     "@lunego/audio": "workspace:*",
-    "solid-js": "^1.9.18",
     "@lunego/vfx": "workspace:*",
     "lunego": "workspace:*",
     "@lunego/kit-runtime": "workspace:*",
-    "@lunego/i18n": "workspace:*"
+    "@lunego/i18n": "workspace:*",
+    "@lunego/kit-loot": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

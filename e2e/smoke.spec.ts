@@ -33,7 +33,7 @@ function centroid(buffer: Buffer, predicate: (r: number, g: number, b: number) =
 const isCrate = (r: number, g: number, b: number): boolean => r > 180 && g > 100 && g < 180 && b < 120
 const isBackground = (r: number, g: number, b: number): boolean => r < 20 && g < 24 && b < 32
 
-test('renders a moving square and redraws the canvas', async ({ page }, testInfo) => {
+test('renders the arena and redraws the moving player', async ({ page }, testInfo) => {
   await page.goto('/')
   await page.waitForFunction(() => (window.__luneGame?.game.frame.tick ?? 0) >= 3)
   const canvas = page.locator('canvas:not(.vfx-layer)')
@@ -42,6 +42,7 @@ test('renders a moving square and redraws the canvas', async ({ page }, testInfo
   if (box === null) {
     throw new Error('canvas has no bounding box')
   }
+  const beforePosition = await page.evaluate(() => window.__luneGame?.position())
   const before = await page.screenshot({ clip: box })
   const beforeCrate = centroid(before, isCrate)
   const beforePixels = centroid(before, (r, g, b) => !isBackground(r, g, b))
@@ -62,6 +63,6 @@ test('renders a moving square and redraws the canvas', async ({ page }, testInfo
   console.log(`crate centroid x: ${beforeCrate.x.toFixed(1)} -> ${afterCrate.x.toFixed(1)}`)
 
   expect(afterCrate.count).toBeGreaterThan(50)
-  expect(afterCrate.x).toBeLessThan(beforeCrate.x - 5)
+  expect((await page.evaluate(() => window.__luneGame?.position()))?.x).toBeGreaterThan((beforePosition?.x ?? 0) + 20)
   expect(Buffer.compare(before, after)).not.toBe(0)
 })

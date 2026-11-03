@@ -1,0 +1,30 @@
+{
+  "schema": "p9.ref.poe/1",
+  "source": {
+    "dataset": "RePoE (community GGPK export)",
+    "repository": "https://github.com/repoe-fork/repoe",
+    "hosted_export": "https://repoe-fork.github.io/",
+    "upstream_commit": "aa9fa7c3",
+    "export_http_last_modified": "2026-10-19T04:15:16Z",
+    "game": "Path of Exile 1 (PC)",
+    "redistribution": "raw data (c) Grinding Gear Games; not redistributed - aggregates only",
+    "revision_note": "PoE1 3.2x-era snapshot; structure is what matters, exact numbers drift per league"
+  },
+  "counts": {
+    "item_classes": 25,
+    "representative_bases": 14,
+    "normal_affix_mods": 940,
+    "affix_families": 203,
+    "affix_tiers": 916,
+    "affix_prefix_families": 100,
+    "affix_suffix_families": 103,
+    "stat_catalog_keys": 115,
+    "stats_json_ids": 23346,
+    "gems_total": 1458,
+    "gems_active": 1010,
+    "gems_support": 448,
+    "gem_tags": 40,
+    "active_skill_types": 117,
+    "affix_pool_rows": 140
+  }
+}

@@ -669,6 +669,9 @@ importers:
       '@lunego/input':
         specifier: workspace:*
         version: link:../../packages/input
+      '@lunego/kit-loot':
+        specifier: workspace:*
+        version: link:../../kits/kit-loot
       '@lunego/kit-runtime':
         specifier: workspace:*
         version: link:../../kits/kit-runtime
@@ -684,9 +687,6 @@ importers:
       lunego:
         specifier: workspace:*
         version: link:../../packages/cli
-      solid-js:
-        specifier: ^1.9.18
-        version: 1.9.18
     devDependencies:
       typescript:
         specifier: ~5.9.3

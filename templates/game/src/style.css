@@ -14,20 +14,25 @@ body {
   text-align: center;
 }
 #game {
-  width: 960px;
-  height: 540px;
+  width: min(960px, calc(100vw - 300px));
+  aspect-ratio: 16 / 9;
   display: grid;
   place-items: center;
   background: #05070b;
   border: 1px solid #243349;
   position: relative;
 }
-#game #ui {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  z-index: var(--lg-ui-z, 20);
-  width: min(320px, calc(100% - 16px));
+.game-layout { display: flex; gap: 12px; align-items: flex-start; }
+#ui { width: 240px; text-align: left; }
+#ui .lg-modal { width: min(480px, calc(100vw - 32px)); max-height: 80vh; overflow-y: auto; }
+.action-notice { min-height: 18px; color: #ffd36b; }
+.run-progress { font-size: 12px; }
+.lg-fx-number { font-size: 18px; font-weight: bold; }
+@media (max-width: 760px) {
+  .game-layout { flex-direction: column; align-items: center; }
+  #game { width: calc(100vw - 24px); }
+  #ui { width: calc(100vw - 24px); }
+  .hint { max-width: calc(100vw - 24px); }
 }
 #game .vfx-layer {
   position: absolute;
@@ -42,3 +47,25 @@ body {
   opacity: 0.65;
   font-size: 12px;
 }
+
+.loot-magic { color: #58c8ff; }
+.loot-rare { color: #ffd36b; }
+
+#ui .lg-button { border: calc(var(--p9-button-slice) * 1px) solid transparent; border-image: var(--p9-button) var(--p9-button-slice) fill stretch; padding: 1px 3px; background: none; }
+#ui .lg-button:hover { border-image-source: var(--p9-button-hover); }
+#ui .lg-button:active { border-image-source: var(--p9-button-pressed); }
+#ui .lg-button:disabled { border-image-source: var(--p9-button-disabled); }
+#ui .lg-ui, #ui .lg-button { cursor: var(--p9-cursor); }
+#ui .lg-modal { border: calc(var(--p9-panel-slice) * 1px) solid transparent; border-image: var(--p9-panel) var(--p9-panel-slice) fill stretch; }
+#ui .lg-bar { box-sizing: content-box; height: 14px; border: calc(var(--p9-bar-slice) * 1px) solid transparent; }
+#ui .lg-bar--hp { border-image: var(--p9-hp-frame) var(--p9-bar-slice) fill stretch; }
+#ui .lg-bar--xp { border-image: var(--p9-xp-frame) var(--p9-bar-slice) fill stretch; }
+#ui .lg-bar--hp .lg-bar__fill { background: var(--p9-hp-fill); }
+#ui .lg-bar--xp .lg-bar__fill { background: var(--p9-xp-fill); }
+#ui .item-icon, #ui .action-label img { width: 24px; height: 24px; object-fit: contain; image-rendering: pixelated; vertical-align: middle; margin-right: 6px; }
+#ui .action-label { display: inline-flex; align-items: center; }
+#ui .lg-option { border-image: var(--p9-slot) 8 fill stretch; }
+
+#ui .loot-common .item-icon { background: var(--p9-rarity-common) center / 100% 100%; }
+#ui .loot-magic .item-icon { background: var(--p9-rarity-magic) center / 100% 100%; }
+#ui .loot-rare .item-icon { background: var(--p9-rarity-rare) center / 100% 100%; }

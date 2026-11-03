@@ -1,0 +1,1113 @@
+{
+  "pack": "p9-dungeon-arpg",
+  "version": "2.2.1",
+  "created": "2026-11-02",
+  "virtualResolution": [
+    480,
+    270
+  ],
+  "pixelScale": "integer only, nearest-neighbour",
+  "palette": {
+    "colors": [
+      "#101018",
+      "#1a1a26",
+      "#2e2f3d",
+      "#4a4c5e",
+      "#6b6e82",
+      "#9a9db2",
+      "#e8ecf4",
+      "#e8b48c",
+      "#b87b5c",
+      "#f2c14e",
+      "#b07c2a",
+      "#e8743a",
+      "#c8392b",
+      "#7a1a1c",
+      "#2f6fb8",
+      "#63a6e8",
+      "#1c2e4d",
+      "#6b3fa0",
+      "#a96bdc",
+      "#4fd6e8",
+      "#4fa64a",
+      "#8fd05a",
+      "#2a6636",
+      "#8a5a33",
+      "#4e3220",
+      "#f7e08a",
+      "#e86b9a",
+      "#d8cba8"
+    ],
+    "note": "characters and icons quantised to these 28 colours; UI drawn from the same ramp"
+  },
+  "licenses": {
+    "aiArt": "CC0-1.0",
+    "ui": "CC0-1.0",
+    "audio": "CC0-1.0",
+    "music": "CC0-1.0",
+    "tiles": "CC0-1.0"
+  },
+  "layoutConvention": {
+    "player": "rows=[down,left,right,up]; columns idle/walk/attack1/attack2/cast/hurt/death",
+    "enemies": "6x5 rows=[idle,move,attack,hurt,death]; bottom-center feet",
+    "boss": "6x7 rows=[idle,smash,cast,charge,phase,hurt,death]",
+    "anchor": "bottom-center for entities (feet), top-left for tiles/UI (nine-slice border 8)"
+  },
+  "description": "p9 production assets used by the first LuneGo game in templates/game; imported from the existing CC0 p9 pack, without archived generators or obsolete variants.",
+  "assets": [
+    {
+      "id": "player_knight",
+      "file": "sprites/player_knight.png",
+      "type": "spritesheet",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "columns": 30,
+      "rows": 4,
+      "facingRows": {
+        "0": "down",
+        "1": "left",
+        "2": "right",
+        "3": "up"
+      },
+      "anchor": "bottom-center",
+      "transparent": true,
+      "animations": [
+        {
+          "name": "idle",
+          "columns": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "frames": 4,
+          "loop": true,
+          "fps": 4
+        },
+        {
+          "name": "walk",
+          "columns": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "frames": 6,
+          "loop": true,
+          "fps": 10
+        },
+        {
+          "name": "attack1",
+          "columns": [
+            10,
+            11,
+            12,
+            13
+          ],
+          "frames": 4,
+          "loop": false,
+          "fps": 12
+        },
+        {
+          "name": "attack2",
+          "columns": [
+            14,
+            15,
+            16,
+            17
+          ],
+          "frames": 4,
+          "loop": false,
+          "fps": 12
+        },
+        {
+          "name": "cast",
+          "columns": [
+            18,
+            19,
+            20,
+            21
+          ],
+          "frames": 4,
+          "loop": false,
+          "fps": 10
+        },
+        {
+          "name": "hurt",
+          "columns": [
+            22,
+            23
+          ],
+          "frames": 2,
+          "loop": false,
+          "fps": 12
+        },
+        {
+          "name": "death",
+          "columns": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29
+          ],
+          "frames": 6,
+          "loop": false,
+          "fps": 8
+        }
+      ],
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image (transparent) -> alpha strip split -> LANCZOS fit to the LARGER target frame (64/96/128/160) -> 28-colour palette quantise -> speck cleanup; action strips generated image-to-image from a restyled walk/idle reference so costume and palette stay identical",
+        "prompt": "hero knight in blue tabard with round shield and sword: 6-frame walk, 4-frame attack1/attack2/cast, 6-frame death per facing; idle bob and hurt recoil derived"
+      },
+      "notes": "layout identical to the shipped 32px sheet (same 30 columns, same row order), only the frame is now 64x64. left row = build-time horizontal mirror of the right row; idle = 4-frame 2px breathing bob from walk[0]; hurt = 2-frame recoil from walk[0]",
+      "frames": 120,
+      "fps": 4
+    },
+    {
+      "id": "enemy_skeleton_warrior",
+      "file": "sprites/enemies/skeleton_warrior.png",
+      "type": "spritesheet",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "columns": 6,
+      "rows": 5,
+      "frames": 30,
+      "fps": 4,
+      "anchor": "bottom-center",
+      "transparent": true,
+      "rowOrder": [
+        "idle",
+        "move",
+        "attack",
+        "hurt",
+        "death"
+      ],
+      "animations": [
+        {
+          "name": "idle",
+          "columns": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "frames": 4,
+          "loop": true,
+          "fps": 4
+        },
+        {
+          "name": "move",
+          "columns": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "frames": 6,
+          "loop": true,
+          "fps": 10
+        },
+        {
+          "name": "attack",
+          "columns": [
+            12,
+            13,
+            14,
+            15
+          ],
+          "frames": 4,
+          "loop": false,
+          "fps": 10
+        },
+        {
+          "name": "hurt",
+          "columns": [
+            18,
+            19
+          ],
+          "frames": 2,
+          "loop": false,
+          "fps": 12
+        },
+        {
+          "name": "death",
+          "columns": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29
+          ],
+          "frames": 6,
+          "loop": false,
+          "fps": 8
+        }
+      ],
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image (transparent) -> alpha strip split -> LANCZOS fit to the LARGER target frame (64/96/128/160) -> 28-colour palette quantise -> speck cleanup; action strips generated image-to-image from a restyled walk/idle reference so costume and palette stay identical",
+        "prompt": "skeleton warrior with sword and shield: 6-frame walk, 4-frame attack and 6-frame death generated from a restyled walk reference"
+      },
+      "notes": "same 6x5 animation-row semantics as the 32px pack; frame doubled to 64",
+      "tags": [
+        "enemy",
+        "character"
+      ]
+    },
+    {
+      "id": "enemy_charger",
+      "file": "sprites/enemies/charger.png",
+      "type": "spritesheet",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "columns": 6,
+      "rows": 5,
+      "facingRows": null,
+      "anchor": "bottom-center",
+      "transparent": true,
+      "rowOrder": [
+        "idle",
+        "move",
+        "attack",
+        "hurt",
+        "death"
+      ],
+      "animations": [
+        {
+          "name": "idle",
+          "columns": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "frames": 4,
+          "loop": true,
+          "fps": 4
+        },
+        {
+          "name": "move",
+          "columns": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "frames": 6,
+          "loop": true,
+          "fps": 10
+        },
+        {
+          "name": "attack",
+          "columns": [
+            12,
+            13,
+            14,
+            15
+          ],
+          "frames": 4,
+          "loop": false,
+          "fps": 10
+        },
+        {
+          "name": "hurt",
+          "columns": [
+            18,
+            19
+          ],
+          "frames": 2,
+          "loop": false,
+          "fps": 12
+        },
+        {
+          "name": "death",
+          "columns": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29
+          ],
+          "frames": 6,
+          "loop": false,
+          "fps": 8
+        }
+      ],
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image (transparent) -> alpha strip split -> LANCZOS fit to the LARGER target frame (64/96/128/160) -> 28-colour palette quantise -> speck cleanup; action strips generated image-to-image from a restyled walk/idle reference so costume and palette stay identical",
+        "prompt": "armored tusked boar: 6-frame walk, 4-frame attack and 6-frame death generated from a restyled walk reference"
+      },
+      "notes": "same 6x5 animation-row semantics as the 32px pack; frame doubled to 64",
+      "frames": 30,
+      "fps": 4
+    },
+    {
+      "id": "boss_lich",
+      "file": "sprites/enemies/boss_lich.png",
+      "type": "spritesheet",
+      "frameWidth": 160,
+      "frameHeight": 160,
+      "columns": 6,
+      "rows": 7,
+      "frames": 42,
+      "fps": 4,
+      "anchor": "bottom-center",
+      "transparent": true,
+      "animations": [
+        {
+          "name": "idle",
+          "columns": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "frames": 4,
+          "loop": true,
+          "fps": 4
+        },
+        {
+          "name": "smash",
+          "columns": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "frames": 6,
+          "loop": false,
+          "fps": 10
+        },
+        {
+          "name": "summon",
+          "columns": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "frames": 6,
+          "loop": false,
+          "fps": 10
+        },
+        {
+          "name": "cast",
+          "columns": [
+            12,
+            13,
+            14,
+            15,
+            16,
+            17
+          ],
+          "frames": 6,
+          "loop": false,
+          "fps": 10
+        },
+        {
+          "name": "charge",
+          "columns": [
+            18,
+            19,
+            20,
+            21
+          ],
+          "frames": 4,
+          "loop": false,
+          "fps": 12
+        },
+        {
+          "name": "phase",
+          "columns": [
+            24,
+            25,
+            26,
+            27
+          ],
+          "frames": 4,
+          "loop": false,
+          "fps": 8
+        },
+        {
+          "name": "hurt",
+          "columns": [
+            30,
+            31
+          ],
+          "frames": 2,
+          "loop": false,
+          "fps": 12
+        },
+        {
+          "name": "death",
+          "columns": [
+            36,
+            37,
+            38,
+            39,
+            40,
+            41
+          ],
+          "frames": 6,
+          "loop": false,
+          "fps": 8
+        }
+      ],
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image (transparent) -> alpha strip split -> LANCZOS fit to the LARGER target frame (64/96/128/160) -> 28-colour palette quantise -> speck cleanup; action strips generated image-to-image from a restyled walk/idle reference so costume and palette stay identical",
+        "prompt": "necromancer lich with bone crown, green soul-fire and a skull staff: idle, summon/cast/teleport/phase/death strips generated from the restyled idle reference",
+        "incoming5": "incoming5/ (CC0-1.0, gpt-image-2.5): summon (row 1) and cast (row 2) rows regenerated so the lich's arms, staff and pose stay readable in all 6 frames; smoke kept to thin wisps at the feet and the green soul-fire moved to the VFX layer (impact frame 3). Row 1 still carries the shared name 'smash' and is also exposed as the 'summon' alias; frame size, columns, rows and anchor unchanged."
+      },
+      "notes": "7 animation rows; row1 is the summon animation for the lich (named 'smash' to keep the shared row index). incoming5: rows 1 and 2 are body-readable 6-frame impact replacements, row 1 also exposed as the 'summon' alias (smoke at the feet only, impact frame 3); every other row is pixel-identical to v2.2.0.",
+      "tags": [
+        "boss",
+        "enemy",
+        "character"
+      ]
+    },
+    {
+      "id": "crypt_tileset",
+      "file": "tiles/crypt/tileset.png",
+      "type": "tileset",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 8,
+      "rows": 3,
+      "frames": 24,
+      "fps": null,
+      "theme": "crypt",
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "columnOrder": [
+        "crypt_floor_a",
+        "crypt_floor_b",
+        "crypt_floor_moss",
+        "crypt_floor_cracked",
+        "crypt_floor_bone",
+        "crypt_floor_ritual",
+        "crypt_wall",
+        "crypt_wall_top",
+        "crypt_wall_broken",
+        "crypt_door_closed",
+        "crypt_door_open",
+        "crypt_stairs_down",
+        "crypt_rubble",
+        "crypt_sarcophagus",
+        "crypt_sarcophagus_open",
+        "crypt_altar",
+        "crypt_bone_pile",
+        "crypt_cobweb",
+        "crypt_brazier",
+        "crypt_chain"
+      ],
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generators in incoming2/_gen (crypt.py, ember.py, town.py, ui_gen.py)",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "atlas of the whole set, row-major (left to right, top to bottom)"
+      },
+      "notes": "columnOrder lists the exact order; animated tiles are stored as their frame 0 in the atlas",
+      "tags": [
+        "tile",
+        "atlas",
+        "crypt"
+      ]
+    },
+    {
+      "id": "ember_tileset",
+      "file": "tiles/ember/tileset.png",
+      "type": "tileset",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 8,
+      "rows": 3,
+      "frames": 24,
+      "fps": null,
+      "theme": "ember",
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "columnOrder": [
+        "ember_floor_basalt_a",
+        "ember_floor_basalt_b",
+        "ember_floor_cracked",
+        "ember_magma_crack",
+        "ember_lava",
+        "ember_wall",
+        "ember_wall_top",
+        "ember_wall_cracked",
+        "ember_gate_closed",
+        "ember_gate_open",
+        "ember_stairs_down",
+        "ember_rubble",
+        "ember_forge",
+        "ember_chain",
+        "ember_brazier",
+        "ember_lava_pool",
+        "ember_spikes",
+        "ember_rune_circle",
+        "ember_pillar"
+      ],
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generators in incoming2/_gen (crypt.py, ember.py, town.py, ui_gen.py)",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "atlas of the whole set, row-major (left to right, top to bottom)"
+      },
+      "notes": "columnOrder lists the exact order; animated tiles are stored as their frame 0 in the atlas",
+      "tags": [
+        "tile",
+        "atlas",
+        "ember"
+      ]
+    },
+    {
+      "id": "tile_crate",
+      "file": "tiles/crate.png",
+      "type": "sprite",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 1,
+      "rows": 1,
+      "frames": 1,
+      "fps": null,
+      "animations": [],
+      "anchor": "bottom-center",
+      "transparent": true,
+      "source": {
+        "kind": "procedural",
+        "tool": "tools-less python/PIL generator (assets/_gen/tiles_proc.py, tiles_floor3.py)",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "toroidal Voronoi cobbles for floors; deterministic brick/wood/stone drawing for the rest"
+      },
+      "tags": [
+        "tile",
+        "prop"
+      ],
+      "notes": null
+    },
+    {
+      "id": "item_potion",
+      "file": "sprites/items/potion.png",
+      "type": "sprite",
+      "frameWidth": 24,
+      "frameHeight": 24,
+      "columns": 1,
+      "rows": 1,
+      "frames": 1,
+      "fps": null,
+      "animations": [
+        {
+          "name": "default",
+          "columns": [
+            0
+          ],
+          "frames": 1
+        }
+      ],
+      "anchor": "bottom-center",
+      "transparent": true,
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image -> alpha crop -> LANCZOS downscale -> shared 28-colour palette quantise -> 1px cleanup",
+        "prompt": "red healing potion inventory icon, pixel art"
+      },
+      "tags": [
+        "item",
+        "icon"
+      ],
+      "notes": null
+    },
+    {
+      "id": "item_sword",
+      "file": "sprites/items/sword.png",
+      "type": "sprite",
+      "frameWidth": 24,
+      "frameHeight": 24,
+      "columns": 1,
+      "rows": 1,
+      "frames": 1,
+      "fps": null,
+      "animations": [
+        {
+          "name": "default",
+          "columns": [
+            0
+          ],
+          "frames": 1
+        }
+      ],
+      "anchor": "bottom-center",
+      "transparent": true,
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image -> alpha crop -> LANCZOS downscale -> shared 28-colour palette quantise -> 1px cleanup",
+        "prompt": "steel sword inventory icon, pixel art"
+      },
+      "tags": [
+        "item",
+        "icon"
+      ],
+      "notes": null
+    },
+    {
+      "id": "equip_weapon_axe",
+      "file": "sprites/items/weapon_axe.png",
+      "type": "sprite",
+      "frameWidth": 24,
+      "frameHeight": 24,
+      "columns": 1,
+      "rows": 1,
+      "frames": 1,
+      "fps": null,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image (transparent) -> alpha strip split -> LANCZOS fit to frame -> 28-colour palette quantise -> speck cleanup; multi-action consistency via image-to-image on a restyled walk/idle reference",
+        "prompt": "24x24 pixel art inventory icon: iron battle axe"
+      },
+      "notes": "base art only; rarity frames are separate UI overlays (incoming/ ui_rarity_*) so the base colour stays clean",
+      "tags": [
+        "icon",
+        "equipment",
+        "weapon"
+      ]
+    },
+    {
+      "id": "skill_knight_cleave",
+      "file": "sprites/items/knight_cleave.png",
+      "type": "sprite",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 1,
+      "rows": 1,
+      "frames": 1,
+      "fps": null,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image (transparent) -> alpha strip split -> LANCZOS fit to frame -> 28-colour palette quantise -> speck cleanup; multi-action consistency via image-to-image on a restyled walk/idle reference",
+        "prompt": "32x32 pixel art skill icon: broad diagonal sword cleave arc, distinct silhouette"
+      },
+      "notes": "drawn at 32x32 so it doubles as a skill-tree node or hotbar icon",
+      "tags": [
+        "icon",
+        "skill",
+        "skill-icon"
+      ]
+    },
+    {
+      "id": "skill_mage_arc_surge",
+      "file": "sprites/items/mage_arc_surge.png",
+      "type": "sprite",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 1,
+      "rows": 1,
+      "frames": 1,
+      "fps": null,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "source": {
+        "kind": "ai-generated",
+        "tool": "gpt-image-2.5 (magpie gateway, local)",
+        "license": "CC0-1.0",
+        "author": "generated for p9 (this repo)",
+        "pipeline": "gpt-image (transparent) -> alpha strip split -> LANCZOS fit to frame -> 28-colour palette quantise -> speck cleanup; multi-action consistency via image-to-image on a restyled walk/idle reference",
+        "prompt": "32x32 pixel art skill icon: branching lightning arc surge, distinct silhouette"
+      },
+      "notes": "drawn at 32x32 so it doubles as a skill-tree node or hotbar icon",
+      "tags": [
+        "icon",
+        "skill",
+        "skill-icon"
+      ]
+    },
+    {
+      "id": "ui_panel_normal",
+      "file": "ui/panel_normal.png",
+      "type": "image",
+      "anchor": "top-left",
+      "transparent": true,
+      "nineSlice": {
+        "border": 8,
+        "cols": 3
+      },
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "panel, normal state"
+      },
+      "notes": "panel, normal state"
+    },
+    {
+      "id": "ui_button_normal",
+      "file": "ui/button_normal.png",
+      "type": "image",
+      "anchor": "top-left",
+      "transparent": true,
+      "nineSlice": {
+        "border": 8,
+        "cols": 3
+      },
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "button, normal"
+      },
+      "notes": "button, normal"
+    },
+    {
+      "id": "ui_button_hover",
+      "file": "ui/button_hover.png",
+      "type": "image",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 1,
+      "rows": 1,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "nineSlice": {
+        "border": 8,
+        "cols": 3
+      },
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "button, hover"
+      },
+      "notes": "button, hover",
+      "frames": 1
+    },
+    {
+      "id": "ui_button_pressed",
+      "file": "ui/button_pressed.png",
+      "type": "image",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 1,
+      "rows": 1,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "nineSlice": {
+        "border": 8,
+        "cols": 3
+      },
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "button, pressed"
+      },
+      "notes": "button, pressed",
+      "frames": 1
+    },
+    {
+      "id": "ui_button_disabled",
+      "file": "ui/button_disabled.png",
+      "type": "image",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 1,
+      "rows": 1,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "nineSlice": {
+        "border": 8,
+        "cols": 3
+      },
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "button, disabled"
+      },
+      "notes": "button, disabled",
+      "frames": 1
+    },
+    {
+      "id": "ui_slot_inventory",
+      "file": "ui/slot_inventory.png",
+      "type": "image",
+      "anchor": "top-left",
+      "transparent": true,
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "inventory cell 32x32"
+      },
+      "notes": "inventory cell 32x32"
+    },
+    {
+      "id": "ui_rarity_common",
+      "file": "ui/rarity_common.png",
+      "type": "image",
+      "anchor": "top-left",
+      "transparent": true,
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "rarity border, common"
+      },
+      "notes": "rarity border, common"
+    },
+    {
+      "id": "ui_rarity_uncommon",
+      "file": "ui/rarity_uncommon.png",
+      "type": "image",
+      "anchor": "top-left",
+      "transparent": true,
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "rarity border, uncommon"
+      },
+      "notes": "rarity border, uncommon"
+    },
+    {
+      "id": "ui_rarity_rare",
+      "file": "ui/rarity_rare.png",
+      "type": "image",
+      "anchor": "top-left",
+      "transparent": true,
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "rarity border, rare"
+      },
+      "notes": "rarity border, rare"
+    },
+    {
+      "id": "ui_bar_hp_frame",
+      "file": "ui/bar_hp_frame.png",
+      "type": "image",
+      "anchor": "top-left",
+      "transparent": true,
+      "nineSlice": {
+        "border": 2,
+        "cols": 3
+      },
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "HP bar frame, horizontal 3-slice (cap 5px)"
+      },
+      "notes": "HP bar frame, horizontal 3-slice (cap 5px)"
+    },
+    {
+      "id": "ui_bar_hp_fill",
+      "file": "ui/bar_hp_fill.png",
+      "type": "image",
+      "anchor": "top-left",
+      "transparent": true,
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "HP fill tile"
+      },
+      "notes": "HP fill tile",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "frames": [
+        {
+          "x": 3,
+          "y": 3,
+          "width": 10,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "id": "ui_bar_xp_frame",
+      "file": "ui/bar_xp_frame.png",
+      "type": "image",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 1,
+      "rows": 1,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "nineSlice": {
+        "border": 2,
+        "cols": 3
+      },
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "XP bar frame, horizontal 3-slice"
+      },
+      "notes": "XP bar frame, horizontal 3-slice",
+      "frames": 1
+    },
+    {
+      "id": "ui_bar_xp_fill",
+      "file": "ui/bar_xp_fill.png",
+      "type": "image",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 1,
+      "rows": 1,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "XP fill"
+      },
+      "notes": "XP fill",
+      "frames": [
+        {
+          "x": 3,
+          "y": 3,
+          "width": 10,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "id": "ui_cursor",
+      "file": "ui/cursor.png",
+      "type": "image",
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "columns": 1,
+      "rows": 1,
+      "anchor": "top-left",
+      "transparent": true,
+      "animations": [],
+      "source": {
+        "kind": "procedural",
+        "tool": "PIL/numpy generator in _gen/v2/ui_gen.py",
+        "license": "CC0-1.0",
+        "author": "written for p9 (this repo)",
+        "note": "mouse cursor 16x16"
+      },
+      "notes": "mouse cursor 16x16",
+      "frames": 1
+    },
+    {
+      "id": "sfx_hit",
+      "file": "audio/hit.ogg",
+      "type": "audio"
+    },
+    {
+      "id": "sfx_slash",
+      "file": "audio/slash.ogg",
+      "type": "audio"
+    },
+    {
+      "id": "sfx_hurt",
+      "file": "audio/hurt.ogg",
+      "type": "audio"
+    },
+    {
+      "id": "sfx_death",
+      "file": "audio/death.ogg",
+      "type": "audio"
+    },
+    {
+      "id": "sfx_pickup",
+      "file": "audio/pickup.ogg",
+      "type": "audio"
+    },
+    {
+      "id": "sfx_levelup",
+      "file": "audio/levelup.ogg",
+      "type": "audio"
+    },
+    {
+      "id": "sfx_loot_drop",
+      "file": "audio/loot_drop.ogg",
+      "type": "audio"
+    },
+    {
+      "id": "music_dungeon_loop",
+      "file": "audio/dungeon_loop.ogg",
+      "type": "audio"
+    },
+    {
+      "id": "sfx_boss_phase",
+      "file": "audio/boss_phase.ogg",
+      "type": "audio"
+    }
+  ]
+}

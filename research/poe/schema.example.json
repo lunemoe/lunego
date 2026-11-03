@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "schema": "p9.ref.poe/1",
+    "example": true,
+    "purpose": "Illustrates the normalized p9 equipment/affix/skill data model. Identifiers and values are self-authored; no PoE names, text or art.",
+    "sibling_files": [
+      "data/base-types.json",
+      "data/affixes.json",
+      "data/stats.json",
+      "data/skills.json",
+      "data/drops.json"
+    ]
+  },
+  "slots": [
+    { "id": "weapon", "accepts": ["weapon_1h", "weapon_2h"], "prefix_max": 3, "suffix_max": 3 },
+    { "id": "offhand", "accepts": ["shield", "quiver", "focus"], "prefix_max": 3, "suffix_max": 3 },
+    { "id": "chest", "accepts": ["body_armour"], "prefix_max": 3, "suffix_max": 3 },
+    { "id": "helm", "accepts": ["helmet"], "prefix_max": 3, "suffix_max": 3 },
+    { "id": "gloves", "accepts": ["gloves"], "prefix_max": 3, "suffix_max": 3 },
+    { "id": "boots", "accepts": ["boots"], "prefix_max": 3, "suffix_max": 3 },
+    { "id": "belt", "accepts": ["belt"], "prefix_max": 3, "suffix_max": 3 },
+    { "id": "ring", "accepts": ["ring"], "prefix_max": 3, "suffix_max": 3, "max_equipped": 2 },
+    { "id": "amulet", "accepts": ["amulet"], "prefix_max": 3, "suffix_max": 3 }
+  ],
+  "base_type": {
+    "id": "base.chest.bulwark.t3",
+    "slot": "chest",
+    "class": "body_armour",
+    "ilvl": 60,
+    "drop_level": 60,
+    "requirements": { "level": 60, "strength": 96, "dexterity": 0, "intelligence": 0 },
+    "defence": { "armour": [286, 392] },
+    "implicit": { "count": 0 },
+    "tags": ["str_armour", "body_armour", "armour"],
+    "value_formula": "armour = round(12.7 * ilvl^0.89) per defence family; roll range +/-18%"
+  },
+  "affix_families": [
+    {
+      "id": "prefix.life_flat.001",
+      "kind": "prefix",
+      "stat": "life_flat",
+      "slots": ["ring", "amulet", "belt", "helm", "chest", "gloves", "boots", "offhand"],
+      "exclusive_group": "life_flat",
+      "tiers": [
+        { "tier": 1, "ilvl": 1, "stats": { "life_flat": { "min": 8, "max": 14 } }, "slot_weight": { "ring": 1000, "chest": 1000 } },
+        { "tier": 2, "ilvl": 12, "stats": { "life_flat": { "min": 15, "max": 24 } }, "slot_weight": { "ring": 1000, "chest": 1000 } },
+        { "tier": 3, "ilvl": 26, "stats": { "life_flat": { "min": 25, "max": 39 } }, "slot_weight": { "ring": 1000, "chest": 1000 } },
+        { "tier": 4, "ilvl": 42, "stats": { "life_flat": { "min": 40, "max": 59 } }, "slot_weight": { "ring": 1000, "chest": 1000 } },
+        { "tier": 5, "ilvl": 60, "stats": { "life_flat": { "min": 60, "max": 89 } }, "slot_weight": { "ring": 1000, "chest": 1000 } }
+      ]
+    },
+    {
+      "id": "suffix.fire_resistance.002",
+      "kind": "suffix",
+      "stat": "fire_resistance_pct",
+      "slots": ["ring", "amulet", "belt", "helm", "chest", "gloves", "boots", "offhand"],
+      "exclusive_group": "fire_resistance",
+      "tiers": [
+        { "tier": 1, "ilvl": 1, "stats": { "fire_resistance_pct": { "min": 6, "max": 11 } }, "slot_weight": { "ring": 1000, "chest": 1000 } },
+        { "tier": 2, "ilvl": 24, "stats": { "fire_resistance_pct": { "min": 12, "max": 17 } }, "slot_weight": { "ring": 1000, "chest": 1000 } },
+        { "tier": 3, "ilvl": 48, "stats": { "fire_resistance_pct": { "min": 18, "max": 24 } }, "slot_weight": { "ring": 1000, "chest": 1000 } },
+        { "tier": 4, "ilvl": 72, "stats": { "fire_resistance_pct": { "min": 25, "max": 30 } }, "slot_weight": { "ring": 1000, "chest": 1000 } }
+      ]
+    },
+    {
+      "id": "prefix.armour_increased_pct.003",
+      "kind": "prefix",
+      "stat": "armour_increased_pct_local",
+      "slots": ["chest", "helm", "gloves", "boots", "offhand"],
+      "exclusive_group": "armour_increased_pct",
+      "tiers": [
+        { "tier": 1, "ilvl": 1, "stats": { "armour_increased_pct_local": { "min": 20, "max": 39 } }, "slot_weight": { "chest": 1000 } },
+        { "tier": 2, "ilvl": 24, "stats": { "armour_increased_pct_local": { "min": 40, "max": 59 } }, "slot_weight": { "chest": 1000 } },
+        { "tier": 3, "ilvl": 48, "stats": { "armour_increased_pct_local": { "min": 60, "max": 79 } }, "slot_weight": { "chest": 1000 } },
+        { "tier": 4, "ilvl": 72, "stats": { "armour_increased_pct_local": { "min": 80, "max": 99 } }, "slot_weight": { "chest": 1000 } }
+      ]
+    }
+  ],
+  "stat_catalog": [
+    { "key": "life_flat", "unit": "integer", "stack_mode": "flat", "applies_to": "self" },
+    { "key": "life_increased_pct", "unit": "percent", "stack_mode": "increased", "applies_to": "self" },
+    { "key": "armour_flat_local", "unit": "integer", "stack_mode": "flat", "applies_to": "item_base" },
+    { "key": "armour_increased_pct_local", "unit": "percent", "stack_mode": "increased", "applies_to": "item_base" },
+    { "key": "fire_resistance_pct", "unit": "percent", "stack_mode": "flat", "applies_to": "self", "cap": 75 },
+    { "key": "fire_max_resistance_pct", "unit": "percent", "stack_mode": "flat", "applies_to": "cap" },
+    { "key": "added_fire_damage_attack", "unit": "integer_pair", "stack_mode": "flat", "applies_to": "damage" },
+    { "key": "physical_damage_increased_pct", "unit": "percent", "stack_mode": "increased", "applies_to": "damage" },
+    { "key": "movement_speed_increased_pct", "unit": "percent", "stack_mode": "increased", "applies_to": "self" },
+    { "key": "crit_chance_increased_pct", "unit": "percent", "stack_mode": "increased", "applies_to": "damage" }
+  ],
+  "aggregation": {
+    "pipeline": [
+      "base = base_type_value(ilvl)",
+      "flat = base + sum(flat_adds)",
+      "increased = 1 + sum(increased_pct)/100",
+      "more = product(1 + more_i/100)",
+      "final = floor(flat * increased * more + 0.5)"
+    ],
+    "rules": [
+      "local_* modifiers are folded into the item's own base value and never stack with global increases into a single pool",
+      "increased sources of the same scope add; more sources always multiply",
+      "speed uses rate = 1000/attack_time_ms so percentage multipliers apply to the rate",
+      "resistance is clamped to cap after flat additions; max-resistance raises the cap first"
+    ],
+    "worked_examples": [
+      {
+        "target": "armour",
+        "base": 320,
+        "flat_add": 120,
+        "local_increased_pct": 45,
+        "quality_increased_pct": 2,
+        "result": 647,
+        "calc": "floor((320+120) * (1 + 0.45 + 0.02) + 0.5)"
+      },
+      {
+        "target": "physical_damage",
+        "base": [10, 20],
+        "added_flat": [5, 9],
+        "increased_pct": 60,
+        "more_pct": 20,
+        "result": [29, 56],
+        "calc": "floor((10+5)*1.6*1.2+0.5) .. floor((20+9)*1.6*1.2+0.5)"
+      }
+    ]
+  },
+  "skill": {
+    "id": "skill.ember_lance.01",
+    "archetype": "projectile_spell",
+    "tags": ["spell", "projectile", "fire", "area"],
+    "cost": { "resource": "mana", "base": 8, "per_level_pct": 6 },
+    "cast_time_ms": 750,
+    "levels": [
+      { "level": 1, "required_level": 1, "damage": [9, 14], "mana": 5 },
+      { "level": 10, "required_level": 32, "damage": [96, 145], "mana": 11 },
+      { "level": 20, "required_level": 70, "damage": [1180, 1770], "mana": 20 }
+    ],
+    "scaling": { "damage_ratio_20_over_1": 131.0, "mana_ratio_20_over_1": 4.0 }
+  },
+  "support": {
+    "id": "support.ember_infusion.01",
+    "color": "red",
+    "allowed_types": ["attack", "damage"],
+    "excluded_types": ["minion"],
+    "cost_multiplier_pct": 120,
+    "grants": [
+      { "stat": "added_fire_damage_attack", "mode": "add_pct_of_physical", "value_pct": 25 },
+      { "stat": "fire_damage_increased_pct", "mode": "quality_only", "value_pct": 5 }
+    ]
+  },
+  "drop_table": {
+    "note": "authored starting point for p9; PoE does not publish these weights in RePoE",
+    "rarity_weights": { "common": 1000, "magic": 180, "rare": 12, "legendary": 0.4 },
+    "affix_roll": "uniform among eligible tiers, weighted by tier slot_weight",
+    "authored": true
+  }
+}

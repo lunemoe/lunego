@@ -1,0 +1,1600 @@
+{
+  "meta": {
+    "schema": "p9.ref.poe/1",
+    "schema_doc": "research/poe/README.md",
+    "source": {
+      "dataset": "RePoE (community GGPK export)",
+      "repository": "https://github.com/repoe-fork/repoe",
+      "hosted_export": "https://repoe-fork.github.io/",
+      "upstream_commit": "aa9fa7c3",
+      "export_http_last_modified": "2026-10-19T04:15:16Z",
+      "game": "Path of Exile 1 (PC)",
+      "redistribution": "raw data (c) Grinding Gear Games; not redistributed - aggregates only",
+      "revision_note": "PoE1 3.2x-era snapshot; structure is what matters, exact numbers drift per league"
+    },
+    "method": "RePoE JSON -> self-named aggregates; no names, text or art",
+    "license": {
+      "code": "this script: project-internal",
+      "data": "raw exports (c) Grinding Gear Games, not redistributed",
+      "repository_content": "derived numeric aggregates only"
+    },
+    "slot_order": [
+      "ring",
+      "amulet",
+      "belt",
+      "helmet",
+      "body_armour",
+      "gloves",
+      "boots",
+      "shield",
+      "quiver",
+      "sword_1h",
+      "axe_2h",
+      "bow",
+      "staff",
+      "wand"
+    ],
+    "inputs": {
+      "mods.json": {
+        "sha256": "defbba31b60f9191080c78197278057f834f7f927c1a2a080a7ca6ed3ea686b5"
+      },
+      "base_items.json": {
+        "sha256": "48afb07a5f40eb51552f90c17d53186469db282a2e759dab7b46e7f9d2a0f58b"
+      },
+      "gems.json": {
+        "sha256": "422215bf3ae04beba25c1e563236774e7b3c6ccb198d5026e23e95dc63ce8af1"
+      },
+      "stats.json": {
+        "sha256": "005317f861978f29cec46fcc0fae3313a2579e86942051ad2a1388a12bb36431"
+      },
+      "default_monster_stats.json": {
+        "sha256": "c50d1410e8c2f6ff546552c967e02e2f531d496cda9674a1377f63474eb0fba5"
+      }
+    }
+  },
+  "base_drop_level_buckets": {
+    "0": 200,
+    "10": 74,
+    "20": 113,
+    "30": 139,
+    "40": 120,
+    "50": 142,
+    "60": 144,
+    "70": 108,
+    "80": 32
+  },
+  "base_item_count": 1072,
+  "implicit_count_distribution": {
+    "0": 499,
+    "1": 573
+  },
+  "currency": {
+    "stackable_base_count": 1083,
+    "stack_size_histogram": {
+      "1": 451,
+      "5": 1,
+      "9": 2,
+      "10": 436,
+      "20": 119,
+      "30": 4,
+      "40": 7,
+      "99": 1,
+      "100": 22,
+      "250": 10,
+      "300": 1,
+      "1000": 4,
+      "5000": 5,
+      "25000": 4,
+      "50000": 16
+    },
+    "currency_tab_stack_size": {
+      "0": 472,
+      "400": 4,
+      "1000": 4,
+      "5000": 72,
+      "10000": 511,
+      "25000": 4,
+      "50000": 16
+    }
+  },
+  "affix_spawn_weight_histogram": {
+    "12": 3,
+    "13": 3,
+    "25": 11,
+    "35": 3,
+    "40": 8,
+    "45": 3,
+    "50": 22,
+    "54": 3,
+    "60": 4,
+    "70": 3,
+    "75": 1,
+    "100": 25,
+    "108": 6,
+    "125": 12,
+    "126": 3,
+    "140": 3,
+    "150": 9,
+    "175": 3,
+    "200": 28,
+    "210": 3,
+    "220": 3,
+    "250": 110,
+    "300": 92,
+    "333": 9,
+    "400": 30,
+    "420": 6,
+    "450": 2,
+    "480": 3,
+    "490": 3,
+    "500": 432,
+    "550": 2,
+    "600": 36,
+    "650": 2,
+    "700": 1,
+    "750": 6,
+    "800": 67,
+    "850": 2,
+    "960": 6,
+    "1000": 1353,
+    "1120": 3,
+    "1200": 42,
+    "1400": 21,
+    "1500": 13
+  },
+  "affix_family_tier_count_distribution": {
+    "1": 48,
+    "2": 21,
+    "3": 25,
+    "4": 9,
+    "5": 23,
+    "6": 26,
+    "7": 9,
+    "8": 13,
+    "9": 19,
+    "10": 6,
+    "11": 2,
+    "12": 2
+  },
+  "affix_pool_by_ilvl": [
+    {
+      "ilvl": 1,
+      "slot": "ring",
+      "prefix_count": 4,
+      "suffix_count": 12,
+      "prefix_weight_total": 3500,
+      "suffix_weight_total": 9500
+    },
+    {
+      "ilvl": 1,
+      "slot": "amulet",
+      "prefix_count": 3,
+      "suffix_count": 11,
+      "prefix_weight_total": 2500,
+      "suffix_weight_total": 9400
+    },
+    {
+      "ilvl": 1,
+      "slot": "belt",
+      "prefix_count": 4,
+      "suffix_count": 6,
+      "prefix_weight_total": 4000,
+      "suffix_weight_total": 6000
+    },
+    {
+      "ilvl": 1,
+      "slot": "helmet",
+      "prefix_count": 4,
+      "suffix_count": 8,
+      "prefix_weight_total": 4000,
+      "suffix_weight_total": 7600
+    },
+    {
+      "ilvl": 1,
+      "slot": "body_armour",
+      "prefix_count": 4,
+      "suffix_count": 6,
+      "prefix_weight_total": 4000,
+      "suffix_weight_total": 6000
+    },
+    {
+      "ilvl": 1,
+      "slot": "gloves",
+      "prefix_count": 4,
+      "suffix_count": 10,
+      "prefix_weight_total": 3500,
+      "suffix_weight_total": 8100
+    },
+    {
+      "ilvl": 1,
+      "slot": "boots",
+      "prefix_count": 4,
+      "suffix_count": 6,
+      "prefix_weight_total": 4000,
+      "suffix_weight_total": 6000
+    },
+    {
+      "ilvl": 1,
+      "slot": "shield",
+      "prefix_count": 4,
+      "suffix_count": 6,
+      "prefix_weight_total": 4000,
+      "suffix_weight_total": 6000
+    },
+    {
+      "ilvl": 1,
+      "slot": "quiver",
+      "prefix_count": 2,
+      "suffix_count": 8,
+      "prefix_weight_total": 1250,
+      "suffix_weight_total": 6100
+    },
+    {
+      "ilvl": 1,
+      "slot": "sword_1h",
+      "prefix_count": 3,
+      "suffix_count": 7,
+      "prefix_weight_total": 3200,
+      "suffix_weight_total": 5000
+    },
+    {
+      "ilvl": 1,
+      "slot": "axe_2h",
+      "prefix_count": 3,
+      "suffix_count": 7,
+      "prefix_weight_total": 3200,
+      "suffix_weight_total": 5000
+    },
+    {
+      "ilvl": 1,
+      "slot": "bow",
+      "prefix_count": 3,
+      "suffix_count": 6,
+      "prefix_weight_total": 3400,
+      "suffix_weight_total": 5000
+    },
+    {
+      "ilvl": 1,
+      "slot": "staff",
+      "prefix_count": 7,
+      "suffix_count": 7,
+      "prefix_weight_total": 6000,
+      "suffix_weight_total": 5000
+    },
+    {
+      "ilvl": 1,
+      "slot": "wand",
+      "prefix_count": 7,
+      "suffix_count": 6,
+      "prefix_weight_total": 5900,
+      "suffix_weight_total": 4333
+    },
+    {
+      "ilvl": 10,
+      "slot": "ring",
+      "prefix_count": 10,
+      "suffix_count": 20,
+      "prefix_weight_total": 7800,
+      "suffix_weight_total": 16300
+    },
+    {
+      "ilvl": 10,
+      "slot": "amulet",
+      "prefix_count": 13,
+      "suffix_count": 21,
+      "prefix_weight_total": 10800,
+      "suffix_weight_total": 18000
+    },
+    {
+      "ilvl": 10,
+      "slot": "belt",
+      "prefix_count": 10,
+      "suffix_count": 12,
+      "prefix_weight_total": 8300,
+      "suffix_weight_total": 11000
+    },
+    {
+      "ilvl": 10,
+      "slot": "helmet",
+      "prefix_count": 7,
+      "suffix_count": 11,
+      "prefix_weight_total": 7000,
+      "suffix_weight_total": 10600
+    },
+    {
+      "ilvl": 10,
+      "slot": "body_armour",
+      "prefix_count": 7,
+      "suffix_count": 7,
+      "prefix_weight_total": 7000,
+      "suffix_weight_total": 7000
+    },
+    {
+      "ilvl": 10,
+      "slot": "gloves",
+      "prefix_count": 9,
+      "suffix_count": 15,
+      "prefix_weight_total": 7500,
+      "suffix_weight_total": 12100
+    },
+    {
+      "ilvl": 10,
+      "slot": "boots",
+      "prefix_count": 7,
+      "suffix_count": 8,
+      "prefix_weight_total": 7000,
+      "suffix_weight_total": 8000
+    },
+    {
+      "ilvl": 10,
+      "slot": "shield",
+      "prefix_count": 9,
+      "suffix_count": 7,
+      "prefix_weight_total": 9000,
+      "suffix_weight_total": 7000
+    },
+    {
+      "ilvl": 10,
+      "slot": "quiver",
+      "prefix_count": 7,
+      "suffix_count": 12,
+      "prefix_weight_total": 4250,
+      "suffix_weight_total": 9600
+    },
+    {
+      "ilvl": 10,
+      "slot": "sword_1h",
+      "prefix_count": 8,
+      "suffix_count": 13,
+      "prefix_weight_total": 7900,
+      "suffix_weight_total": 10000
+    },
+    {
+      "ilvl": 10,
+      "slot": "axe_2h",
+      "prefix_count": 8,
+      "suffix_count": 13,
+      "prefix_weight_total": 7900,
+      "suffix_weight_total": 10000
+    },
+    {
+      "ilvl": 10,
+      "slot": "bow",
+      "prefix_count": 8,
+      "suffix_count": 11,
+      "prefix_weight_total": 8500,
+      "suffix_weight_total": 9000
+    },
+    {
+      "ilvl": 10,
+      "slot": "staff",
+      "prefix_count": 23,
+      "suffix_count": 17,
+      "prefix_weight_total": 19500,
+      "suffix_weight_total": 11600
+    },
+    {
+      "ilvl": 10,
+      "slot": "wand",
+      "prefix_count": 21,
+      "suffix_count": 17,
+      "prefix_weight_total": 13350,
+      "suffix_weight_total": 11633
+    },
+    {
+      "ilvl": 20,
+      "slot": "ring",
+      "prefix_count": 25,
+      "suffix_count": 35,
+      "prefix_weight_total": 20100,
+      "suffix_weight_total": 29250
+    },
+    {
+      "ilvl": 20,
+      "slot": "amulet",
+      "prefix_count": 31,
+      "suffix_count": 37,
+      "prefix_weight_total": 26100,
+      "suffix_weight_total": 32350
+    },
+    {
+      "ilvl": 20,
+      "slot": "belt",
+      "prefix_count": 18,
+      "suffix_count": 22,
+      "prefix_weight_total": 15600,
+      "suffix_weight_total": 19750
+    },
+    {
+      "ilvl": 20,
+      "slot": "helmet",
+      "prefix_count": 15,
+      "suffix_count": 21,
+      "prefix_weight_total": 14250,
+      "suffix_weight_total": 19850
+    },
+    {
+      "ilvl": 20,
+      "slot": "body_armour",
+      "prefix_count": 14,
+      "suffix_count": 14,
+      "prefix_weight_total": 14000,
+      "suffix_weight_total": 13250
+    },
+    {
+      "ilvl": 20,
+      "slot": "gloves",
+      "prefix_count": 22,
+      "suffix_count": 24,
+      "prefix_weight_total": 18500,
+      "suffix_weight_total": 19850
+    },
+    {
+      "ilvl": 20,
+      "slot": "boots",
+      "prefix_count": 15,
+      "suffix_count": 15,
+      "prefix_weight_total": 15000,
+      "suffix_weight_total": 14250
+    },
+    {
+      "ilvl": 20,
+      "slot": "shield",
+      "prefix_count": 18,
+      "suffix_count": 15,
+      "prefix_weight_total": 17500,
+      "suffix_weight_total": 14250
+    },
+    {
+      "ilvl": 20,
+      "slot": "quiver",
+      "prefix_count": 16,
+      "suffix_count": 22,
+      "prefix_weight_total": 9250,
+      "suffix_weight_total": 18350
+    },
+    {
+      "ilvl": 20,
+      "slot": "sword_1h",
+      "prefix_count": 18,
+      "suffix_count": 23,
+      "prefix_weight_total": 18400,
+      "suffix_weight_total": 18000
+    },
+    {
+      "ilvl": 20,
+      "slot": "axe_2h",
+      "prefix_count": 18,
+      "suffix_count": 23,
+      "prefix_weight_total": 18400,
+      "suffix_weight_total": 18000
+    },
+    {
+      "ilvl": 20,
+      "slot": "bow",
+      "prefix_count": 18,
+      "suffix_count": 20,
+      "prefix_weight_total": 20200,
+      "suffix_weight_total": 17000
+    },
+    {
+      "ilvl": 20,
+      "slot": "staff",
+      "prefix_count": 46,
+      "suffix_count": 37,
+      "prefix_weight_total": 37700,
+      "suffix_weight_total": 26300
+    },
+    {
+      "ilvl": 20,
+      "slot": "wand",
+      "prefix_count": 44,
+      "suffix_count": 35,
+      "prefix_weight_total": 30450,
+      "suffix_weight_total": 24926
+    },
+    {
+      "ilvl": 30,
+      "slot": "ring",
+      "prefix_count": 39,
+      "suffix_count": 53,
+      "prefix_weight_total": 30900,
+      "suffix_weight_total": 43200
+    },
+    {
+      "ilvl": 30,
+      "slot": "amulet",
+      "prefix_count": 47,
+      "suffix_count": 57,
+      "prefix_weight_total": 38900,
+      "suffix_weight_total": 48700
+    },
+    {
+      "ilvl": 30,
+      "slot": "belt",
+      "prefix_count": 28,
+      "suffix_count": 30,
+      "prefix_weight_total": 23900,
+      "suffix_weight_total": 27000
+    },
+    {
+      "ilvl": 30,
+      "slot": "helmet",
+      "prefix_count": 22,
+      "suffix_count": 30,
+      "prefix_weight_total": 21250,
+      "suffix_weight_total": 28100
+    },
+    {
+      "ilvl": 30,
+      "slot": "body_armour",
+      "prefix_count": 21,
+      "suffix_count": 20,
+      "prefix_weight_total": 21000,
+      "suffix_weight_total": 18500
+    },
+    {
+      "ilvl": 30,
+      "slot": "gloves",
+      "prefix_count": 35,
+      "suffix_count": 34,
+      "prefix_weight_total": 29000,
+      "suffix_weight_total": 27600
+    },
+    {
+      "ilvl": 30,
+      "slot": "boots",
+      "prefix_count": 23,
+      "suffix_count": 22,
+      "prefix_weight_total": 23000,
+      "suffix_weight_total": 20500
+    },
+    {
+      "ilvl": 30,
+      "slot": "shield",
+      "prefix_count": 26,
+      "suffix_count": 23,
+      "prefix_weight_total": 25000,
+      "suffix_weight_total": 21500
+    },
+    {
+      "ilvl": 30,
+      "slot": "quiver",
+      "prefix_count": 25,
+      "suffix_count": 34,
+      "prefix_weight_total": 14000,
+      "suffix_weight_total": 28100
+    },
+    {
+      "ilvl": 30,
+      "slot": "sword_1h",
+      "prefix_count": 25,
+      "suffix_count": 36,
+      "prefix_weight_total": 25100,
+      "suffix_weight_total": 28000
+    },
+    {
+      "ilvl": 30,
+      "slot": "axe_2h",
+      "prefix_count": 25,
+      "suffix_count": 36,
+      "prefix_weight_total": 25100,
+      "suffix_weight_total": 28000
+    },
+    {
+      "ilvl": 30,
+      "slot": "bow",
+      "prefix_count": 25,
+      "suffix_count": 32,
+      "prefix_weight_total": 27300,
+      "suffix_weight_total": 26500
+    },
+    {
+      "ilvl": 30,
+      "slot": "staff",
+      "prefix_count": 63,
+      "suffix_count": 54,
+      "prefix_weight_total": 52100,
+      "suffix_weight_total": 39800
+    },
+    {
+      "ilvl": 30,
+      "slot": "wand",
+      "prefix_count": 61,
+      "suffix_count": 50,
+      "prefix_weight_total": 44150,
+      "suffix_weight_total": 36759
+    },
+    {
+      "ilvl": 40,
+      "slot": "ring",
+      "prefix_count": 47,
+      "suffix_count": 68,
+      "prefix_weight_total": 37400,
+      "suffix_weight_total": 55100
+    },
+    {
+      "ilvl": 40,
+      "slot": "amulet",
+      "prefix_count": 56,
+      "suffix_count": 74,
+      "prefix_weight_total": 46400,
+      "suffix_weight_total": 62800
+    },
+    {
+      "ilvl": 40,
+      "slot": "belt",
+      "prefix_count": 33,
+      "suffix_count": 37,
+      "prefix_weight_total": 27900,
+      "suffix_weight_total": 33000
+    },
+    {
+      "ilvl": 40,
+      "slot": "helmet",
+      "prefix_count": 25,
+      "suffix_count": 38,
+      "prefix_weight_total": 24250,
+      "suffix_weight_total": 35750
+    },
+    {
+      "ilvl": 40,
+      "slot": "body_armour",
+      "prefix_count": 24,
+      "suffix_count": 26,
+      "prefix_weight_total": 24000,
+      "suffix_weight_total": 24350
+    },
+    {
+      "ilvl": 40,
+      "slot": "gloves",
+      "prefix_count": 41,
+      "suffix_count": 44,
+      "prefix_weight_total": 33500,
+      "suffix_weight_total": 36050
+    },
+    {
+      "ilvl": 40,
+      "slot": "boots",
+      "prefix_count": 27,
+      "suffix_count": 28,
+      "prefix_weight_total": 27000,
+      "suffix_weight_total": 26050
+    },
+    {
+      "ilvl": 40,
+      "slot": "shield",
+      "prefix_count": 31,
+      "suffix_count": 31,
+      "prefix_weight_total": 29500,
+      "suffix_weight_total": 29250
+    },
+    {
+      "ilvl": 40,
+      "slot": "quiver",
+      "prefix_count": 30,
+      "suffix_count": 42,
+      "prefix_weight_total": 16250,
+      "suffix_weight_total": 35100
+    },
+    {
+      "ilvl": 40,
+      "slot": "sword_1h",
+      "prefix_count": 32,
+      "suffix_count": 44,
+      "prefix_weight_total": 31700,
+      "suffix_weight_total": 33500
+    },
+    {
+      "ilvl": 40,
+      "slot": "axe_2h",
+      "prefix_count": 32,
+      "suffix_count": 44,
+      "prefix_weight_total": 31700,
+      "suffix_weight_total": 33500
+    },
+    {
+      "ilvl": 40,
+      "slot": "bow",
+      "prefix_count": 32,
+      "suffix_count": 39,
+      "prefix_weight_total": 34700,
+      "suffix_weight_total": 31500
+    },
+    {
+      "ilvl": 40,
+      "slot": "staff",
+      "prefix_count": 84,
+      "suffix_count": 69,
+      "prefix_weight_total": 67800,
+      "suffix_weight_total": 48600
+    },
+    {
+      "ilvl": 40,
+      "slot": "wand",
+      "prefix_count": 77,
+      "suffix_count": 62,
+      "prefix_weight_total": 55150,
+      "suffix_weight_total": 42712
+    },
+    {
+      "ilvl": 50,
+      "slot": "ring",
+      "prefix_count": 56,
+      "suffix_count": 84,
+      "prefix_weight_total": 44900,
+      "suffix_weight_total": 68350
+    },
+    {
+      "ilvl": 50,
+      "slot": "amulet",
+      "prefix_count": 67,
+      "suffix_count": 93,
+      "prefix_weight_total": 55900,
+      "suffix_weight_total": 78650
+    },
+    {
+      "ilvl": 50,
+      "slot": "belt",
+      "prefix_count": 41,
+      "suffix_count": 48,
+      "prefix_weight_total": 34150,
+      "suffix_weight_total": 42250
+    },
+    {
+      "ilvl": 50,
+      "slot": "helmet",
+      "prefix_count": 30,
+      "suffix_count": 47,
+      "prefix_weight_total": 29250,
+      "suffix_weight_total": 44000
+    },
+    {
+      "ilvl": 50,
+      "slot": "body_armour",
+      "prefix_count": 29,
+      "suffix_count": 34,
+      "prefix_weight_total": 29000,
+      "suffix_weight_total": 31600
+    },
+    {
+      "ilvl": 50,
+      "slot": "gloves",
+      "prefix_count": 49,
+      "suffix_count": 54,
+      "prefix_weight_total": 40000,
+      "suffix_weight_total": 45300
+    },
+    {
+      "ilvl": 50,
+      "slot": "boots",
+      "prefix_count": 32,
+      "suffix_count": 36,
+      "prefix_weight_total": 32000,
+      "suffix_weight_total": 33300
+    },
+    {
+      "ilvl": 50,
+      "slot": "shield",
+      "prefix_count": 37,
+      "suffix_count": 42,
+      "prefix_weight_total": 35500,
+      "suffix_weight_total": 39500
+    },
+    {
+      "ilvl": 50,
+      "slot": "quiver",
+      "prefix_count": 35,
+      "suffix_count": 54,
+      "prefix_weight_total": 18500,
+      "suffix_weight_total": 45650
+    },
+    {
+      "ilvl": 50,
+      "slot": "sword_1h",
+      "prefix_count": 39,
+      "suffix_count": 55,
+      "prefix_weight_total": 37500,
+      "suffix_weight_total": 41800
+    },
+    {
+      "ilvl": 50,
+      "slot": "axe_2h",
+      "prefix_count": 39,
+      "suffix_count": 55,
+      "prefix_weight_total": 37500,
+      "suffix_weight_total": 41800
+    },
+    {
+      "ilvl": 50,
+      "slot": "bow",
+      "prefix_count": 39,
+      "suffix_count": 47,
+      "prefix_weight_total": 41100,
+      "suffix_weight_total": 38300
+    },
+    {
+      "ilvl": 50,
+      "slot": "staff",
+      "prefix_count": 99,
+      "suffix_count": 83,
+      "prefix_weight_total": 77500,
+      "suffix_weight_total": 59900
+    },
+    {
+      "ilvl": 50,
+      "slot": "wand",
+      "prefix_count": 92,
+      "suffix_count": 74,
+      "prefix_weight_total": 64650,
+      "suffix_weight_total": 52845
+    },
+    {
+      "ilvl": 60,
+      "slot": "ring",
+      "prefix_count": 64,
+      "suffix_count": 99,
+      "prefix_weight_total": 49500,
+      "suffix_weight_total": 81100
+    },
+    {
+      "ilvl": 60,
+      "slot": "amulet",
+      "prefix_count": 80,
+      "suffix_count": 112,
+      "prefix_weight_total": 66700,
+      "suffix_weight_total": 94500
+    },
+    {
+      "ilvl": 60,
+      "slot": "belt",
+      "prefix_count": 47,
+      "suffix_count": 57,
+      "prefix_weight_total": 39450,
+      "suffix_weight_total": 50500
+    },
+    {
+      "ilvl": 60,
+      "slot": "helmet",
+      "prefix_count": 34,
+      "suffix_count": 59,
+      "prefix_weight_total": 33250,
+      "suffix_weight_total": 54900
+    },
+    {
+      "ilvl": 60,
+      "slot": "body_armour",
+      "prefix_count": 34,
+      "suffix_count": 43,
+      "prefix_weight_total": 34000,
+      "suffix_weight_total": 39700
+    },
+    {
+      "ilvl": 60,
+      "slot": "gloves",
+      "prefix_count": 52,
+      "suffix_count": 66,
+      "prefix_weight_total": 43000,
+      "suffix_weight_total": 55000
+    },
+    {
+      "ilvl": 60,
+      "slot": "boots",
+      "prefix_count": 36,
+      "suffix_count": 45,
+      "prefix_weight_total": 36000,
+      "suffix_weight_total": 41100
+    },
+    {
+      "ilvl": 60,
+      "slot": "shield",
+      "prefix_count": 43,
+      "suffix_count": 53,
+      "prefix_weight_total": 41000,
+      "suffix_weight_total": 49500
+    },
+    {
+      "ilvl": 60,
+      "slot": "quiver",
+      "prefix_count": 41,
+      "suffix_count": 67,
+      "prefix_weight_total": 21750,
+      "suffix_weight_total": 56200
+    },
+    {
+      "ilvl": 60,
+      "slot": "sword_1h",
+      "prefix_count": 46,
+      "suffix_count": 68,
+      "prefix_weight_total": 42200,
+      "suffix_weight_total": 51600
+    },
+    {
+      "ilvl": 60,
+      "slot": "axe_2h",
+      "prefix_count": 46,
+      "suffix_count": 68,
+      "prefix_weight_total": 42200,
+      "suffix_weight_total": 51600
+    },
+    {
+      "ilvl": 60,
+      "slot": "bow",
+      "prefix_count": 46,
+      "suffix_count": 58,
+      "prefix_weight_total": 46400,
+      "suffix_weight_total": 47100
+    },
+    {
+      "ilvl": 60,
+      "slot": "staff",
+      "prefix_count": 117,
+      "suffix_count": 99,
+      "prefix_weight_total": 86150,
+      "suffix_weight_total": 72200
+    },
+    {
+      "ilvl": 60,
+      "slot": "wand",
+      "prefix_count": 110,
+      "suffix_count": 87,
+      "prefix_weight_total": 72850,
+      "suffix_weight_total": 62978
+    },
+    {
+      "ilvl": 70,
+      "slot": "ring",
+      "prefix_count": 70,
+      "suffix_count": 107,
+      "prefix_weight_total": 52800,
+      "suffix_weight_total": 86850
+    },
+    {
+      "ilvl": 70,
+      "slot": "amulet",
+      "prefix_count": 90,
+      "suffix_count": 126,
+      "prefix_weight_total": 75200,
+      "suffix_weight_total": 103600
+    },
+    {
+      "ilvl": 70,
+      "slot": "belt",
+      "prefix_count": 53,
+      "suffix_count": 62,
+      "prefix_weight_total": 43700,
+      "suffix_weight_total": 53750
+    },
+    {
+      "ilvl": 70,
+      "slot": "helmet",
+      "prefix_count": 37,
+      "suffix_count": 64,
+      "prefix_weight_total": 36250,
+      "suffix_weight_total": 59150
+    },
+    {
+      "ilvl": 70,
+      "slot": "body_armour",
+      "prefix_count": 37,
+      "suffix_count": 47,
+      "prefix_weight_total": 37000,
+      "suffix_weight_total": 42950
+    },
+    {
+      "ilvl": 70,
+      "slot": "gloves",
+      "prefix_count": 52,
+      "suffix_count": 73,
+      "prefix_weight_total": 43000,
+      "suffix_weight_total": 60250
+    },
+    {
+      "ilvl": 70,
+      "slot": "boots",
+      "prefix_count": 36,
+      "suffix_count": 49,
+      "prefix_weight_total": 36000,
+      "suffix_weight_total": 44350
+    },
+    {
+      "ilvl": 70,
+      "slot": "shield",
+      "prefix_count": 49,
+      "suffix_count": 62,
+      "prefix_weight_total": 46500,
+      "suffix_weight_total": 54625
+    },
+    {
+      "ilvl": 70,
+      "slot": "quiver",
+      "prefix_count": 46,
+      "suffix_count": 73,
+      "prefix_weight_total": 24000,
+      "suffix_weight_total": 59000
+    },
+    {
+      "ilvl": 70,
+      "slot": "sword_1h",
+      "prefix_count": 51,
+      "suffix_count": 75,
+      "prefix_weight_total": 46480,
+      "suffix_weight_total": 54650
+    },
+    {
+      "ilvl": 70,
+      "slot": "axe_2h",
+      "prefix_count": 51,
+      "suffix_count": 75,
+      "prefix_weight_total": 46480,
+      "suffix_weight_total": 54650
+    },
+    {
+      "ilvl": 70,
+      "slot": "bow",
+      "prefix_count": 51,
+      "suffix_count": 64,
+      "prefix_weight_total": 51160,
+      "suffix_weight_total": 50900
+    },
+    {
+      "ilvl": 70,
+      "slot": "staff",
+      "prefix_count": 126,
+      "suffix_count": 112,
+      "prefix_weight_total": 90540,
+      "suffix_weight_total": 77150
+    },
+    {
+      "ilvl": 70,
+      "slot": "wand",
+      "prefix_count": 122,
+      "suffix_count": 96,
+      "prefix_weight_total": 76270,
+      "suffix_weight_total": 65421
+    },
+    {
+      "ilvl": 83,
+      "slot": "ring",
+      "prefix_count": 78,
+      "suffix_count": 123,
+      "prefix_weight_total": 57250,
+      "suffix_weight_total": 100600
+    },
+    {
+      "ilvl": 83,
+      "slot": "amulet",
+      "prefix_count": 109,
+      "suffix_count": 147,
+      "prefix_weight_total": 86300,
+      "suffix_weight_total": 121250
+    },
+    {
+      "ilvl": 83,
+      "slot": "belt",
+      "prefix_count": 61,
+      "suffix_count": 72,
+      "prefix_weight_total": 50000,
+      "suffix_weight_total": 62500
+    },
+    {
+      "ilvl": 83,
+      "slot": "helmet",
+      "prefix_count": 40,
+      "suffix_count": 78,
+      "prefix_weight_total": 38275,
+      "suffix_weight_total": 72400
+    },
+    {
+      "ilvl": 83,
+      "slot": "body_armour",
+      "prefix_count": 43,
+      "suffix_count": 58,
+      "prefix_weight_total": 42500,
+      "suffix_weight_total": 53200
+    },
+    {
+      "ilvl": 83,
+      "slot": "gloves",
+      "prefix_count": 54,
+      "suffix_count": 87,
+      "prefix_weight_total": 45000,
+      "suffix_weight_total": 72000
+    },
+    {
+      "ilvl": 83,
+      "slot": "boots",
+      "prefix_count": 38,
+      "suffix_count": 58,
+      "prefix_weight_total": 38000,
+      "suffix_weight_total": 52600
+    },
+    {
+      "ilvl": 83,
+      "slot": "shield",
+      "prefix_count": 54,
+      "suffix_count": 85,
+      "prefix_weight_total": 51000,
+      "suffix_weight_total": 68875
+    },
+    {
+      "ilvl": 83,
+      "slot": "quiver",
+      "prefix_count": 52,
+      "suffix_count": 88,
+      "prefix_weight_total": 26000,
+      "suffix_weight_total": 70350
+    },
+    {
+      "ilvl": 83,
+      "slot": "sword_1h",
+      "prefix_count": 64,
+      "suffix_count": 88,
+      "prefix_weight_total": 49314,
+      "suffix_weight_total": 62750
+    },
+    {
+      "ilvl": 83,
+      "slot": "axe_2h",
+      "prefix_count": 64,
+      "suffix_count": 88,
+      "prefix_weight_total": 49314,
+      "suffix_weight_total": 62750
+    },
+    {
+      "ilvl": 83,
+      "slot": "bow",
+      "prefix_count": 64,
+      "suffix_count": 75,
+      "prefix_weight_total": 54358,
+      "suffix_weight_total": 59000
+    },
+    {
+      "ilvl": 83,
+      "slot": "staff",
+      "prefix_count": 154,
+      "suffix_count": 138,
+      "prefix_weight_total": 94382,
+      "suffix_weight_total": 92450
+    },
+    {
+      "ilvl": 83,
+      "slot": "wand",
+      "prefix_count": 141,
+      "suffix_count": 118,
+      "prefix_weight_total": 79090,
+      "suffix_weight_total": 77842
+    },
+    {
+      "ilvl": 100,
+      "slot": "ring",
+      "prefix_count": 81,
+      "suffix_count": 126,
+      "prefix_weight_total": 60250,
+      "suffix_weight_total": 103600
+    },
+    {
+      "ilvl": 100,
+      "slot": "amulet",
+      "prefix_count": 112,
+      "suffix_count": 152,
+      "prefix_weight_total": 88600,
+      "suffix_weight_total": 126050
+    },
+    {
+      "ilvl": 100,
+      "slot": "belt",
+      "prefix_count": 64,
+      "suffix_count": 77,
+      "prefix_weight_total": 51550,
+      "suffix_weight_total": 67000
+    },
+    {
+      "ilvl": 100,
+      "slot": "helmet",
+      "prefix_count": 41,
+      "suffix_count": 84,
+      "prefix_weight_total": 39275,
+      "suffix_weight_total": 78400
+    },
+    {
+      "ilvl": 100,
+      "slot": "body_armour",
+      "prefix_count": 46,
+      "suffix_count": 63,
+      "prefix_weight_total": 45500,
+      "suffix_weight_total": 58200
+    },
+    {
+      "ilvl": 100,
+      "slot": "gloves",
+      "prefix_count": 55,
+      "suffix_count": 93,
+      "prefix_weight_total": 46000,
+      "suffix_weight_total": 78000
+    },
+    {
+      "ilvl": 100,
+      "slot": "boots",
+      "prefix_count": 40,
+      "suffix_count": 62,
+      "prefix_weight_total": 40000,
+      "suffix_weight_total": 56600
+    },
+    {
+      "ilvl": 100,
+      "slot": "shield",
+      "prefix_count": 57,
+      "suffix_count": 90,
+      "prefix_weight_total": 54000,
+      "suffix_weight_total": 73875
+    },
+    {
+      "ilvl": 100,
+      "slot": "quiver",
+      "prefix_count": 53,
+      "suffix_count": 94,
+      "prefix_weight_total": 27000,
+      "suffix_weight_total": 76350
+    },
+    {
+      "ilvl": 100,
+      "slot": "sword_1h",
+      "prefix_count": 65,
+      "suffix_count": 88,
+      "prefix_weight_total": 49614,
+      "suffix_weight_total": 62750
+    },
+    {
+      "ilvl": 100,
+      "slot": "axe_2h",
+      "prefix_count": 65,
+      "suffix_count": 88,
+      "prefix_weight_total": 49614,
+      "suffix_weight_total": 62750
+    },
+    {
+      "ilvl": 100,
+      "slot": "bow",
+      "prefix_count": 65,
+      "suffix_count": 77,
+      "prefix_weight_total": 54658,
+      "suffix_weight_total": 60100
+    },
+    {
+      "ilvl": 100,
+      "slot": "staff",
+      "prefix_count": 159,
+      "suffix_count": 138,
+      "prefix_weight_total": 94761,
+      "suffix_weight_total": 92450
+    },
+    {
+      "ilvl": 100,
+      "slot": "wand",
+      "prefix_count": 146,
+      "suffix_count": 119,
+      "prefix_weight_total": 79466,
+      "suffix_weight_total": 78842
+    }
+  ],
+  "top_tier_probability_ring_ilvl83": [
+    {
+      "family": "prefix.energy_shield_flat.054",
+      "stat": "energy_shield_flat",
+      "eligible_tiers": 11,
+      "top_tier": 11,
+      "top_tier_chance": 0.0909
+    },
+    {
+      "family": "prefix.mana_flat.080",
+      "stat": "mana_flat",
+      "eligible_tiers": 11,
+      "top_tier": 11,
+      "top_tier_chance": 0.0909
+    },
+    {
+      "family": "suffix.dexterity_flat.140",
+      "stat": "dexterity_flat",
+      "eligible_tiers": 9,
+      "top_tier": 9,
+      "top_tier_chance": 0.1111
+    },
+    {
+      "family": "suffix.intelligence_flat.159",
+      "stat": "intelligence_flat",
+      "eligible_tiers": 9,
+      "top_tier": 9,
+      "top_tier_chance": 0.1111
+    },
+    {
+      "family": "suffix.strength_flat.199",
+      "stat": "strength_flat",
+      "eligible_tiers": 9,
+      "top_tier": 9,
+      "top_tier_chance": 0.1111
+    },
+    {
+      "family": "prefix.life_flat.073",
+      "stat": "life_flat",
+      "eligible_tiers": 8,
+      "top_tier": 8,
+      "top_tier_chance": 0.125
+    },
+    {
+      "family": "suffix.cold_resistance_pct.133",
+      "stat": "cold_resistance_pct",
+      "eligible_tiers": 7,
+      "top_tier": 7,
+      "top_tier_chance": 0.1429
+    },
+    {
+      "family": "suffix.fire_resistance_pct.151",
+      "stat": "fire_resistance_pct",
+      "eligible_tiers": 7,
+      "top_tier": 7,
+      "top_tier_chance": 0.1429
+    },
+    {
+      "family": "suffix.life_regen_per_min_pct.175",
+      "stat": "life_regen_per_min_pct",
+      "eligible_tiers": 7,
+      "top_tier": 7,
+      "top_tier_chance": 0.1429
+    },
+    {
+      "family": "suffix.lightning_resistance_pct.181",
+      "stat": "lightning_resistance_pct",
+      "eligible_tiers": 7,
+      "top_tier": 7,
+      "top_tier_chance": 0.1429
+    },
+    {
+      "family": "prefix.added_cold_damage_attack.005",
+      "stat": "added_cold_damage_attack",
+      "eligible_tiers": 6,
+      "top_tier": 6,
+      "top_tier_chance": 0.1667
+    },
+    {
+      "family": "prefix.added_fire_damage_attack.012",
+      "stat": "added_fire_damage_attack",
+      "eligible_tiers": 6,
+      "top_tier": 6,
+      "top_tier_chance": 0.1667
+    },
+    {
+      "family": "prefix.added_lightning_damage_attack.019",
+      "stat": "added_lightning_damage_attack",
+      "eligible_tiers": 6,
+      "top_tier": 6,
+      "top_tier_chance": 0.1667
+    },
+    {
+      "family": "prefix.evasion_flat.056",
+      "stat": "evasion_flat",
+      "eligible_tiers": 6,
+      "top_tier": 6,
+      "top_tier_chance": 0.1667
+    },
+    {
+      "family": "suffix.chaos_resistance_pct.126",
+      "stat": "chaos_resistance_pct",
+      "eligible_tiers": 6,
+      "top_tier": 6,
+      "top_tier_chance": 0.1667
+    },
+    {
+      "family": "suffix.life_gain_on_kill_flat.165",
+      "stat": "life_gain_on_kill_flat",
+      "eligible_tiers": 6,
+      "top_tier": 6,
+      "top_tier_chance": 0.1667
+    },
+    {
+      "family": "suffix.mana_gain_on_kill_flat.182",
+      "stat": "mana_gain_on_kill_flat",
+      "eligible_tiers": 6,
+      "top_tier": 6,
+      "top_tier_chance": 0.1667
+    },
+    {
+      "family": "suffix.mana_regen_increased_pct.186",
+      "stat": "mana_regen_increased_pct",
+      "eligible_tiers": 6,
+      "top_tier": 6,
+      "top_tier_chance": 0.1667
+    },
+    {
+      "family": "prefix.added_cold_damage_attack.004",
+      "stat": "added_cold_damage_attack",
+      "eligible_tiers": 3,
+      "top_tier": 3,
+      "top_tier_chance": 0.2
+    },
+    {
+      "family": "prefix.added_fire_damage_attack.011",
+      "stat": "added_fire_damage_attack",
+      "eligible_tiers": 3,
+      "top_tier": 3,
+      "top_tier_chance": 0.2
+    },
+    {
+      "family": "prefix.added_lightning_damage_attack.018",
+      "stat": "added_lightning_damage_attack",
+      "eligible_tiers": 3,
+      "top_tier": 3,
+      "top_tier_chance": 0.2
+    },
+    {
+      "family": "prefix.elemental_attack_damage_increased_pct.051",
+      "stat": "elemental_attack_damage_increased_pct",
+      "eligible_tiers": 5,
+      "top_tier": 5,
+      "top_tier_chance": 0.2
+    },
+    {
+      "family": "suffix.elemental_resistance_pct.145",
+      "stat": "elemental_resistance_pct",
+      "eligible_tiers": 5,
+      "top_tier": 5,
+      "top_tier_chance": 0.2
+    },
+    {
+      "family": "suffix.accuracy_flat.101",
+      "stat": "accuracy_flat",
+      "eligible_tiers": 5,
+      "top_tier": 5,
+      "top_tier_chance": 0.2174
+    },
+    {
+      "family": "prefix.added_physical_damage_attack.027",
+      "stat": "added_physical_damage_attack",
+      "eligible_tiers": 4,
+      "top_tier": 4,
+      "top_tier_chance": 0.25
+    },
+    {
+      "family": "suffix.all_attributes_flat.107",
+      "stat": "all_attributes_flat",
+      "eligible_tiers": 4,
+      "top_tier": 4,
+      "top_tier_chance": 0.25
+    },
+    {
+      "family": "suffix.cold_damage_increased_pct.129",
+      "stat": "cold_damage_increased_pct",
+      "eligible_tiers": 4,
+      "top_tier": 4,
+      "top_tier_chance": 0.25
+    },
+    {
+      "family": "suffix.damage_taken_to_life_pct.138",
+      "stat": "damage_taken_to_life_pct",
+      "eligible_tiers": 4,
+      "top_tier": 4,
+      "top_tier_chance": 0.25
+    },
+    {
+      "family": "suffix.fire_damage_increased_pct.147",
+      "stat": "fire_damage_increased_pct",
+      "eligible_tiers": 4,
+      "top_tier": 4,
+      "top_tier_chance": 0.25
+    },
+    {
+      "family": "suffix.lightning_damage_increased_pct.179",
+      "stat": "lightning_damage_increased_pct",
+      "eligible_tiers": 4,
+      "top_tier": 4,
+      "top_tier_chance": 0.25
+    },
+    {
+      "family": "suffix.cast_speed_increased_pct.120",
+      "stat": "cast_speed_increased_pct",
+      "eligible_tiers": 3,
+      "top_tier": 3,
+      "top_tier_chance": 0.3333
+    },
+    {
+      "family": "suffix.light_radius_increased_pct.176",
+      "stat": "light_radius_increased_pct",
+      "eligible_tiers": 3,
+      "top_tier": 3,
+      "top_tier_chance": 0.3333
+    }
+  ],
+  "monster_stat_scaling": {
+    "note": "default monster stat table; fit y = a * level^b, level 1..83",
+    "growth_fit": {
+      "life": {
+        "a": 1.573,
+        "b": 1.85,
+        "r2": 0.883,
+        "n": 83
+      },
+      "physical_damage": {
+        "a": 0.557,
+        "b": 1.45,
+        "r2": 0.868,
+        "n": 83
+      },
+      "armour": {
+        "a": 0.709,
+        "b": 2.382,
+        "r2": 0.895,
+        "n": 83
+      },
+      "evasion": {
+        "a": 16.195,
+        "b": 1.293,
+        "r2": 0.938,
+        "n": 83
+      },
+      "accuracy": {
+        "a": 2.505,
+        "b": 1.051,
+        "r2": 0.842,
+        "n": 83
+      }
+    },
+    "samples": [
+      {
+        "level": 1,
+        "life": 22,
+        "physical_damage": 4.989999771118164,
+        "armour": 16,
+        "evasion": 67,
+        "accuracy": 14
+      },
+      {
+        "level": 10,
+        "life": 78,
+        "physical_damage": 11.619999885559082,
+        "armour": 115,
+        "evasion": 259,
+        "accuracy": 23
+      },
+      {
+        "level": 20,
+        "life": 207,
+        "physical_damage": 24.469999313354492,
+        "armour": 402,
+        "evasion": 563,
+        "accuracy": 37
+      },
+      {
+        "level": 40,
+        "life": 972,
+        "physical_damage": 84.26000213623047,
+        "armour": 2811,
+        "evasion": 1597,
+        "accuracy": 92
+      },
+      {
+        "level": 60,
+        "life": 3698,
+        "physical_damage": 248.3699951171875,
+        "armour": 15178,
+        "evasion": 3556,
+        "accuracy": 211
+      },
+      {
+        "level": 83,
+        "life": 15319,
+        "physical_damage": 782.9400024414062,
+        "armour": 92477,
+        "evasion": 7860,
+        "accuracy": 518
+      },
+      {
+        "level": 100,
+        "life": 41817,
+        "physical_damage": 1758.1700439453125,
+        "armour": 334204,
+        "evasion": 13445,
+        "accuracy": 980
+      }
+    ]
+  }
+}

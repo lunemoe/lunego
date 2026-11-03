@@ -1,0 +1,2764 @@
+{
+  "meta": {
+    "schema": "p9.classes/1",
+    "generatedBy": "tools/build_classes.py",
+    "provenance": {
+      "structure": "kit-ability AbilityDefinition/TargetSpec + p9 stat catalogue",
+      "content": "authored for p9; no PoE names, text or verbatim values",
+      "reference": "research/poe/DESIGN-NOTES.md, p9-itemization.md"
+    },
+    "notes": {
+      "ticks": "cooldowns are whole ticks, matching kit-ability and p9 combat",
+      "percent": "fraction stats (0.05 == 5%) so p9's (1 + value) formulas hold",
+      "rage": "designed secondary resource for knight; p9 currently tracks mana only",
+      "flags": "flag effects are game-side counters; stat effects map to StatBlock"
+    },
+    "counts": {
+      "classes": 2,
+      "skills": 10,
+      "passives": 72,
+      "maxSkillLevel": 10,
+      "statDefinitionsReferenced": 19
+    }
+  },
+  "resources": [
+    {
+      "id": "mana",
+      "nameEn": "Mana",
+      "nameZh": "法力",
+      "max": 100,
+      "regenPerSecond": 2.0,
+      "spendTiming": "onCast"
+    },
+    {
+      "id": "rage",
+      "nameEn": "Rage",
+      "nameZh": "怒气",
+      "max": 100,
+      "gainPerHit": 6,
+      "decayPerSecond": 4,
+      "spendTiming": "onCast"
+    }
+  ],
+  "classes": [
+    {
+      "id": "knight",
+      "nameEn": "Knight",
+      "nameZh": "骑士",
+      "archetype": "melee / shield",
+      "sprite": "player_knight",
+      "base": {
+        "health": 120,
+        "mana": 70,
+        "armorFlat": 12,
+        "movementSpeed": 224,
+        "critPct": 0.05,
+        "critMultiplier": 2.0
+      },
+      "resources": [
+        "mana",
+        "rage"
+      ],
+      "primaryResource": "mana",
+      "secondaryResource": "rage",
+      "skills": [
+        {
+          "id": "knight.cleave",
+          "key": "cleave",
+          "classId": "knight",
+          "nameEn": "Cleave",
+          "nameZh": "劈砍",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 10
+            }
+          ],
+          "cooldownTicks": 64,
+          "target": {
+            "kind": "direction",
+            "range": 116,
+            "minDot": 0.1
+          },
+          "tags": [
+            "melee",
+            "physical",
+            "attack",
+            "cone"
+          ],
+          "mechanic": "cone melee, scales with attack speed",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 26
+            },
+            {
+              "level": 2,
+              "damage": 34
+            },
+            {
+              "level": 3,
+              "damage": 42
+            },
+            {
+              "level": 4,
+              "damage": 50
+            },
+            {
+              "level": 5,
+              "damage": 58
+            },
+            {
+              "level": 6,
+              "damage": 66
+            },
+            {
+              "level": 7,
+              "damage": 74
+            },
+            {
+              "level": 8,
+              "damage": 82
+            },
+            {
+              "level": 9,
+              "damage": 90
+            },
+            {
+              "level": 10,
+              "damage": 98
+            }
+          ]
+        },
+        {
+          "id": "knight.hurl_axe",
+          "key": "hurl_axe",
+          "classId": "knight",
+          "nameEn": "Hurl Axe",
+          "nameZh": "掷斧",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 8
+            }
+          ],
+          "cooldownTicks": 45,
+          "target": {
+            "kind": "nearest",
+            "range": 340
+          },
+          "tags": [
+            "ranged",
+            "physical",
+            "attack",
+            "projectile"
+          ],
+          "mechanic": "single-target ranged attack",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 22
+            },
+            {
+              "level": 2,
+              "damage": 28
+            },
+            {
+              "level": 3,
+              "damage": 34
+            },
+            {
+              "level": 4,
+              "damage": 41
+            },
+            {
+              "level": 5,
+              "damage": 48
+            },
+            {
+              "level": 6,
+              "damage": 55
+            },
+            {
+              "level": 7,
+              "damage": 62
+            },
+            {
+              "level": 8,
+              "damage": 69
+            },
+            {
+              "level": 9,
+              "damage": 77
+            },
+            {
+              "level": 10,
+              "damage": 84
+            }
+          ]
+        },
+        {
+          "id": "knight.lunge",
+          "key": "lunge",
+          "classId": "knight",
+          "nameEn": "Lunge",
+          "nameZh": "突进",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 12
+            }
+          ],
+          "cooldownTicks": 130,
+          "target": {
+            "kind": "direction",
+            "range": 220
+          },
+          "tags": [
+            "movement",
+            "physical",
+            "attack"
+          ],
+          "mechanic": "short dash, hits enemies on the path",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 14
+            },
+            {
+              "level": 2,
+              "damage": 17
+            },
+            {
+              "level": 3,
+              "damage": 20
+            },
+            {
+              "level": 4,
+              "damage": 24
+            },
+            {
+              "level": 5,
+              "damage": 28
+            },
+            {
+              "level": 6,
+              "damage": 32
+            },
+            {
+              "level": 7,
+              "damage": 36
+            },
+            {
+              "level": 8,
+              "damage": 40
+            },
+            {
+              "level": 9,
+              "damage": 44
+            },
+            {
+              "level": 10,
+              "damage": 48
+            }
+          ]
+        },
+        {
+          "id": "knight.shield_bash",
+          "key": "shield_bash",
+          "classId": "knight",
+          "nameEn": "Shield Bash",
+          "nameZh": "盾击",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 14
+            }
+          ],
+          "cooldownTicks": 96,
+          "target": {
+            "kind": "point",
+            "range": 110
+          },
+          "tags": [
+            "melee",
+            "physical",
+            "attack",
+            "stun"
+          ],
+          "mechanic": "stuns the target in front",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 30,
+              "stunChance": 0.35
+            },
+            {
+              "level": 2,
+              "damage": 39,
+              "stunChance": 0.38
+            },
+            {
+              "level": 3,
+              "damage": 48,
+              "stunChance": 0.41
+            },
+            {
+              "level": 4,
+              "damage": 58,
+              "stunChance": 0.44
+            },
+            {
+              "level": 5,
+              "damage": 68,
+              "stunChance": 0.47
+            },
+            {
+              "level": 6,
+              "damage": 78,
+              "stunChance": 0.5
+            },
+            {
+              "level": 7,
+              "damage": 88,
+              "stunChance": 0.52
+            },
+            {
+              "level": 8,
+              "damage": 98,
+              "stunChance": 0.54
+            },
+            {
+              "level": 9,
+              "damage": 109,
+              "stunChance": 0.57
+            },
+            {
+              "level": 10,
+              "damage": 120,
+              "stunChance": 0.6
+            }
+          ]
+        },
+        {
+          "id": "knight.bulwark",
+          "key": "bulwark",
+          "classId": "knight",
+          "nameEn": "Bulwark",
+          "nameZh": "壁垒",
+          "costs": [
+            {
+              "resource": "rage",
+              "amount": 30
+            }
+          ],
+          "cooldownTicks": 300,
+          "target": {
+            "kind": "none"
+          },
+          "tags": [
+            "guard",
+            "rage"
+          ],
+          "mechanic": "temporary damage reduction",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 0,
+              "guardPct": 0.18
+            },
+            {
+              "level": 2,
+              "damage": 0,
+              "guardPct": 0.2
+            },
+            {
+              "level": 3,
+              "damage": 0,
+              "guardPct": 0.23
+            },
+            {
+              "level": 4,
+              "damage": 0,
+              "guardPct": 0.25
+            },
+            {
+              "level": 5,
+              "damage": 0,
+              "guardPct": 0.28
+            },
+            {
+              "level": 6,
+              "damage": 0,
+              "guardPct": 0.3
+            },
+            {
+              "level": 7,
+              "damage": 0,
+              "guardPct": 0.33
+            },
+            {
+              "level": 8,
+              "damage": 0,
+              "guardPct": 0.35
+            },
+            {
+              "level": 9,
+              "damage": 0,
+              "guardPct": 0.38
+            },
+            {
+              "level": 10,
+              "damage": 0,
+              "guardPct": 0.4
+            }
+          ]
+        }
+      ],
+      "passives": [
+        {
+          "id": "knight.iron_body",
+          "key": "iron_body",
+          "classId": "knight",
+          "tier": 1,
+          "nameEn": "Iron Body",
+          "nameZh": "铁躯",
+          "position": {
+            "row": 0,
+            "col": 0
+          },
+          "requires": [],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "healthBonus",
+              "mode": "add",
+              "value": 15
+            }
+          ]
+        },
+        {
+          "id": "knight.weapon_drill",
+          "key": "weapon_drill",
+          "classId": "knight",
+          "tier": 1,
+          "nameEn": "Weapon Drill",
+          "nameZh": "兵器操练",
+          "position": {
+            "row": 0,
+            "col": 1
+          },
+          "requires": [],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damagePct",
+              "mode": "add",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "knight.thick_hide",
+          "key": "thick_hide",
+          "classId": "knight",
+          "tier": 2,
+          "nameEn": "Thick Hide",
+          "nameZh": "厚皮",
+          "position": {
+            "row": 1,
+            "col": 0
+          },
+          "requires": [
+            "knight.iron_body"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "healthBonus",
+              "mode": "add",
+              "value": 20
+            }
+          ]
+        },
+        {
+          "id": "knight.plated_stance",
+          "key": "plated_stance",
+          "classId": "knight",
+          "tier": 2,
+          "nameEn": "Plated Stance",
+          "nameZh": "覆甲架势",
+          "position": {
+            "row": 1,
+            "col": 1
+          },
+          "requires": [
+            "knight.iron_body"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "armorPct",
+              "mode": "add",
+              "value": 0.08
+            }
+          ]
+        },
+        {
+          "id": "knight.sharpened_edge",
+          "key": "sharpened_edge",
+          "classId": "knight",
+          "tier": 2,
+          "nameEn": "Sharpened Edge",
+          "nameZh": "开刃",
+          "position": {
+            "row": 1,
+            "col": 2
+          },
+          "requires": [
+            "knight.weapon_drill"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "physicalDamagePct",
+              "mode": "add",
+              "value": 0.07
+            }
+          ]
+        },
+        {
+          "id": "knight.measured_swing",
+          "key": "measured_swing",
+          "classId": "knight",
+          "tier": 2,
+          "nameEn": "Measured Swing",
+          "nameZh": "沉稳挥击",
+          "position": {
+            "row": 1,
+            "col": 3
+          },
+          "requires": [
+            "knight.weapon_drill"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "attackSpeedPct",
+              "mode": "add",
+              "value": 0.04
+            }
+          ]
+        },
+        {
+          "id": "knight.second_wind",
+          "key": "second_wind",
+          "classId": "knight",
+          "tier": 3,
+          "nameEn": "Second Wind",
+          "nameZh": "回气",
+          "position": {
+            "row": 2,
+            "col": 0
+          },
+          "requires": [
+            "knight.thick_hide"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "lifeRegenFlat",
+              "mode": "add",
+              "value": 1.5
+            }
+          ]
+        },
+        {
+          "id": "knight.bulwark_training",
+          "key": "bulwark_training",
+          "classId": "knight",
+          "tier": 3,
+          "nameEn": "Bulwark Training",
+          "nameZh": "壁垒训练",
+          "position": {
+            "row": 2,
+            "col": 1
+          },
+          "requires": [
+            "knight.plated_stance"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damageReductionPct",
+              "mode": "add",
+              "value": 0.03
+            }
+          ]
+        },
+        {
+          "id": "knight.shield_mastery",
+          "key": "shield_mastery",
+          "classId": "knight",
+          "tier": 3,
+          "nameEn": "Shield Mastery",
+          "nameZh": "盾牌精通",
+          "position": {
+            "row": 2,
+            "col": 2
+          },
+          "requires": [
+            "knight.plated_stance"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "blockChance",
+              "mode": "add",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "knight.heavy_blows",
+          "key": "heavy_blows",
+          "classId": "knight",
+          "tier": 3,
+          "nameEn": "Heavy Blows",
+          "nameZh": "重击",
+          "position": {
+            "row": 2,
+            "col": 3
+          },
+          "requires": [
+            "knight.sharpened_edge"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damagePct",
+              "mode": "add",
+              "value": 0.08
+            }
+          ]
+        },
+        {
+          "id": "knight.bleed_cut",
+          "key": "bleed_cut",
+          "classId": "knight",
+          "tier": 3,
+          "nameEn": "Wide Cleave",
+          "nameZh": "横扫",
+          "position": {
+            "row": 2,
+            "col": 4
+          },
+          "requires": [
+            "knight.sharpened_edge"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "cleave.extra_target",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "id": "knight.quick_hands",
+          "key": "quick_hands",
+          "classId": "knight",
+          "tier": 3,
+          "nameEn": "Quick Hands",
+          "nameZh": "快手",
+          "position": {
+            "row": 2,
+            "col": 5
+          },
+          "requires": [
+            "knight.measured_swing"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "attackSpeedPct",
+              "mode": "add",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "knight.axe_training",
+          "key": "axe_training",
+          "classId": "knight",
+          "tier": 3,
+          "nameEn": "Axe Training",
+          "nameZh": "掷斧训练",
+          "position": {
+            "row": 2,
+            "col": 6
+          },
+          "requires": [
+            "knight.measured_swing"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "hurl_axe.bounce",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "id": "knight.unyielding",
+          "key": "unyielding",
+          "classId": "knight",
+          "tier": 4,
+          "nameEn": "Unyielding",
+          "nameZh": "不屈",
+          "position": {
+            "row": 3,
+            "col": 0
+          },
+          "requires": [
+            "knight.bulwark_training"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damageReductionPct",
+              "mode": "add",
+              "value": 0.04
+            }
+          ]
+        },
+        {
+          "id": "knight.guard_drill",
+          "key": "guard_drill",
+          "classId": "knight",
+          "tier": 4,
+          "nameEn": "Guard Drill",
+          "nameZh": "格挡操练",
+          "position": {
+            "row": 3,
+            "col": 1
+          },
+          "requires": [
+            "knight.shield_mastery"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "blockChance",
+              "mode": "add",
+              "value": 0.06
+            }
+          ]
+        },
+        {
+          "id": "knight.executioner",
+          "key": "executioner",
+          "classId": "knight",
+          "tier": 4,
+          "nameEn": "Executioner",
+          "nameZh": "处刑者",
+          "position": {
+            "row": 3,
+            "col": 2
+          },
+          "requires": [
+            "knight.heavy_blows"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "critPct",
+              "mode": "add",
+              "value": 0.04
+            }
+          ]
+        },
+        {
+          "id": "knight.crushing",
+          "key": "crushing",
+          "classId": "knight",
+          "tier": 4,
+          "nameEn": "Crushing",
+          "nameZh": "压碎",
+          "position": {
+            "row": 3,
+            "col": 3
+          },
+          "requires": [
+            "knight.heavy_blows"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "physicalDamagePct",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "knight.momentum",
+          "key": "momentum",
+          "classId": "knight",
+          "tier": 4,
+          "nameEn": "Momentum",
+          "nameZh": "势头",
+          "position": {
+            "row": 3,
+            "col": 4
+          },
+          "requires": [
+            "knight.quick_hands"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "movementSpeedPct",
+              "mode": "add",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "knight.riposte",
+          "key": "riposte",
+          "classId": "knight",
+          "tier": 4,
+          "nameEn": "Riposte",
+          "nameZh": "反击",
+          "position": {
+            "row": 3,
+            "col": 5
+          },
+          "requires": [
+            "knight.shield_mastery"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "critPct",
+              "mode": "add",
+              "value": 0.03
+            }
+          ]
+        },
+        {
+          "id": "knight.tireless",
+          "key": "tireless",
+          "classId": "knight",
+          "tier": 4,
+          "nameEn": "Tireless",
+          "nameZh": "不倦",
+          "position": {
+            "row": 3,
+            "col": 6
+          },
+          "requires": [
+            "knight.second_wind"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "lifeRegenFlat",
+              "mode": "add",
+              "value": 2.0
+            }
+          ]
+        },
+        {
+          "id": "knight.cleave_arc",
+          "key": "cleave_arc",
+          "classId": "knight",
+          "tier": 4,
+          "nameEn": "Long Arc",
+          "nameZh": "长弧",
+          "position": {
+            "row": 3,
+            "col": 7
+          },
+          "requires": [
+            "knight.bleed_cut"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "cleave.range",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "id": "knight.colossus",
+          "key": "colossus",
+          "classId": "knight",
+          "tier": 5,
+          "nameEn": "Colossus",
+          "nameZh": "巨像",
+          "position": {
+            "row": 4,
+            "col": 0
+          },
+          "requires": [
+            "knight.tireless"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "healthBonus",
+              "mode": "add",
+              "value": 40
+            }
+          ]
+        },
+        {
+          "id": "knight.impenetrable",
+          "key": "impenetrable",
+          "classId": "knight",
+          "tier": 5,
+          "nameEn": "Impenetrable",
+          "nameZh": "不可穿透",
+          "position": {
+            "row": 4,
+            "col": 1
+          },
+          "requires": [
+            "knight.unyielding"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "armorPct",
+              "mode": "add",
+              "value": 0.15
+            }
+          ]
+        },
+        {
+          "id": "knight.bloodlust",
+          "key": "bloodlust",
+          "classId": "knight",
+          "tier": 5,
+          "nameEn": "Bloodlust",
+          "nameZh": "嗜血",
+          "position": {
+            "row": 4,
+            "col": 2
+          },
+          "requires": [
+            "knight.executioner"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damagePct",
+              "mode": "add",
+              "value": 0.12
+            }
+          ]
+        },
+        {
+          "id": "knight.shatter_guard",
+          "key": "shatter_guard",
+          "classId": "knight",
+          "tier": 5,
+          "nameEn": "Shatter Guard",
+          "nameZh": "碎防",
+          "position": {
+            "row": 4,
+            "col": 3
+          },
+          "requires": [
+            "knight.crushing"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damagePct",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "knight.swift_strikes",
+          "key": "swift_strikes",
+          "classId": "knight",
+          "tier": 5,
+          "nameEn": "Swift Strikes",
+          "nameZh": "迅击",
+          "position": {
+            "row": 4,
+            "col": 4
+          },
+          "requires": [
+            "knight.momentum"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "attackSpeedPct",
+              "mode": "add",
+              "value": 0.08
+            }
+          ]
+        },
+        {
+          "id": "knight.counter_edge",
+          "key": "counter_edge",
+          "classId": "knight",
+          "tier": 5,
+          "nameEn": "Counter Edge",
+          "nameZh": "反刃",
+          "position": {
+            "row": 4,
+            "col": 5
+          },
+          "requires": [
+            "knight.riposte"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "critMultiplierPct",
+              "mode": "add",
+              "value": 0.15
+            }
+          ]
+        },
+        {
+          "id": "knight.bulwark_long",
+          "key": "bulwark_long",
+          "classId": "knight",
+          "tier": 5,
+          "nameEn": "Lasting Bulwark",
+          "nameZh": "持久壁垒",
+          "position": {
+            "row": 4,
+            "col": 6
+          },
+          "requires": [
+            "knight.bulwark_training"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "bulwark.duration",
+              "value": 30
+            }
+          ]
+        },
+        {
+          "id": "knight.lunge_far",
+          "key": "lunge_far",
+          "classId": "knight",
+          "tier": 5,
+          "nameEn": "Far Lunge",
+          "nameZh": "远突",
+          "position": {
+            "row": 4,
+            "col": 7
+          },
+          "requires": [
+            "knight.momentum"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "lunge.range",
+              "value": 40
+            }
+          ]
+        },
+        {
+          "id": "knight.last_stand",
+          "key": "last_stand",
+          "classId": "knight",
+          "tier": 6,
+          "nameEn": "Last Stand",
+          "nameZh": "背水一战",
+          "position": {
+            "row": 5,
+            "col": 0
+          },
+          "requires": [
+            "knight.colossus"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "healthBonus",
+              "mode": "add",
+              "value": 50
+            }
+          ]
+        },
+        {
+          "id": "knight.juggernaut",
+          "key": "juggernaut",
+          "classId": "knight",
+          "tier": 6,
+          "nameEn": "Juggernaut",
+          "nameZh": "主宰",
+          "position": {
+            "row": 5,
+            "col": 1
+          },
+          "requires": [
+            "knight.impenetrable"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damageReductionPct",
+              "mode": "add",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "knight.warlord",
+          "key": "warlord",
+          "classId": "knight",
+          "tier": 6,
+          "nameEn": "Warlord",
+          "nameZh": "战争领主",
+          "position": {
+            "row": 5,
+            "col": 2
+          },
+          "requires": [
+            "knight.bloodlust"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damagePct",
+              "mode": "add",
+              "value": 0.15
+            }
+          ]
+        },
+        {
+          "id": "knight.rage_flow",
+          "key": "rage_flow",
+          "classId": "knight",
+          "tier": 6,
+          "nameEn": "Rage Flow",
+          "nameZh": "怒气涌流",
+          "position": {
+            "row": 5,
+            "col": 3
+          },
+          "requires": [
+            "knight.bloodlust"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "rage.gain",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "id": "knight.endless_cleave",
+          "key": "endless_cleave",
+          "classId": "knight",
+          "tier": 6,
+          "nameEn": "Endless Cleave",
+          "nameZh": "无尽横扫",
+          "position": {
+            "row": 5,
+            "col": 4
+          },
+          "requires": [
+            "knight.shatter_guard"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "cleave.extra_target",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "id": "knight.veteran",
+          "key": "veteran",
+          "classId": "knight",
+          "tier": 6,
+          "nameEn": "Veteran",
+          "nameZh": "老兵",
+          "position": {
+            "row": 5,
+            "col": 5
+          },
+          "requires": [
+            "knight.colossus"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "healthBonus",
+              "mode": "add",
+              "value": 25
+            }
+          ]
+        },
+        {
+          "id": "knight.shield_wall",
+          "key": "shield_wall",
+          "classId": "knight",
+          "tier": 6,
+          "nameEn": "Shield Wall",
+          "nameZh": "盾墙",
+          "position": {
+            "row": 5,
+            "col": 6
+          },
+          "requires": [
+            "knight.guard_drill"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "shield_bash.stun",
+              "value": 0.1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mage",
+      "nameEn": "Mage",
+      "nameZh": "法师",
+      "archetype": "ranged / elemental",
+      "sprite": "player_mage",
+      "base": {
+        "health": 90,
+        "mana": 120,
+        "energyShieldFlat": 15,
+        "movementSpeed": 224,
+        "critPct": 0.06,
+        "critMultiplier": 2.0
+      },
+      "resources": [
+        "mana"
+      ],
+      "primaryResource": "mana",
+      "secondaryResource": null,
+      "skills": [
+        {
+          "id": "mage.ember_fan",
+          "key": "ember_fan",
+          "classId": "mage",
+          "nameEn": "Ember Fan",
+          "nameZh": "余烬扇",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 9
+            }
+          ],
+          "cooldownTicks": 56,
+          "target": {
+            "kind": "direction",
+            "range": 130,
+            "minDot": 0.2
+          },
+          "tags": [
+            "spell",
+            "fire",
+            "aoe",
+            "cone",
+            "burn"
+          ],
+          "mechanic": "cone fire spell, applies burn",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 24,
+              "burnPerTick": 3
+            },
+            {
+              "level": 2,
+              "damage": 32,
+              "burnPerTick": 4
+            },
+            {
+              "level": 3,
+              "damage": 41,
+              "burnPerTick": 5
+            },
+            {
+              "level": 4,
+              "damage": 50,
+              "burnPerTick": 6
+            },
+            {
+              "level": 5,
+              "damage": 60,
+              "burnPerTick": 7
+            },
+            {
+              "level": 6,
+              "damage": 70,
+              "burnPerTick": 8
+            },
+            {
+              "level": 7,
+              "damage": 80,
+              "burnPerTick": 9
+            },
+            {
+              "level": 8,
+              "damage": 90,
+              "burnPerTick": 10
+            },
+            {
+              "level": 9,
+              "damage": 101,
+              "burnPerTick": 11
+            },
+            {
+              "level": 10,
+              "damage": 112,
+              "burnPerTick": 12
+            }
+          ]
+        },
+        {
+          "id": "mage.ember_bolt",
+          "key": "ember_bolt",
+          "classId": "mage",
+          "nameEn": "Ember Bolt",
+          "nameZh": "余烬弹",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 8
+            }
+          ],
+          "cooldownTicks": 45,
+          "target": {
+            "kind": "nearest",
+            "range": 420
+          },
+          "tags": [
+            "spell",
+            "fire",
+            "projectile"
+          ],
+          "mechanic": "single-target fire projectile",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 20
+            },
+            {
+              "level": 2,
+              "damage": 27
+            },
+            {
+              "level": 3,
+              "damage": 34
+            },
+            {
+              "level": 4,
+              "damage": 42
+            },
+            {
+              "level": 5,
+              "damage": 50
+            },
+            {
+              "level": 6,
+              "damage": 58
+            },
+            {
+              "level": 7,
+              "damage": 66
+            },
+            {
+              "level": 8,
+              "damage": 74
+            },
+            {
+              "level": 9,
+              "damage": 83
+            },
+            {
+              "level": 10,
+              "damage": 92
+            }
+          ]
+        },
+        {
+          "id": "mage.blink",
+          "key": "blink",
+          "classId": "mage",
+          "nameEn": "Blink",
+          "nameZh": "闪烁",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 12
+            }
+          ],
+          "cooldownTicks": 120,
+          "target": {
+            "kind": "direction",
+            "range": 220
+          },
+          "tags": [
+            "spell",
+            "movement",
+            "blink"
+          ],
+          "mechanic": "teleport dash",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 0
+            },
+            {
+              "level": 2,
+              "damage": 0
+            },
+            {
+              "level": 3,
+              "damage": 0
+            },
+            {
+              "level": 4,
+              "damage": 0
+            },
+            {
+              "level": 5,
+              "damage": 0
+            },
+            {
+              "level": 6,
+              "damage": 0
+            },
+            {
+              "level": 7,
+              "damage": 0
+            },
+            {
+              "level": 8,
+              "damage": 0
+            },
+            {
+              "level": 9,
+              "damage": 0
+            },
+            {
+              "level": 10,
+              "damage": 0
+            }
+          ]
+        },
+        {
+          "id": "mage.frost_nova",
+          "key": "frost_nova",
+          "classId": "mage",
+          "nameEn": "Frost Nova",
+          "nameZh": "霜爆",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 14
+            }
+          ],
+          "cooldownTicks": 100,
+          "target": {
+            "kind": "point",
+            "range": 160
+          },
+          "tags": [
+            "spell",
+            "cold",
+            "aoe",
+            "chill"
+          ],
+          "mechanic": "area burst that chills",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 28,
+              "slowPct": 0.2
+            },
+            {
+              "level": 2,
+              "damage": 37,
+              "slowPct": 0.23
+            },
+            {
+              "level": 3,
+              "damage": 46,
+              "slowPct": 0.25
+            },
+            {
+              "level": 4,
+              "damage": 56,
+              "slowPct": 0.28
+            },
+            {
+              "level": 5,
+              "damage": 66,
+              "slowPct": 0.3
+            },
+            {
+              "level": 6,
+              "damage": 76,
+              "slowPct": 0.33
+            },
+            {
+              "level": 7,
+              "damage": 86,
+              "slowPct": 0.35
+            },
+            {
+              "level": 8,
+              "damage": 97,
+              "slowPct": 0.38
+            },
+            {
+              "level": 9,
+              "damage": 108,
+              "slowPct": 0.41
+            },
+            {
+              "level": 10,
+              "damage": 120,
+              "slowPct": 0.45
+            }
+          ]
+        },
+        {
+          "id": "mage.arc_surge",
+          "key": "arc_surge",
+          "classId": "mage",
+          "nameEn": "Arc Surge",
+          "nameZh": "电弧涌动",
+          "costs": [
+            {
+              "resource": "mana",
+              "amount": 16
+            }
+          ],
+          "cooldownTicks": 110,
+          "target": {
+            "kind": "nearest",
+            "range": 300
+          },
+          "tags": [
+            "spell",
+            "lightning",
+            "chain",
+            "shock"
+          ],
+          "mechanic": "chain lightning",
+          "levels": [
+            {
+              "level": 1,
+              "damage": 32,
+              "chains": 1
+            },
+            {
+              "level": 2,
+              "damage": 42,
+              "chains": 1
+            },
+            {
+              "level": 3,
+              "damage": 52,
+              "chains": 2
+            },
+            {
+              "level": 4,
+              "damage": 63,
+              "chains": 2
+            },
+            {
+              "level": 5,
+              "damage": 74,
+              "chains": 2
+            },
+            {
+              "level": 6,
+              "damage": 85,
+              "chains": 3
+            },
+            {
+              "level": 7,
+              "damage": 96,
+              "chains": 3
+            },
+            {
+              "level": 8,
+              "damage": 108,
+              "chains": 3
+            },
+            {
+              "level": 9,
+              "damage": 120,
+              "chains": 3
+            },
+            {
+              "level": 10,
+              "damage": 132,
+              "chains": 3
+            }
+          ]
+        }
+      ],
+      "passives": [
+        {
+          "id": "mage.mana_spring",
+          "key": "mana_spring",
+          "classId": "mage",
+          "tier": 1,
+          "nameEn": "Mana Spring",
+          "nameZh": "灵泉",
+          "position": {
+            "row": 0,
+            "col": 0
+          },
+          "requires": [],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "manaFlat",
+              "mode": "add",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "id": "mage.arcane_spark",
+          "key": "arcane_spark",
+          "classId": "mage",
+          "tier": 1,
+          "nameEn": "Arcane Spark",
+          "nameZh": "奥术火花",
+          "position": {
+            "row": 0,
+            "col": 1
+          },
+          "requires": [],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "spellDamagePct",
+              "mode": "add",
+              "value": 0.06
+            }
+          ]
+        },
+        {
+          "id": "mage.mana_flow",
+          "key": "mana_flow",
+          "classId": "mage",
+          "tier": 2,
+          "nameEn": "Mana Flow",
+          "nameZh": "法力流动",
+          "position": {
+            "row": 1,
+            "col": 0
+          },
+          "requires": [
+            "mage.mana_spring"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "manaRegenPct",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "mage.deep_reserve",
+          "key": "deep_reserve",
+          "classId": "mage",
+          "tier": 2,
+          "nameEn": "Deep Reserve",
+          "nameZh": "深层储备",
+          "position": {
+            "row": 1,
+            "col": 1
+          },
+          "requires": [
+            "mage.mana_spring"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "manaFlat",
+              "mode": "add",
+              "value": 20
+            }
+          ]
+        },
+        {
+          "id": "mage.ember_affinity",
+          "key": "ember_affinity",
+          "classId": "mage",
+          "tier": 2,
+          "nameEn": "Ember Affinity",
+          "nameZh": "余烬亲和",
+          "position": {
+            "row": 1,
+            "col": 2
+          },
+          "requires": [
+            "mage.arcane_spark"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "fireResistance",
+              "mode": "add",
+              "value": 0.08
+            }
+          ]
+        },
+        {
+          "id": "mage.frost_affinity",
+          "key": "frost_affinity",
+          "classId": "mage",
+          "tier": 2,
+          "nameEn": "Frost Affinity",
+          "nameZh": "霜寒亲和",
+          "position": {
+            "row": 1,
+            "col": 3
+          },
+          "requires": [
+            "mage.arcane_spark"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "coldResistance",
+              "mode": "add",
+              "value": 0.08
+            }
+          ]
+        },
+        {
+          "id": "mage.flow_state",
+          "key": "flow_state",
+          "classId": "mage",
+          "tier": 3,
+          "nameEn": "Flow State",
+          "nameZh": "流态",
+          "position": {
+            "row": 2,
+            "col": 0
+          },
+          "requires": [
+            "mage.mana_flow"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "manaRegenPct",
+              "mode": "add",
+              "value": 0.15
+            }
+          ]
+        },
+        {
+          "id": "mage.ward_weave",
+          "key": "ward_weave",
+          "classId": "mage",
+          "tier": 3,
+          "nameEn": "Ward Weave",
+          "nameZh": "护盾编织",
+          "position": {
+            "row": 2,
+            "col": 1
+          },
+          "requires": [
+            "mage.deep_reserve"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "energyShieldPct",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "mage.kindling",
+          "key": "kindling",
+          "classId": "mage",
+          "tier": 3,
+          "nameEn": "Kindling",
+          "nameZh": "引燃",
+          "position": {
+            "row": 2,
+            "col": 2
+          },
+          "requires": [
+            "mage.ember_affinity"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "ember_fan.burn",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "id": "mage.chill_touch",
+          "key": "chill_touch",
+          "classId": "mage",
+          "tier": 3,
+          "nameEn": "Chill Touch",
+          "nameZh": "寒触",
+          "position": {
+            "row": 2,
+            "col": 3
+          },
+          "requires": [
+            "mage.frost_affinity"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "frost_nova.slow",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "mage.spark_focus",
+          "key": "spark_focus",
+          "classId": "mage",
+          "tier": 3,
+          "nameEn": "Spark Focus",
+          "nameZh": "火花专注",
+          "position": {
+            "row": 2,
+            "col": 4
+          },
+          "requires": [
+            "mage.arcane_spark"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "spellDamagePct",
+              "mode": "add",
+              "value": 0.08
+            }
+          ]
+        },
+        {
+          "id": "mage.quick_cast",
+          "key": "quick_cast",
+          "classId": "mage",
+          "tier": 3,
+          "nameEn": "Quick Cast",
+          "nameZh": "快速施法",
+          "position": {
+            "row": 2,
+            "col": 5
+          },
+          "requires": [
+            "mage.mana_flow"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "attackSpeedPct",
+              "mode": "add",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "mage.bolt_training",
+          "key": "bolt_training",
+          "classId": "mage",
+          "tier": 3,
+          "nameEn": "Bolt Training",
+          "nameZh": "弹道训练",
+          "position": {
+            "row": 2,
+            "col": 6
+          },
+          "requires": [
+            "mage.arcane_spark"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "ember_bolt.pierce",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "id": "mage.mana_shield",
+          "key": "mana_shield",
+          "classId": "mage",
+          "tier": 4,
+          "nameEn": "Mana Shield",
+          "nameZh": "法力护盾",
+          "position": {
+            "row": 3,
+            "col": 0
+          },
+          "requires": [
+            "mage.ward_weave"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "energyShieldFlat",
+              "mode": "add",
+              "value": 25
+            }
+          ]
+        },
+        {
+          "id": "mage.inferno",
+          "key": "inferno",
+          "classId": "mage",
+          "tier": 4,
+          "nameEn": "Inferno",
+          "nameZh": "炼狱",
+          "position": {
+            "row": 3,
+            "col": 1
+          },
+          "requires": [
+            "mage.kindling"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "ember_fan.radius",
+              "value": 10
+            }
+          ]
+        },
+        {
+          "id": "mage.permafrost",
+          "key": "permafrost",
+          "classId": "mage",
+          "tier": 4,
+          "nameEn": "Permafrost",
+          "nameZh": "永冻",
+          "position": {
+            "row": 3,
+            "col": 2
+          },
+          "requires": [
+            "mage.chill_touch"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "frost_nova.radius",
+              "value": 10
+            }
+          ]
+        },
+        {
+          "id": "mage.storm_affinity",
+          "key": "storm_affinity",
+          "classId": "mage",
+          "tier": 4,
+          "nameEn": "Storm Affinity",
+          "nameZh": "风暴亲和",
+          "position": {
+            "row": 3,
+            "col": 3
+          },
+          "requires": [
+            "mage.spark_focus"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "lightningResistance",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "mage.arc_mastery",
+          "key": "arc_mastery",
+          "classId": "mage",
+          "tier": 4,
+          "nameEn": "Arc Mastery",
+          "nameZh": "电弧精通",
+          "position": {
+            "row": 3,
+            "col": 4
+          },
+          "requires": [
+            "mage.spark_focus"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "arc_surge.chains",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "id": "mage.haste_weave",
+          "key": "haste_weave",
+          "classId": "mage",
+          "tier": 4,
+          "nameEn": "Haste Weave",
+          "nameZh": "迅捷编织",
+          "position": {
+            "row": 3,
+            "col": 5
+          },
+          "requires": [
+            "mage.flow_state"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "movementSpeedPct",
+              "mode": "add",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "mage.elemental_focus",
+          "key": "elemental_focus",
+          "classId": "mage",
+          "tier": 4,
+          "nameEn": "Elemental Focus",
+          "nameZh": "元素专注",
+          "position": {
+            "row": 3,
+            "col": 6
+          },
+          "requires": [
+            "mage.spark_focus"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "spellDamagePct",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "mage.bolt_pierce",
+          "key": "bolt_pierce",
+          "classId": "mage",
+          "tier": 4,
+          "nameEn": "Piercing Bolt",
+          "nameZh": "穿透弹",
+          "position": {
+            "row": 3,
+            "col": 7
+          },
+          "requires": [
+            "mage.bolt_training"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "ember_bolt.pierce",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "id": "mage.pyre",
+          "key": "pyre",
+          "classId": "mage",
+          "tier": 5,
+          "nameEn": "Pyre",
+          "nameZh": "焚堆",
+          "position": {
+            "row": 4,
+            "col": 0
+          },
+          "requires": [
+            "mage.inferno"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "ember_fan.burn",
+              "value": 4
+            }
+          ]
+        },
+        {
+          "id": "mage.glacier",
+          "key": "glacier",
+          "classId": "mage",
+          "tier": 5,
+          "nameEn": "Glacier",
+          "nameZh": "冰川",
+          "position": {
+            "row": 4,
+            "col": 1
+          },
+          "requires": [
+            "mage.permafrost"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "frost_nova.slow",
+              "value": 0.08
+            }
+          ]
+        },
+        {
+          "id": "mage.tempest",
+          "key": "tempest",
+          "classId": "mage",
+          "tier": 5,
+          "nameEn": "Tempest",
+          "nameZh": "暴风",
+          "position": {
+            "row": 4,
+            "col": 2
+          },
+          "requires": [
+            "mage.storm_affinity"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "arc_surge.damage",
+              "value": 0.08
+            }
+          ]
+        },
+        {
+          "id": "mage.overload",
+          "key": "overload",
+          "classId": "mage",
+          "tier": 5,
+          "nameEn": "Overload",
+          "nameZh": "过载",
+          "position": {
+            "row": 4,
+            "col": 3
+          },
+          "requires": [
+            "mage.elemental_focus"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "spellDamagePct",
+              "mode": "add",
+              "value": 0.12
+            }
+          ]
+        },
+        {
+          "id": "mage.bulwark_of_mana",
+          "key": "bulwark_of_mana",
+          "classId": "mage",
+          "tier": 5,
+          "nameEn": "Bulwark of Mana",
+          "nameZh": "法力壁垒",
+          "position": {
+            "row": 4,
+            "col": 4
+          },
+          "requires": [
+            "mage.mana_shield"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "damageReductionPct",
+              "mode": "add",
+              "value": 0.04
+            }
+          ]
+        },
+        {
+          "id": "mage.blink_mastery",
+          "key": "blink_mastery",
+          "classId": "mage",
+          "tier": 5,
+          "nameEn": "Blink Mastery",
+          "nameZh": "闪烁精通",
+          "position": {
+            "row": 4,
+            "col": 5
+          },
+          "requires": [
+            "mage.haste_weave"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "blink.distance",
+              "value": 40
+            }
+          ]
+        },
+        {
+          "id": "mage.frostfire",
+          "key": "frostfire",
+          "classId": "mage",
+          "tier": 5,
+          "nameEn": "Frostfire",
+          "nameZh": "霜火",
+          "position": {
+            "row": 4,
+            "col": 6
+          },
+          "requires": [
+            "mage.kindling"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "frost_nova.slow",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "id": "mage.static_field",
+          "key": "static_field",
+          "classId": "mage",
+          "tier": 5,
+          "nameEn": "Static Field",
+          "nameZh": "静电场",
+          "position": {
+            "row": 4,
+            "col": 7
+          },
+          "requires": [
+            "mage.arc_mastery"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "arc_surge.chains",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "id": "mage.arcane_surge",
+          "key": "arcane_surge",
+          "classId": "mage",
+          "tier": 6,
+          "nameEn": "Arcane Surge",
+          "nameZh": "奥术涌动",
+          "position": {
+            "row": 5,
+            "col": 0
+          },
+          "requires": [
+            "mage.overload"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "manaRegenPct",
+              "mode": "add",
+              "value": 0.2
+            }
+          ]
+        },
+        {
+          "id": "mage.phoenix",
+          "key": "phoenix",
+          "classId": "mage",
+          "tier": 6,
+          "nameEn": "Phoenix",
+          "nameZh": "不死鸟",
+          "position": {
+            "row": 5,
+            "col": 1
+          },
+          "requires": [
+            "mage.pyre"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "fireResistance",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "mage.absolute_zero",
+          "key": "absolute_zero",
+          "classId": "mage",
+          "tier": 6,
+          "nameEn": "Absolute Zero",
+          "nameZh": "绝对零度",
+          "position": {
+            "row": 5,
+            "col": 2
+          },
+          "requires": [
+            "mage.glacier"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "coldResistance",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "mage.thunderhead",
+          "key": "thunderhead",
+          "classId": "mage",
+          "tier": 6,
+          "nameEn": "Thunderhead",
+          "nameZh": "雷首",
+          "position": {
+            "row": 5,
+            "col": 3
+          },
+          "requires": [
+            "mage.static_field"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "lightningResistance",
+              "mode": "add",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "mage.arcane_ward",
+          "key": "arcane_ward",
+          "classId": "mage",
+          "tier": 6,
+          "nameEn": "Arcane Ward",
+          "nameZh": "奥术守卫",
+          "position": {
+            "row": 5,
+            "col": 4
+          },
+          "requires": [
+            "mage.bulwark_of_mana"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "energyShieldFlat",
+              "mode": "add",
+              "value": 40
+            }
+          ]
+        },
+        {
+          "id": "mage.tempest_mastery",
+          "key": "tempest_mastery",
+          "classId": "mage",
+          "tier": 6,
+          "nameEn": "Tempest Mastery",
+          "nameZh": "暴风精通",
+          "position": {
+            "row": 5,
+            "col": 5
+          },
+          "requires": [
+            "mage.tempest"
+          ],
+          "effects": [
+            {
+              "kind": "flag",
+              "flag": "arc_surge.damage",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "id": "mage.mana_well",
+          "key": "mana_well",
+          "classId": "mage",
+          "tier": 6,
+          "nameEn": "Mana Well",
+          "nameZh": "法泉",
+          "position": {
+            "row": 5,
+            "col": 6
+          },
+          "requires": [
+            "mage.overload"
+          ],
+          "effects": [
+            {
+              "kind": "stat",
+              "stat": "manaFlat",
+              "mode": "add",
+              "value": 40
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "progression": {
+    "maxLevel": 20,
+    "xpFormula": {
+      "base": 8,
+      "perLevel": 6
+    },
+    "pointsPerLevel": 1,
+    "milestoneBonus": [
+      {
+        "level": 5,
+        "points": 1
+      },
+      {
+        "level": 10,
+        "points": 1
+      },
+      {
+        "level": 15,
+        "points": 1
+      },
+      {
+        "level": 20,
+        "points": 1
+      }
+    ],
+    "levels": [
+      {
+        "level": 1,
+        "xpToNext": 14,
+        "cumulativeXp": 0,
+        "skillPoints": 0,
+        "estimatedNormalKills": 0
+      },
+      {
+        "level": 2,
+        "xpToNext": 20,
+        "cumulativeXp": 14,
+        "skillPoints": 1,
+        "estimatedNormalKills": 3
+      },
+      {
+        "level": 3,
+        "xpToNext": 26,
+        "cumulativeXp": 34,
+        "skillPoints": 2,
+        "estimatedNormalKills": 7
+      },
+      {
+        "level": 4,
+        "xpToNext": 32,
+        "cumulativeXp": 60,
+        "skillPoints": 3,
+        "estimatedNormalKills": 12
+      },
+      {
+        "level": 5,
+        "xpToNext": 38,
+        "cumulativeXp": 92,
+        "skillPoints": 5,
+        "estimatedNormalKills": 18
+      },
+      {
+        "level": 6,
+        "xpToNext": 44,
+        "cumulativeXp": 130,
+        "skillPoints": 6,
+        "estimatedNormalKills": 26
+      },
+      {
+        "level": 7,
+        "xpToNext": 50,
+        "cumulativeXp": 174,
+        "skillPoints": 7,
+        "estimatedNormalKills": 35
+      },
+      {
+        "level": 8,
+        "xpToNext": 56,
+        "cumulativeXp": 224,
+        "skillPoints": 8,
+        "estimatedNormalKills": 45
+      },
+      {
+        "level": 9,
+        "xpToNext": 62,
+        "cumulativeXp": 280,
+        "skillPoints": 9,
+        "estimatedNormalKills": 56
+      },
+      {
+        "level": 10,
+        "xpToNext": 68,
+        "cumulativeXp": 342,
+        "skillPoints": 11,
+        "estimatedNormalKills": 68
+      },
+      {
+        "level": 11,
+        "xpToNext": 74,
+        "cumulativeXp": 410,
+        "skillPoints": 12,
+        "estimatedNormalKills": 82
+      },
+      {
+        "level": 12,
+        "xpToNext": 80,
+        "cumulativeXp": 484,
+        "skillPoints": 13,
+        "estimatedNormalKills": 97
+      },
+      {
+        "level": 13,
+        "xpToNext": 86,
+        "cumulativeXp": 564,
+        "skillPoints": 14,
+        "estimatedNormalKills": 113
+      },
+      {
+        "level": 14,
+        "xpToNext": 92,
+        "cumulativeXp": 650,
+        "skillPoints": 15,
+        "estimatedNormalKills": 130
+      },
+      {
+        "level": 15,
+        "xpToNext": 98,
+        "cumulativeXp": 742,
+        "skillPoints": 17,
+        "estimatedNormalKills": 148
+      },
+      {
+        "level": 16,
+        "xpToNext": 104,
+        "cumulativeXp": 840,
+        "skillPoints": 18,
+        "estimatedNormalKills": 168
+      },
+      {
+        "level": 17,
+        "xpToNext": 110,
+        "cumulativeXp": 944,
+        "skillPoints": 19,
+        "estimatedNormalKills": 189
+      },
+      {
+        "level": 18,
+        "xpToNext": 116,
+        "cumulativeXp": 1054,
+        "skillPoints": 20,
+        "estimatedNormalKills": 211
+      },
+      {
+        "level": 19,
+        "xpToNext": 122,
+        "cumulativeXp": 1170,
+        "skillPoints": 21,
+        "estimatedNormalKills": 234
+      },
+      {
+        "level": 20,
+        "xpToNext": 128,
+        "cumulativeXp": 1292,
+        "skillPoints": 23,
+        "estimatedNormalKills": 258
+      }
+    ],
+    "totalXpToMax": 1292,
+    "skillPointsAtMax": 23
+  },
+  "kitView": {
+    "abilities": [
+      {
+        "id": "knight.cleave",
+        "cooldownTicks": 64,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 10
+          }
+        ],
+        "target": {
+          "kind": "direction",
+          "range": 116,
+          "minDot": 0.1
+        }
+      },
+      {
+        "id": "knight.hurl_axe",
+        "cooldownTicks": 45,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 8
+          }
+        ],
+        "target": {
+          "kind": "nearest",
+          "range": 340
+        }
+      },
+      {
+        "id": "knight.lunge",
+        "cooldownTicks": 130,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 12
+          }
+        ],
+        "target": {
+          "kind": "direction",
+          "range": 220
+        }
+      },
+      {
+        "id": "knight.shield_bash",
+        "cooldownTicks": 96,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 14
+          }
+        ],
+        "target": {
+          "kind": "point",
+          "range": 110
+        }
+      },
+      {
+        "id": "knight.bulwark",
+        "cooldownTicks": 300,
+        "costs": [
+          {
+            "resource": "rage",
+            "amount": 30
+          }
+        ],
+        "target": {
+          "kind": "none"
+        }
+      },
+      {
+        "id": "mage.ember_fan",
+        "cooldownTicks": 56,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 9
+          }
+        ],
+        "target": {
+          "kind": "direction",
+          "range": 130,
+          "minDot": 0.2
+        }
+      },
+      {
+        "id": "mage.ember_bolt",
+        "cooldownTicks": 45,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 8
+          }
+        ],
+        "target": {
+          "kind": "nearest",
+          "range": 420
+        }
+      },
+      {
+        "id": "mage.blink",
+        "cooldownTicks": 120,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 12
+          }
+        ],
+        "target": {
+          "kind": "direction",
+          "range": 220
+        }
+      },
+      {
+        "id": "mage.frost_nova",
+        "cooldownTicks": 100,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 14
+          }
+        ],
+        "target": {
+          "kind": "point",
+          "range": 160
+        }
+      },
+      {
+        "id": "mage.arc_surge",
+        "cooldownTicks": 110,
+        "costs": [
+          {
+            "resource": "mana",
+            "amount": 16
+          }
+        ],
+        "target": {
+          "kind": "nearest",
+          "range": 300
+        }
+      }
+    ],
+    "passiveModifierExample": {
+      "affix": "knight.iron_body",
+      "modifiers": [
+        {
+          "stat": "healthBonus",
+          "mode": "add",
+          "value": 15,
+          "source": "knight.iron_body"
+        }
+      ]
+    },
+    "note": "AbilityDefinition = kitView.abilities[i]. Passive stats feed StatBlock.add; flags are read by the game, not by kit-stats. TargetSpec kinds are none/point/direction/nearest."
+  }
+}

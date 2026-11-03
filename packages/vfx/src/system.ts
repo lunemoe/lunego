@@ -308,14 +308,23 @@ export class VfxSystem {
     pixelFx.composite(scene, out.data, null)
   }
 
+  /** Retire effects and cue deduplication when a session is loaded or restarted. */
+  clear(): void {
+    for (const effect of this.active) {
+      effect.instance.stop()
+      this.framePool.release(effect.frame)
+    }
+    this.active.length = 0
+    for (const frame of this.sceneFrames.values()) clearFrame(frame)
+    this.lastFrameTick = -1
+    this.nextOrder = 0
+  }
+
   destroy(): void {
     if (this.destroyed) {
       return
     }
-    for (const effect of this.active) {
-      effect.instance.stop()
-    }
-    this.active.length = 0
+    this.clear()
     this.framePool.clear()
     this.sceneFrames.clear()
     this.lastFrameTick = -1

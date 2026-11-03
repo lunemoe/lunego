@@ -19,6 +19,8 @@ export class InputActions implements ActionState {
   private readonly pressed = new Set<string>()
   private readonly released = new Set<string>()
   private readonly downByCode = new Map<string, string[]>()
+  private readonly heldCodes = new Set<string>()
+  private readonly externalDown = new Set<string>()
 
   constructor(map: InputMap = {}) {
     this.loadMap(map)
@@ -77,12 +79,8 @@ export class InputActions implements ActionState {
     if (actions === undefined) {
       return false
     }
-    for (const action of actions) {
-      if (!this.down.has(action)) {
-        this.down.add(action)
-        this.pressed.add(action)
-      }
-    }
+    this.heldCodes.add(code)
+    for (const action of actions) this.updateAction(action)
     return true
   }
 
@@ -91,12 +89,8 @@ export class InputActions implements ActionState {
     if (actions === undefined) {
       return false
     }
-    for (const action of actions) {
-      if (this.down.has(action)) {
-        this.down.delete(action)
-        this.released.add(action)
-      }
-    }
+    this.heldCodes.delete(code)
+    for (const action of actions) this.updateAction(action)
     return true
   }
 
@@ -107,6 +101,13 @@ export class InputActions implements ActionState {
 
   /** Sets an action from a non-keyboard device while preserving edge sets. */
   setAction(action: string, pressed: boolean): void {
+    if (pressed) this.externalDown.add(action)
+    else this.externalDown.delete(action)
+    this.updateAction(action)
+  }
+
+  private updateAction(action: string): void {
+    const pressed = this.externalDown.has(action) || (this.bindings[action] ?? []).some((code) => this.heldCodes.has(code))
     if (pressed) {
       if (!this.down.has(action)) {
         this.down.add(action)
@@ -124,6 +125,8 @@ export class InputActions implements ActionState {
       this.released.add(action)
     }
     this.down.clear()
+    this.heldCodes.clear()
+    this.externalDown.clear()
     this.pressed.clear()
   }
 

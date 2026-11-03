@@ -78,6 +78,7 @@ export interface AssetEntry {
   readonly fps?: number | null
   readonly anchor?: AssetAnchor
   readonly animations?: readonly AssetAnimation[]
+  readonly nineSlice?: { readonly border: number; readonly cols?: number }
   readonly [key: string]: unknown
 }
 

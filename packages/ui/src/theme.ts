@@ -138,7 +138,7 @@ export const UI_STYLES = `
   --lg-fx-shadow: 0 0 6px rgba(0,0,0,.6);
   --lg-panel-border: 8px;
   --lg-radius-sm: 3px;
-  --lg-bar-height: var(--lg-bar-height);
+  --lg-bar-height: 18px;
   --lg-control-min-width: 60px;
   --lg-control-padding: 6px 10px;
   --lg-tooltip-min-width: 120px;

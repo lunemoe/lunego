@@ -19,6 +19,9 @@ texture loading and tilemap layers. No game rules.
     for Cue/VFX/aim instead of guessing sprite height in game code.
   - `PixiAdapter.measure(spec, time)` resolves texture/frame dimensions; custom
     adapters may implement `measure` or rely on explicit spec width/height.
+- Sprite `x/y` locate the declared anchor. The anchor is applied once; painted
+  sprite bounds and measured bounds share the same pixel-snapped origin. Flips
+  mirror the image within that same rectangle.
 - Pointer input accepts `renderer.viewport` directly; pointer screen coords are
   CSS client coordinates and are converted through `cssScale`/offset first.
 - VFX requests use world feet coordinates; `PixiEffectRenderer.sync(frame, map,
@@ -74,3 +77,14 @@ animatedSpec(id, {
 
 Invalid durations (length mismatch, zero/negative, non-finite total) throw; specs
 without `durations` keep the original `fps` behavior.
+
+## Small viewports
+
+`fit()` uses integer CSS enlargement when the surface fits at least one virtual
+pixel per CSS pixel. Smaller containers use proportional reduction so the
+complete viewport remains visible. `viewport.cssScale` and pointer transforms
+use the actual displayed size in both cases.
+
+Directional sheets can call `animationFrames(asset, animation, { row })` to
+resolve animation-relative indices within one validated sheet row. Row bounds
+are checked; games select direction while the framework owns frame slicing.

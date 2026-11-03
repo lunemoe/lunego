@@ -85,7 +85,8 @@ export function createViewLoop(options: ViewLoopOptions): ViewLoop {
         }
   )
   const maxDelta = options.maxDeltaSeconds ?? 0.1
-  let last = scheduler.now()
+  const started = scheduler.now()
+  let last = started
   let handle = 0
   let running = true
   let pausedByVisibility = false
@@ -118,7 +119,7 @@ export function createViewLoop(options: ViewLoopOptions): ViewLoop {
     options.update({
       game: options.game,
       frame,
-      elapsed: frame.elapsed,
+      elapsed: Math.max(0, (now - started) / 1000),
       dt: ticks * frame.dt,
       alpha: options.game.alpha,
     })

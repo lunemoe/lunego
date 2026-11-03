@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>__GAME_NAME__ · LuneGo</title>
+    <title>p9 · LuneGo</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <main id="shell">
-      <div id="game"><div id="ui"></div></div>
-      <p class="hint">Arrow keys / WASD move · K save · J load</p>
+      <div class="game-layout"><div id="game"></div><div id="ui"></div></div>
+      <div id="effects"></div>
+      <p class="hint">WASD move · Hold F / Space attack · R burst · E pick up · H potion · I inventory · Esc pause · K / J save / load</p>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -189,6 +189,13 @@ async function validateEntry(
     errors.push(`LG009 ${label}.type is not recognized: ${String(typed.type)}`)
   }
   const image = await readImage(typed, index, cwd, errors)
+  if (typed.nineSlice !== undefined) {
+    const slice: unknown = typed.nineSlice
+    if (!isRecord(slice) || typeof slice['border'] !== 'number' || !Number.isInteger(slice['border']) || slice['border'] <= 0 ||
+      (image !== undefined && slice['border'] * 2 >= Math.min(image.width, image.height))) {
+      errors.push(`LG009 ${label}.nineSlice.border must leave a nonempty image center`)
+    }
+  }
   for (const key of ['frameWidth', 'frameHeight', 'columns', 'rows'] as const) {
     const value = typed[key]
     if (value !== undefined) {

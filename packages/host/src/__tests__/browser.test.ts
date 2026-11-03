@@ -105,10 +105,10 @@ describe('view loop', () => {
     })
     scheduler.advance(1000)
     expect(game.updates).toEqual([0.05])
-    expect(views).toEqual([{ tick: 1, elapsed: 1 / 60, dt: 1 / 60 }])
+    expect(views).toEqual([{ tick: 1, elapsed: 1, dt: 1 / 60 }])
     game.steps = 2
     scheduler.advance(16)
-    expect(views[1]).toEqual({ tick: 3, elapsed: 3 / 60, dt: 2 / 60 })
+    expect(views[1]).toEqual({ tick: 3, elapsed: 1.016, dt: 2 / 60 })
     visibility.setHidden(true)
     expect(game.paused).toBe(true)
     scheduler.advance(100)

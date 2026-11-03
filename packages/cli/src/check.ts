@@ -76,7 +76,7 @@ const forbidden: IForbiddenRuleType[] = [
     name: 'feature-schema-only',
     severity: 'error',
     from: { path: '^features/([^/]+)/' },
-    to: { path: '^features/(?!$1/)', pathNot: '(^|/)schema\\.ts$' },
+    to: { path: '^features/(?!$1/)', pathNot: '(^|/)schema\\.ts$|^features/_generated/' },
   },
   {
     name: 'logic-no-view',

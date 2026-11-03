@@ -1,4 +1,4 @@
-import type { HandlerContext } from '@lunego/core'
+import type { HandlerContext, StateDef } from '@lunego/core'
 import type { ItemDef, ItemInstance } from '@lunego/kit-items'
 import type { DialogueEffect } from '@lunego/kit-dialogue'
 import type { QuestReward } from '@lunego/kit-quest'
@@ -21,6 +21,12 @@ export interface RuntimeFeatureOptions {
   readonly name: string
   readonly content: RuntimeContent
   readonly hooks?: RuntimeHooks
+  /** Explicit read declarations for game policies injected through hooks. */
+  readonly hookReads?: readonly StateDef[]
+  /** World-space pickup distance. Omitted preserves unrestricted non-spatial inventories. */
+  readonly pickupRange?: number
+  /** Integer ticks between cleared encounter waves; defaults to zero. */
+  readonly waveDelayTicks?: number
 }
 
 export interface InventoryData {

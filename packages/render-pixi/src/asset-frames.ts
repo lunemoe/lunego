@@ -47,6 +47,11 @@ export interface AssetDimensions {
   readonly height?: number
 }
 
+export interface AnimationFrameOptions extends AssetDimensions {
+  /** Zero-based directional row; animation indices remain relative to that row. */
+  readonly row?: number
+}
+
 const ANCHOR_POINTS: Readonly<Record<string, AssetAnchorPoint>> = {
   'top-left': { x: 0, y: 0 },
   top: { x: 0.5, y: 0 },
@@ -173,20 +178,24 @@ export function assetAnimationDurations(
 export function animationFrames(
   asset: AssetMetadata,
   animation: AssetAnimationSpec,
-  dimensions?: AssetDimensions,
+  dimensions?: AnimationFrameOptions,
 ): SpriteFrame[] {
   const frames = assetFrames(asset, dimensions)
+  const row = dimensions?.row ?? 0
+  if (!Number.isInteger(row) || row < 0 || (asset.rows !== undefined && row >= asset.rows) ||
+    (row > 0 && asset.columns === undefined)) throw new Error(`animation ${animation.name} has invalid row ${row}`)
+  const offset = row * (asset.columns ?? 0)
   let result: SpriteFrame[]
   if (animation.columns !== undefined) {
     result = animation.columns.map((index) => {
-      const frame = frames[index]
+      const frame = frames[index + offset]
       if (frame === undefined) {
         throw new Error(`animation ${animation.name} frame ${index} is outside ${frames.length} frames`)
       }
       return frame
     })
   } else if (animation.frames !== undefined) {
-    const start = animation.from ?? 0
+    const start = (animation.from ?? 0) + offset
     if (!Number.isInteger(start) || start < 0 || !Number.isInteger(animation.frames) || animation.frames <= 0) {
       throw new Error(`animation ${animation.name} has an invalid frame range`)
     }
@@ -195,7 +204,7 @@ export function animationFrames(
       throw new Error(`animation ${animation.name} frame range exceeds ${frames.length} frames`)
     }
   } else {
-    result = frames.slice(animation.from ?? 0)
+    result = frames.slice((animation.from ?? 0) + offset)
   }
   if (animation.durations !== undefined && animation.durations.length !== result.length) {
     throw new Error(

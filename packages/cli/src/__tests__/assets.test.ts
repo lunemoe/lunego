@@ -54,6 +54,15 @@ function baseManifest(assets: AssetManifest['assets'], extra: Partial<AssetManif
 }
 
 describe('asset manifest validation', () => {
+  it('preserves validated nine-slice metadata for game UI skins', async () => {
+    const root = await tempDir()
+    await writeAsset(root, 'panel.png', 32, 32)
+    const panel = { id: 'panel', type: 'image', file: 'panel.png', nineSlice: { border: 8 } }
+    await writeManifest(root, baseManifest([panel]))
+    expect((await generateAssets(root))?.source).toContain('"nineSlice"')
+    await writeManifest(root, baseManifest([{ ...panel, nineSlice: { border: 16 } }]))
+    expect((await generateAssets(root))?.errors.join('\n')).toMatch(/nineSlice/)
+  })
   it('accepts grid and explicit frame manifests and emits metadata', async () => {
     const root = await tempDir()
     await writeAsset(root, 'hero.png', 32, 16)

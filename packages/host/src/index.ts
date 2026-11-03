@@ -1,4 +1,6 @@
 export { Game, createGame } from './game.js'
+export { createBrowserGameSaveStore } from './browser-game-save.js'
+export type { BrowserGameSaveStore } from './browser-game-save.js'
 export { createViewLoop, startViewLoop } from './view-loop.js'
 export type {
   ViewLoop,

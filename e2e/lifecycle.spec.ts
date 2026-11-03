@@ -6,7 +6,7 @@ test('disposes an externally driven Pixi adapter idempotently and detaches resiz
   await page.goto('/')
   await page.waitForFunction(() => window.__luneGame !== undefined)
   await page.evaluate(async () => {
-    const probe = await import('/src/pixi-probe.ts')
+    const probe = await import('/__test__/pixi-probe.ts')
     await probe.createProbe()
   })
   await expect(page.locator('#pixi-probe canvas')).toHaveCount(1)
@@ -15,7 +15,7 @@ test('disposes an externally driven Pixi adapter idempotently and detaches resiz
     void window.__pixiProbe
   })
   await page.evaluate(async () => {
-    const probe = await import('/src/pixi-probe.ts')
+    const probe = await import('/__test__/pixi-probe.ts')
     probe.disposeProbe()
     window.dispatchEvent(new Event('resize'))
   })

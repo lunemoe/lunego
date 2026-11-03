@@ -108,7 +108,7 @@ module.exports = {
       },
       to: {
         path: '(?:^|/)features/(?!$1/)',
-        pathNot: '(^|/)schema\\.ts$',
+        pathNot: '(^|/)schema\\.ts$|(?:^|/)features/_generated/',
       },
     },
     {

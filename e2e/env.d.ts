@@ -4,18 +4,19 @@ declare global {
     __pixiProbe?: {
       readonly connected: boolean
     }
-    __audioProbe?: {
-      readonly state: string
-      readonly voices: number
-      readonly sampleRate: number
-    }
     __luneGame?: {
+      readonly audio: { readonly state: string; readonly loaded: number; readonly voices: number; readonly musicPlaying: boolean; readonly muted: boolean }
       readonly game: {
         readonly frame: { readonly tick: number; readonly hash: string }
+        readonly paused: boolean
+        pause(): void
+        resume(): void
+        step(count?: number): unknown
         send(type: string, payload: unknown): Promise<unknown>
       }
       readonly vfx: { readonly effectCount: number }
       readonly renderer: {
+        readonly element: HTMLCanvasElement
         readonly textures: { has(id: string): boolean }
         readonly tilemap: { readonly count: number } | null
         readonly worldContainer: {
@@ -48,6 +49,10 @@ declare global {
       readonly gamepad: {
         readonly connected: boolean
       }
+      readonly save: () => void
+      readonly load: () => void
+      readonly restart: () => void
+      readonly position: () => { readonly x: number; readonly y: number } | null
       readonly pendingCommands: () => number
       readonly hud: () => {
         readonly player: number
@@ -57,6 +62,12 @@ declare global {
         readonly inventory: readonly { readonly slot: number; readonly contentId: string; readonly quantity: number }[]
         readonly quests: readonly { readonly id: string; readonly status: string; readonly progress: number }[]
         readonly enemy: number
+        readonly stage: number
+        readonly weaponPower: number
+        readonly weapon: string | null
+        readonly outcome: string
+        readonly wave: number
+        readonly kills: number
         readonly ground: number
       } | null
       readonly input: {

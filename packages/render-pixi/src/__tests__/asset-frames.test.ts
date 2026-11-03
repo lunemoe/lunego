@@ -22,6 +22,17 @@ const explicit: AssetMetadata = {
 }
 
 describe('asset manifest frames', () => {
+  it('selects a directional animation row through metadata and rejects missing rows', () => {
+    const asset = { frameWidth: 64, frameHeight: 64, columns: 30, rows: 4, frames: 120 }
+    const walk = { name: 'walk', columns: [4, 5, 6], fps: 10 }
+    expect(animationFrames(asset, walk, { row: 2 })).toEqual([
+      { x: 256, y: 128, width: 64, height: 64 },
+      { x: 320, y: 128, width: 64, height: 64 },
+      { x: 384, y: 128, width: 64, height: 64 },
+    ])
+    expect(() => animationFrames(asset, walk, { row: 4 })).toThrow(/row/)
+    expect(() => animationFrames(asset, walk, { row: -1 })).toThrow(/row/)
+  })
   it('reads explicit packed-atlas rects instead of assuming a grid', () => {
     expect(assetFrames(explicit, { width: 36, height: 12 })).toEqual([
       { x: 0, y: 0, width: 16, height: 12 },

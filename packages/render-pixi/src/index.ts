@@ -70,6 +70,7 @@ export type {
   AssetAnchor as AssetManifestAnchor,
   AssetAnchorPoint as AssetManifestAnchorPoint,
   AssetAnimationSpec,
+  AnimationFrameOptions,
   AssetDimensions,
   AssetFrameRect as AssetManifestFrame,
   AssetMetadata,

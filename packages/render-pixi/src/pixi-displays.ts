@@ -72,10 +72,13 @@ export function updateSpriteDisplay(
   sprite.height = height
   sprite.scale.x = Math.abs(sprite.scale.x) * (spec.flipX === true ? -1 : 1)
   sprite.scale.y = Math.abs(sprite.scale.y) * (spec.flipY === true ? -1 : 1)
-  sprite.anchor.set(spec.anchorX ?? 0, spec.anchorY ?? 0)
+  const anchorX = spec.anchorX ?? 0
+  const anchorY = spec.anchorY ?? 0
+  sprite.anchor.set(spec.flipX === true ? 1 - anchorX : anchorX, spec.flipY === true ? 1 - anchorY : anchorY)
+  // Snap the painted origin, then restore the pivot that Pixi applies itself.
   sprite.position.set(
-    snapped(spec.x - width * (spec.anchorX ?? 0), spec.pixelSnap ?? true),
-    snapped(spec.y - height * (spec.anchorY ?? 0), spec.pixelSnap ?? true),
+    snapped(spec.x - width * anchorX, spec.pixelSnap ?? true) + width * anchorX,
+    snapped(spec.y - height * anchorY, spec.pixelSnap ?? true) + height * anchorY,
   )
   sprite.tint = spec.tint ?? 0xffffff
   sprite.alpha = spec.alpha

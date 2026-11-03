@@ -39,6 +39,7 @@ function pointerTarget(target: BrowserInputTarget): PointerTarget {
 export function attachBrowserInput(
   input: Input,
   target?: BrowserInputTarget,
+  pointerSurface?: PointerTarget,
 ): () => void {
   const global = globalThis as GlobalTarget
   const resolved: BrowserInputTarget = target ?? {
@@ -53,7 +54,7 @@ export function attachBrowserInput(
     },
   }
   input.attach(keyboardTarget(resolved))
-  input.attachPointer(pointerTarget(resolved))
+  input.attachPointer(pointerSurface ?? pointerTarget(resolved))
   const onBlur = (): void => input.releaseAll()
   const onVisibility = (): void => {
     const doc = (globalThis as { readonly document?: { readonly hidden: boolean } }).document

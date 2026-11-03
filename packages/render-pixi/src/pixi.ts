@@ -223,10 +223,8 @@ export class PixiAdapter implements RenderAdapter<Container> {
   fit(container: HTMLElement): void {
     const availableWidth = container.clientWidth || this.virtualWidth
     const availableHeight = container.clientHeight || this.virtualHeight
-    const scale = Math.max(
-      1,
-      Math.floor(Math.min(availableWidth / this.virtualWidth, availableHeight / this.virtualHeight)),
-    )
+    const fitScale = Math.min(availableWidth / this.virtualWidth, availableHeight / this.virtualHeight)
+    const scale = fitScale >= 1 ? Math.floor(fitScale) : fitScale
     this.app.canvas.style.width = `${this.virtualWidth * scale}px`
     this.app.canvas.style.height = `${this.virtualHeight * scale}px`
   }

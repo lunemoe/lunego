@@ -60,6 +60,7 @@ export class Input {
   private readonly onPointerDown = (event: PointerEventLike): void => {
     this.markDevice('pointer')
     this.pointer.handleDown(event)
+    if (event.pointerId !== undefined) this.pointerTarget?.setPointerCapture?.(event.pointerId)
     if (this.preventDefault) {
       event.preventDefault?.()
     }

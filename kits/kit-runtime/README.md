@@ -37,3 +37,18 @@
 - world：actor position/velocity/facing/moveSpeed、combat team/health/defenses/dead、content tag、status snapshot、AI sight/target/threat/memory、ground item、encounter member/state、zone state。
 - profile：inventory/equipment snapshot、wallet、progression/quest/dialogue snapshot、item identity、fog。
 - 同一组件不会同时使用 world 和 profile scope。
+
+## 可玩性与持久化约束
+
+- `MoveIntent` 的 x/y 是方向轴；长度超过 1 时归一化，再乘 `ActorMoveSpeed.value`（世界单位/秒）。停止不会清除朝向。死亡角色停止移动和 AI；有当前区域时，移动限制在区域 bounds 内。
+- 玩家和 AI 共用能力校验：存活、敌对阵营、内容存在、目标范围/方向锥、视线和整数 tick 冷却。`AbilityCooldowns` 是 world scope，读档不会清掉冷却，同 tick 重复命令也不能绕过冷却。正资源消耗在没有资源时返回 `resource`。
+- `attackDamage` hook 用于玩家和 AI；显式返回 null 禁用本次攻击。`AbilityUsed` 供表现层反馈，所有伤害仍经 `DamageRequested` 结算。
+- 同 tick 多个致死伤害只发一次 `Died`。护盾剩余值写回，抗性传入伤害管线，闪避/格挡使用 world RNG。
+- 掉落实体拥有死亡位置的 `ActorPosition`；可用 `pickupRange` 限制拾取距离。拾取成功后立即标记已领取，防止 flush 前重复拾取。表现层按 `GroundItem` 绑定掉落，不往掉落实体附加游戏私有组件。
+- `EquipItem` 将旧装备换回同一背包格。`RuntimeItemDef.heal` + `UseItem` 提供消耗式治疗；满血、死亡或非消耗品不会消耗物品。
+- `EncounterStart` 创建的实体要到 flush 才能被查询；`spawnTick` 防止出生当 tick 被误判为空波。清完当前波后等待 `waveDelayTicks`，再进入下一波；完成最后一波只发送一次 `EncounterCompleted`。波次、过渡截止 tick、完成标记和 RNG 都随世界存档恢复。
+- `RuntimeQueries` 提供背包、装备和遭遇的 typed DTO，游戏不需要另写快照解析。
+- `RuntimeAbilityDef.areaRadius` 为以有效目标为中心的范围伤害；只命中存活敌对目标，整次施法只消耗一次冷却。
+- `SellItem` 校验 vendor、背包格和出售价格后，原子移除物品并增加金币，同 tick 不能重复出售同一格。
+- `hookReads` 显式声明注入策略要读取的额外 state/model，使成长和难度策略可以留在游戏而不绕过运行时守卫。
+- `readGroundItem` 提供掉落物的校验式 typed 解码，供表现层读取品质等元数据。

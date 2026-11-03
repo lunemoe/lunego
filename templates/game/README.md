@@ -1,16 +1,28 @@
-# __GAME_NAME__
+# p9
 
-LuneGo 的俯视角最小游戏模板：方块响应方向键移动，相机跟随，按 Y 排序绘制，支持存档/读档与回放。
-
-- 逻辑：`features/motion`
-- 表现：`src/main.ts`（PixiJS v8，480×270 虚拟分辨率，整数放大）
-- UI：`src/main.ts` 的 Settings 菜单演示 `UiMenuStack` + `ActionContext`（菜单打开时游戏输入不进命令），以及 UI scale/reduced-motion 开关。
-- 生成物：`features/**/_generated/`，由 `lunego gen` 维护，不要手改。
+此目录就是 LuneGo 的第一款正式游戏 p9，作为可玩的游戏和框架的端到端验收基准维护。
 
 ```bash
 pnpm install
-pnpm --filter @lunego/game-__GAME_NAME__ dev
-pnpm --filter @lunego/game-__GAME_NAME__ test
+pnpm --filter @lunego/game-p9 dev
 ```
 
-工作区内使用 `workspace:*`；对外发布/独立安装留给 create-lunego 阶段。
+在 http://127.0.0.1:4174 游玩。480×270 虚拟分辨率，相机、像素缩放、输入、动画、存档与 UI 都通过框架 API。
+
+- 每层三波：先锋、疾行者、半血狂暴的首领。清层后按 N 继续，保留装备、金币、等级和经验；敌人生命与伤害逐层提高。
+- 按住 F / 空格 / 鼠标左键攻击最近敌人；R / 右键释放有冷却的范围爆发；WASD / 方向键走位；E 拾取，H 喝药。
+- 装备有普通/魔法/稀有品质与随机伤害词缀。I 打开背包，点击武器替换装备；旧武器回背包。Shop 可以买药、点击背包物品出售。
+- 击杀获得经验和金币，升级增加生命与伤害并回血。死亡按 V 复活，保留装备和等级，扣除 20% 金币并重试当前层。
+- Q 查看任务，Talk 查看原有对话；Esc 打开暂停菜单/关闭菜单。菜单停止模拟，交易/换装在关闭后执行。
+- K 存档、J 读档；世界与角色同 tick 成对保存。当前 schema 14，旧版本存档不会静默混入。Settings 中 Restart 才会重置整局。
+- 手柄：左摇杆移动，A 攻击，B 拾取，X 爆发，Y 喝药。支持减少动态效果和 UI scale。
+
+逻辑与内容在 `features/adventure`，表现接入在 `src/main.ts` 与 `src/view`；通用机制在 `@lunego/kit-runtime`。生成物和 schema.lock 由 `lunego gen` 管理。测试覆盖正常操作清两层、升级与换装、掉落/出售、死亡保留成长、读档透明与浏览器交互。
+
+## 素材与发布
+
+已接入既有 p9 CC0 素材包中的 35 项生产资源：四向骑士、骷髅战士、冲锋怪、巫妖 Boss、地穴/熔岩地图、物品/技能图标、像素 UI 皮肤、8 个音效与循环音乐。`assets/manifest.json` 记录动画帧、九宫格、来源和许可；生成的 `Assets/AssetPack` 由画面、UI、音频及内容哈希共同消费。
+
+浏览器首次按键或点击后解锁声音；Settings 可静音。构建通过 Vite 的 assets publicDir 将同一套素材直接复制到产物，运行时不依赖外部工作区。来源与元数据修正见 `assets/SOURCES.md`，许可见 `assets/LICENSE.md` 与 `assets/ATTRIBUTION.md`。
+
+已清理程序绘制角色/箱子/地面、旧 `motion`/`demo` 命名、伪内容包及游戏内测试探针。框架探针仅在仓库的 `e2e/fixtures` 中保留回归覆盖。

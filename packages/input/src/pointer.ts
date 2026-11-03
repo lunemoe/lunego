@@ -8,6 +8,8 @@ export interface PointerEventLike {
 }
 
 export interface PointerTarget {
+  /** Browser surfaces keep receiving release/cancel after the pointer leaves. */
+  setPointerCapture?(pointerId: number): void
   addEventListener(
     type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel' | 'contextmenu',
     listener: (event: PointerEventLike) => void,

@@ -3,7 +3,7 @@
 面向 Web 的 2D 游戏架构框架：逻辑是确定性的状态机，表现层只读镜像并发命令。
 
 - 公开仓库：github.com/lunemoe/lunego，MIT。
-- 第一款游戏代号 p9（Hero Siege 式俯视角 ARPG）：旧实现已删除，等框架完成后从模板重建。
+- 第一款游戏 p9（Hero Siege 式俯视角像素 ARPG）就是 `templates/game`；在现有模板中修框架、完善玩法，不另建替代游戏。
 - 架构事实源：`docs/architecture.md`。规则清单：`docs/rules/`。
 
 当前仓库包含已实现并测试的内核、host、input、render-pixi、vfx、audio、ui、i18n、cli、testkit 与游戏模板；通用机制在 packages/ 与 kits/。
@@ -48,10 +48,22 @@ kits/kit-runtime/    通用 ECS/World 适配层：组件/系统/命令/查询/�
 packages/cli/        lunego gen / new game / check / assets
 packages/eslint-plugin/  LG002 / LG012 / LG013 / LG016 的可执行规则
 packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
-templates/game/      可运行俯视角模板：移动、Y 排序、相机、存档/回放
+templates/game/      第一款正式游戏 p9：真实素材、战斗、装备成长、连续地图与存读档
+art/p9/             原始 CC0 素材完整归档，不参与运行与发布
+research/poe/       p9 装备与职业设计参考，不参与运行与发布
 ```
 
 `features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；`kits/kit-runtime` 是通用 ECS/World 适配层（组件/系统/命令/查询/内容 catalog），只含机制、不含具体内容；模板通过 `lunego new game <name>` 复制到 `games/`。框架与游戏并行演进：当前需要的通用机制直接进 `kits/`，去掉玩法名词并补契约/测试；只做当前需要，不为想象需求预写接口。特效来源与 MIT 许可见 `THIRD_PARTY_NOTICES.md` 与 `packages/vfx/vendor/pixelfx/`。
+
+## 模板就是第一款游戏（定位准则）
+
+1. `templates/game` 就是 LuneGo 的第一款完整游戏 p9，包名 `@lunego/game-p9`；它不是教学 Demo、最小示例或等待替换的占位工程。
+2. 第一款游戏只在此目录维护。不得另建 `games/p9`、复制另一份实现，或以“模板完成后再重建 p9”为路线。
+3. 先修复真实游玩暴露的框架缺口并补契约与回归，再在同一个 p9 中接入素材、完善内容和玩法。不能用通过测试代替实际游玩验收。
+4. p9 的正式素材、动画/九宫格元数据与许可放在 `templates/game/assets`；`assets/manifest.json` 是唯一事实源，经 `lunego gen` 生成 `Assets/AssetPack`。角色、敌人、地图、物品、UI 和音频必须实际消费素材，禁止用程序绘制替代图冒充素材接入。
+5. 通用能力归 `packages/` / `kits/`；玩法内容和美术归 p9。历史演示名、无用内容、替代绘图器和测试探针应随替换清理；浏览器框架测试夹具放 `e2e/fixtures`，不得随 p9 发布。
+6. `lunego new game` 只用于用户明确要求的其他新游戏；复制可玩的 p9 起点不改变第一款游戏的唯一定位。
+7. 框架、p9、正式素材、需求与设计参考统一在本仓库管理，只使用根目录这一份 Git。不得恢复外层私有工作区 + 框架 submodule 的双仓库结构，不为 p9 再建 Git 仓库。完整产品目标见 `docs/p9-requirements.md`，设定见 `docs/p9-world.md`；原始素材归档在 `art/p9/`。
 
 ## 设计约束（必须遵守）
 
@@ -85,10 +97,10 @@ templates/game/      可运行俯视角模板：移动、Y 排序、相机、存
 4. 提交前跑 `pnpm check`；框架改动附带变更记录。
 5. 只通过 `schema.ts` 使用其他 feature；不调用其他 feature 的 System / Handler / 内部函数。
 6. 新增 System / Handler 文件后运行 `lunego gen`；`_generated/` 不得手改（LG014）。
-7. 新游戏用 `lunego new game <name>`，不要手抄模板。
+7. 当前 p9 直接在 `templates/game` 迭代；只有明确创建其他新游戏时才用 `lunego new game <name>`。
 
 ## 规则速查
 
-模板游戏：`templates/game`，逻辑在 `features/motion`，表现只通过 host 的 Frame/只读视图与 Command 交互。生成物、schema.lock、feature README/测试由 `lunego check` 校验。
+第一款游戏 p9：`templates/game`，逻辑在 `features/adventure`，表现只通过 host 的 Frame/只读视图与 Command 交互。生成物、schema.lock、feature README/测试由 `lunego check` 校验。
 
 LG001 DOM 隔离 · LG002 确定性 · LG003 声明 · LG004 写入路径 · LG005 写权限 · LG006 feature 边界 · LG007 逻辑/表现分离 · LG008 框架无玩法 · LG009 类型化 ID · LG010 schema 版本 · LG011 表现层规则（人工） · LG012 无杂物/无模块级可变状态/文件上限 · LG013 无临时实现 · LG014 不改生成物 · LG015 feature 契约与变更记录 · LG016 框架是游戏访问引擎/平台的唯一通道。

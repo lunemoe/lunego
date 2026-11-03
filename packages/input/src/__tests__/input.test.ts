@@ -139,6 +139,9 @@ function viewport(options: {
 
 class FakePointerTarget implements PointerTarget {
   readonly listeners = new Map<string, Array<(event: PointerEventLike) => void>>()
+  readonly captured: number[] = []
+
+  setPointerCapture(id: number): void { this.captured.push(id) }
 
   addEventListener(type: string, listener: (event: PointerEventLike) => void): void {
     const list = this.listeners.get(type) ?? []
@@ -336,10 +339,12 @@ describe('pointer input', () => {
       clientY: 6,
       button: 0,
       buttons: 1,
+      pointerId: 7,
       preventDefault: () => undefined,
     })
     expect(input.poll()).toEqual([{ type: 'test.aim', payload: { x: 5, y: 6 } }])
     expect(seen[0]).toEqual({ x: 5, y: 6, down: true })
+    expect(target.captured).toEqual([7])
     target.dispatch('pointerup', { clientX: 5, clientY: 6, button: 0 })
     expect(input.poll()).toEqual([{ type: 'test.aim', payload: { x: 5, y: 6 } }])
     expect(seen[1]?.down).toBe(false)

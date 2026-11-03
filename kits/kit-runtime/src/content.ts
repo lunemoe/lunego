@@ -60,6 +60,13 @@ export interface RuntimeAbilityDef {
   readonly ability: AbilityDefinition
   readonly damage?: { readonly amount: number; readonly type: string }
   readonly status?: string
+  /** Optional splash radius around the validated target, in world units. */
+  readonly areaRadius?: number
+}
+
+export interface RuntimeItemDef extends ItemDef {
+  /** Consumable health restoration; gameplay values come from the catalog. */
+  readonly heal?: number
 }
 
 export interface RuntimeVendorDef {
@@ -89,7 +96,7 @@ export interface RuntimeDialogueDef {
 export interface RuntimeCatalogs {
   readonly prefabs: ReadonlyMap<string, Prefab>
   readonly portals: ReadonlyMap<string, RuntimePortalDef>
-  readonly items: ReadonlyMap<string, ItemDef>
+  readonly items: ReadonlyMap<string, RuntimeItemDef>
   readonly affixes: ReadonlyMap<string, AffixDefinition>
   readonly lootTables: ReadonlyMap<string, LootTable>
   readonly statuses: ReadonlyMap<string, StatusDef>
@@ -176,6 +183,15 @@ export function registerRuntimeCatalogs(registry: ContentRegistry, catalogs: Run
 }
 
 function validate(catalogs: RuntimeCatalogs): void {
+  for (const item of catalogs.items.values()) {
+    if (item.heal !== undefined && (!Number.isFinite(item.heal) || item.heal <= 0)) throw new Error(`item ${item.id} has invalid heal`)
+  }
+  for (const def of catalogs.abilities.values()) {
+    if (!Number.isInteger(def.ability.cooldownTicks) || def.ability.cooldownTicks < 0) throw new Error(`ability ${def.id} has invalid cooldown`)
+    for (const distance of [def.areaRadius, def.ability.target?.range]) {
+      if (distance !== undefined && (!Number.isFinite(distance) || distance < 0)) throw new Error(`ability ${def.id} has invalid range`)
+    }
+  }
   for (const encounter of catalogs.encounters.values()) {
     for (const table of Object.keys(encounter.lootTables ?? {})) {
       requireId(catalogs.lootTables, table, `encounter ${encounter.id}.lootTables`)

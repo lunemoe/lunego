@@ -87,8 +87,9 @@ describe('lunego cli', () => {
     const packageJson = await readFile(join(game, 'package.json'), 'utf8')
     expect(packageJson).toContain('@lunego/game-demo')
     expect(packageJson).toContain('"lunego": "workspace:*"')
-    expect(await readFile(join(game, 'features/motion/README.md'), 'utf8')).toContain('motion')
-    expect(await readFile(join(game, 'vitest.config.ts'), 'utf8')).toContain("name: 'demo'")
+    expect(await readFile(join(game, 'README.md'), 'utf8')).toContain('@lunego/game-demo')
+    expect(await readFile(join(game, 'features/adventure/README.md'), 'utf8')).toContain('adventure')
+    expect(await readFile(join(game, 'vitest.config.ts'), 'utf8')).toContain("name: packageInfo.name")
 
     const generated = await invoke(['gen', '--check'], game)
     expect(generated.code).toBe(0)
@@ -99,8 +100,9 @@ describe('lunego cli', () => {
     const idsPath = join(game, 'features/_generated/ids.ts')
     const ids = await readFile(idsPath, 'utf8')
     expect(ids).toContain('ContentIds')
-    expect(ids).toContain('"DemoText"')
-    expect(ids).toContain('ContentId<"DemoText">')
+    const assets = await readFile(join(game, 'features/_generated/assets.ts'), 'utf8')
+    expect(assets).toContain('player_knight')
+    expect(assets).toContain('AssetPack')
     const localeRun = await run(process.execPath, [cli, 'gen', '--cwd', game], {
       cwd: game,
       env: { ...process.env, LC_ALL: 'tr_TR.UTF-8', LANG: 'tr_TR.UTF-8' },
@@ -163,12 +165,14 @@ describe('lunego cli', () => {
     const sheet = new PNG({ width: 32, height: 16 })
     sheet.data.fill(0)
     await writeFile(join(game, 'assets', 'sprites', 'a.png'), PNG.sync.write(sheet))
+    const existingManifest = JSON.parse(await readFile(join(game, 'assets/manifest.json'), 'utf8')) as { assets: readonly Record<string, unknown>[] }
     await writeFile(
       join(game, 'assets', 'manifest.json'),
       JSON.stringify({
         pack: 'test-pack',
         version: '1.2.3',
         assets: [
+          ...existingManifest.assets,
           {
             id: 'hero',
             file: 'sprites/a.png',
@@ -196,7 +200,8 @@ describe('lunego cli', () => {
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {
       assets: Array<Record<string, unknown>>
     }
-    manifest.assets[0] = { ...manifest.assets[0], frames: 99 }
+    const heroIndex = manifest.assets.findIndex((entry) => entry['id'] === 'hero')
+    manifest.assets[heroIndex] = { ...manifest.assets[heroIndex], frames: 99 }
     await writeFile(manifestPath, JSON.stringify(manifest), 'utf8')
     const broken = await invoke(['check'], game)
     expect(broken.code).toBe(1)
@@ -207,9 +212,9 @@ describe('lunego cli', () => {
     const root = await tempDir()
     expect((await invoke(['new', 'game', 'refs'], root)).code).toBe(0)
     const game = join(root, 'games', 'refs')
-    await mkdir(join(game, 'features/motion/content'), { recursive: true })
+    await mkdir(join(game, 'features/adventure/content'), { recursive: true })
     await writeFile(
-      join(game, 'features/motion/content/refs.ts'),
+      join(game, 'features/adventure/content/refs.ts'),
       "import { defineContent, defineContentType, t } from '@lunego/core'\n" +
       "export const Item = defineContentType('Item', { name: t.str })\n" +
       "export const Monster = defineContentType('Monster', { drop: t.ref(Item) })\n" +
@@ -231,7 +236,7 @@ describe('lunego cli', () => {
     await mkdir(join(game, 'kits/bad/src'), { recursive: true })
     await writeFile(
       join(game, 'kits/bad/src/index.ts'),
-      "import { MotionFeature } from '../../../features/motion/logic/index.js'\nexport const bad = MotionFeature\n",
+      "import { AdventureFeature } from '../../../features/adventure/logic/index.js'\nexport const bad = AdventureFeature\n",
       'utf8',
     )
     const result = await invoke(['check'], game)
@@ -244,7 +249,7 @@ describe('lunego cli', () => {
     expect((await invoke(['new', 'game', 'inner'], root)).code).toBe(0)
     const game = join(root, 'games', 'inner')
     await writeFile(
-      join(game, 'features/motion/logic/internal-probe.ts'),
+      join(game, 'features/adventure/logic/internal-probe.ts'),
       "import { worldInternals } from '@lunego/core/internal'\nexport const probe = worldInternals\n",
       'utf8',
     )
@@ -264,18 +269,18 @@ describe('lunego cli', () => {
       'utf8',
     )
     await writeFile(
-      join(game, 'features/motion/logic/bad-logic.ts'),
+      join(game, 'features/adventure/logic/bad-logic.ts'),
       "export const n = Math.random() + Math.sqrt(4)\nexport const dom = document.body\n",
       'utf8',
     )
     await writeFile(
-      join(game, 'features/motion/schema.ts'),
-      (await readFile(join(game, 'features/motion/schema.ts'), 'utf8')) + '\nexport const badSchemaRandom = Math.random()\n',
+      join(game, 'features/adventure/schema.ts'),
+      (await readFile(join(game, 'features/adventure/schema.ts'), 'utf8')) + '\nexport const badSchemaRandom = Math.random()\n',
       'utf8',
     )
-    await mkdir(join(game, 'features/motion/content'), { recursive: true })
+    await mkdir(join(game, 'features/adventure/content'), { recursive: true })
     await writeFile(
-      join(game, 'features/motion/content/bad.ts'),
+      join(game, 'features/adventure/content/bad.ts'),
       "export const badContentRandom = Math.random()\n",
       'utf8',
     )
@@ -331,7 +336,7 @@ describe('lunego cli', () => {
     const root = await tempDir()
     expect((await invoke(['new', 'game', 'drift'], root)).code).toBe(0)
     const game = join(root, 'games', 'drift')
-    const extra = join(game, 'features/motion/logic/systems/extra.ts')
+    const extra = join(game, 'features/adventure/logic/systems/extra.ts')
     await writeFile(
       extra,
       "import { defineSystem } from '@lunego/core'\nexport default defineSystem({ name: 'motion.extra', phase: 'post', run() {} })\n",
@@ -343,7 +348,7 @@ describe('lunego cli', () => {
     expect((await invoke(['gen'], game)).code).toBe(0)
     expect((await invoke(['gen', '--check'], game)).code).toBe(0)
 
-    const schema = join(game, 'features/motion/schema.ts')
+    const schema = join(game, 'features/adventure/schema.ts')
     await writeFile(schema, `${await readFile(schema, 'utf8')}\n// changed\n`, 'utf8')
     const drift = await invoke(['check'], game)
     expect(drift.code).toBe(1)

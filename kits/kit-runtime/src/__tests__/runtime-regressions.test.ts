@@ -56,7 +56,8 @@ describe('runtime correctness regressions', () => {
     const pending = world.send(MoveIntent, { x: 3, y: -1 })
     world.step()
     expect(await pending).toEqual({ status: 'ok' })
-    expect(world.get(player, ActorVelocity)).toEqual({ x: 3, y: -1 })
+    expect(world.get(player, ActorVelocity)?.x).toBeCloseTo(3 / Math.sqrt(10))
+    expect(world.get(player, ActorVelocity)?.y).toBeCloseTo(-1 / Math.sqrt(10))
     expect(world.get(staticEntity, ActorVelocity)).toEqual({ x: 9, y: 9 })
   })
 

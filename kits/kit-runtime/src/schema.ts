@@ -209,10 +209,15 @@ export const EncounterMember: ComponentDef<{
   { encounter: t.str, wave: t.str, spawnKey: t.str },
   { persist: 'world' },
 )
-export const EncounterStateModel: ModelDef<{ readonly snapshot: StringType }> = defineModel(
+export const EncounterStateModel: ModelDef<{
+  readonly snapshot: StringType
+  readonly completed: ScalarType<boolean, 'bool'>
+  readonly nextWaveTick: U32
+  readonly spawnTick: U32
+}> = defineModel(
   'runtime.encounter.state',
-  { snapshot: t.str },
-  { snapshot: '' },
+  { snapshot: t.str, completed: t.bool, nextWaveTick: t.u32, spawnTick: t.u32 },
+  { snapshot: '', completed: false, nextWaveTick: 0, spawnTick: 0 },
   { persist: 'world' },
 )
 export const ZoneStateModel: ModelDef<{ readonly snapshot: StringType }> = defineModel(
@@ -233,6 +238,20 @@ export const FogStateModel: ModelDef<{ readonly snapshot: StringType }> = define
   { snapshot: '' },
   { persist: 'profile' },
 )
+
+type CooldownEntry = { readonly entity: EntityType; readonly ability: StringType; readonly untilTick: U32 }
+export const AbilityCooldowns: ModelDef<{ readonly entries: ArrayType<StructType<CooldownEntry>> }> = defineModel(
+  'runtime.ability.cooldowns',
+  { entries: t.array(t.struct({ entity: t.entity, ability: t.str, untilTick: t.u32 })) },
+  { entries: [] },
+  { persist: 'world' },
+)
+
+export const AbilityUsed: EventDef<{ readonly source: EntityType; readonly target: EntityType; readonly ability: StringType }> = defineEvent('runtime.ability.used', {
+  source: t.entity, target: t.entity, ability: t.str,
+})
+
+export const EncounterCompleted: EventDef<{ readonly encounter: StringType }> = defineEvent('runtime.encounter.completed', { encounter: t.str })
 
 type DamageShape = {
   readonly target: EntityType
@@ -326,10 +345,14 @@ export const BuyItem: CommandDef<{ readonly vendor: RefType<'runtime.VendorDef'>
   'runtime.commerce.buy',
   { vendor: t.ref(VendorDefContent), slot: t.i32 },
 )
+export const SellItem: CommandDef<{ readonly vendor: RefType<'runtime.VendorDef'>; readonly slot: I32 }> = defineCommand(
+  'runtime.commerce.sell', { vendor: t.ref(VendorDefContent), slot: t.i32 },
+)
 export const EquipItem: CommandDef<{ readonly slot: I32 }> = defineCommand(
   'runtime.items.equip',
   { slot: t.i32 },
 )
+export const UseItem: CommandDef<{ readonly slot: I32 }> = defineCommand('runtime.items.use', { slot: t.i32 })
 type QuestRef = { readonly quest: RefType<'runtime.QuestDef'> }
 export const AcceptQuest: CommandDef<QuestRef> = defineCommand(
   'runtime.quest.accept',

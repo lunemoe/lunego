@@ -25,6 +25,7 @@ const METADATA_KEYS = [
   'fps',
   'anchor',
   'animations',
+  'nineSlice',
 ] as const
 
 function metadata(entry: AssetEntry): Record<string, unknown> {
@@ -102,6 +103,7 @@ function assetSource(
     '  readonly fps?: number | null',
     '  readonly anchor?: AssetAnchor',
     '  readonly animations?: readonly AssetAnimation[]',
+    '  readonly nineSlice?: { readonly border: number; readonly cols?: number }',
     '}',
     '',
     `export const Assets = ${JSON.stringify(assets, null, 2)} as const satisfies Record<AssetId, AssetDisplay>`,

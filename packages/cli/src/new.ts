@@ -201,7 +201,7 @@ const textExtensions: Readonly<Record<string, true>> = {
   '.yaml': true,
 }
 
-async function copyTemplate(source: string, target: string, name: string): Promise<void> {
+async function copyTemplate(source: string, target: string, name: string, sourcePackage: string): Promise<void> {
   const entries = await readdir(source, { withFileTypes: true })
   await mkdir(target, { recursive: true })
   for (const entry of entries) {
@@ -211,15 +211,19 @@ async function copyTemplate(source: string, target: string, name: string): Promi
     const from = join(source, entry.name)
     const to = join(target, entry.name)
     if (entry.isDirectory()) {
-      await copyTemplate(from, to, name)
+      await copyTemplate(from, to, name, sourcePackage)
       continue
     }
     if (textExtensions[extname(entry.name)] === true) {
       const content = await readFile(from, 'utf8')
+      if (entry.name === 'package.json') {
+        const packageInfo: Record<string, unknown> = JSON.parse(content)
+        packageInfo['name'] = `@lunego/game-${name}`
+        await writeFile(to, `${JSON.stringify(packageInfo, null, 2)}\n`, 'utf8')
+        continue
+      }
       await writeFile(to, content
-        .split('__GAME_NAME__')
-        .join(name)
-        .split('@lunego/game-template')
+        .split(sourcePackage)
         .join(`@lunego/game-${name}`), 'utf8')
     } else {
       await cp(from, to)
@@ -244,7 +248,8 @@ export async function newGame(cwd: string, name: string): Promise<NewGameResult>
   if (!(await pathExists(join(root, 'game')))) {
     throw new Error(`game template not found at ${join(root, 'game')}`)
   }
-  await copyTemplate(join(root, 'game'), target, name)
+  const packageInfo: { name: string } = JSON.parse(await readFile(join(root, 'game', 'package.json'), 'utf8'))
+  await copyTemplate(join(root, 'game'), target, name, packageInfo.name)
   const workspaceRoot = await findWorkspaceRoot(cwd)
   if (workspaceRoot === null || !(await workspaceHasFramework(workspaceRoot))) {
     await prepareExternalWorkspace(cwd)

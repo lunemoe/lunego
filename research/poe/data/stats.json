@@ -1,0 +1,1577 @@
+{
+  "meta": {
+    "schema": "p9.ref.poe/1",
+    "schema_doc": "research/poe/README.md",
+    "source": {
+      "dataset": "RePoE (community GGPK export)",
+      "repository": "https://github.com/repoe-fork/repoe",
+      "hosted_export": "https://repoe-fork.github.io/",
+      "upstream_commit": "aa9fa7c3",
+      "export_http_last_modified": "2026-10-19T04:15:16Z",
+      "game": "Path of Exile 1 (PC)",
+      "redistribution": "raw data (c) Grinding Gear Games; not redistributed - aggregates only",
+      "revision_note": "PoE1 3.2x-era snapshot; structure is what matters, exact numbers drift per league"
+    },
+    "method": "RePoE JSON -> self-named aggregates; no names, text or art",
+    "license": {
+      "code": "this script: project-internal",
+      "data": "raw exports (c) Grinding Gear Games, not redistributed",
+      "repository_content": "derived numeric aggregates only"
+    },
+    "slot_order": [
+      "ring",
+      "amulet",
+      "belt",
+      "helmet",
+      "body_armour",
+      "gloves",
+      "boots",
+      "shield",
+      "quiver",
+      "sword_1h",
+      "axe_2h",
+      "bow",
+      "staff",
+      "wand"
+    ],
+    "inputs": {
+      "mods.json": {
+        "sha256": "defbba31b60f9191080c78197278057f834f7f927c1a2a080a7ca6ed3ea686b5"
+      },
+      "base_items.json": {
+        "sha256": "48afb07a5f40eb51552f90c17d53186469db282a2e759dab7b46e7f9d2a0f58b"
+      },
+      "gems.json": {
+        "sha256": "422215bf3ae04beba25c1e563236774e7b3c6ccb198d5026e23e95dc63ce8af1"
+      },
+      "stats.json": {
+        "sha256": "005317f861978f29cec46fcc0fae3313a2579e86942051ad2a1388a12bb36431"
+      },
+      "default_monster_stats.json": {
+        "sha256": "c50d1410e8c2f6ff546552c967e02e2f531d496cda9674a1377f63474eb0fba5"
+      }
+    }
+  },
+  "aggregation_model": {
+    "pipeline": [
+      "base := base_type_value(ilvl) * (1 + local_quality_bonus)",
+      "flat := base + sum(flat_adds)  # local flat affixes already folded into base",
+      "increased := 1 + sum(increased_%)  # all 'increased' sources add together",
+      "more := product(1 + more_i)  # each 'more' source multiplies separately",
+      "final := floor(flat * increased * more + 0.5)"
+    ],
+    "notes": [
+      "local_* modifiers apply to the item's own base value before global modifiers",
+      "defence/weapon damage is recomputed from base each time, never compounded",
+      "resistance cap and max-resistance raises are separate stats",
+      "speed/attack-time uses 1000/rate_ms so multipliers compose as rates"
+    ],
+    "evidence": {
+      "stat_ids_total": 23346,
+      "stat_ids_local": 2117,
+      "stat_ids_aliased_by_hand": 181,
+      "stat_ids_scalable": 16155
+    }
+  },
+  "catalog": [
+    {
+      "key": "accuracy_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        50,
+        600
+      ]
+    },
+    {
+      "key": "accuracy_flat_local",
+      "unit": "flat_local",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        80,
+        780
+      ]
+    },
+    {
+      "key": "added_chaos_damage_attack",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        27,
+        69
+      ]
+    },
+    {
+      "key": "added_chaos_damage_local",
+      "unit": "flat_local",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        56,
+        280
+      ]
+    },
+    {
+      "key": "added_cold_damage_attack",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 3,
+      "observed_range": [
+        1,
+        78
+      ]
+    },
+    {
+      "key": "added_cold_damage_local",
+      "unit": "flat_local",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        348
+      ]
+    },
+    {
+      "key": "added_cold_damage_spell",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        223
+      ]
+    },
+    {
+      "key": "added_fire_damage_attack",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 3,
+      "observed_range": [
+        1,
+        87
+      ]
+    },
+    {
+      "key": "added_fire_damage_local",
+      "unit": "flat_local",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        390
+      ]
+    },
+    {
+      "key": "added_fire_damage_spell",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        246
+      ]
+    },
+    {
+      "key": "added_lightning_damage_attack",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 3,
+      "observed_range": [
+        1,
+        140
+      ]
+    },
+    {
+      "key": "added_lightning_damage_local",
+      "unit": "flat_local",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        638
+      ]
+    },
+    {
+      "key": "added_lightning_damage_spell",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        429
+      ]
+    },
+    {
+      "key": "added_physical_damage_attack",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 4,
+      "observed_range": [
+        1,
+        39
+      ]
+    },
+    {
+      "key": "added_physical_damage_local",
+      "unit": "flat_local",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        84
+      ]
+    },
+    {
+      "key": "additional_arrows",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        2
+      ]
+    },
+    {
+      "key": "all_attributes_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        35
+      ]
+    },
+    {
+      "key": "all_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        1
+      ]
+    },
+    {
+      "key": "all_max_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        2
+      ]
+    },
+    {
+      "key": "armour_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        3,
+        540
+      ]
+    },
+    {
+      "key": "armour_flat_local",
+      "unit": "flat_local",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 4,
+      "observed_range": [
+        6,
+        500
+      ]
+    },
+    {
+      "key": "armour_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        4,
+        36
+      ]
+    },
+    {
+      "key": "armour_increased_pct_local",
+      "unit": "percent_local",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        6,
+        110
+      ]
+    },
+    {
+      "key": "attack_speed_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        5,
+        16
+      ]
+    },
+    {
+      "key": "attack_speed_increased_pct_local",
+      "unit": "percent_local",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        5,
+        27
+      ]
+    },
+    {
+      "key": "attribute_requirements_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        -32,
+        -18
+      ]
+    },
+    {
+      "key": "avoid_elemental_ailment_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        16,
+        35
+      ]
+    },
+    {
+      "key": "block_pct_extra",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        8,
+        20
+      ]
+    },
+    {
+      "key": "block_pct_local",
+      "unit": "percent_local",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        40,
+        81
+      ]
+    },
+    {
+      "key": "bow_crit_chance_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        10,
+        44
+      ]
+    },
+    {
+      "key": "bow_crit_multiplier_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        8,
+        38
+      ]
+    },
+    {
+      "key": "bow_damage_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        5,
+        50
+      ]
+    },
+    {
+      "key": "cast_speed_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 5,
+      "observed_range": [
+        5,
+        49
+      ]
+    },
+    {
+      "key": "chaos_dot_multiplier_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        14,
+        75
+      ]
+    },
+    {
+      "key": "chaos_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        1
+      ]
+    },
+    {
+      "key": "chaos_max_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        3
+      ]
+    },
+    {
+      "key": "chaos_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        5,
+        35
+      ]
+    },
+    {
+      "key": "chaos_spell_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        4
+      ]
+    },
+    {
+      "key": "charge_gain_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        5,
+        40
+      ]
+    },
+    {
+      "key": "cold_damage_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix",
+        "suffix"
+      ],
+      "family_count": 4,
+      "observed_range": [
+        10,
+        200
+      ]
+    },
+    {
+      "key": "cold_dot_multiplier_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        14,
+        75
+      ]
+    },
+    {
+      "key": "cold_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        1
+      ]
+    },
+    {
+      "key": "cold_max_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        3
+      ]
+    },
+    {
+      "key": "cold_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        6,
+        48
+      ]
+    },
+    {
+      "key": "cold_spell_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        4
+      ]
+    },
+    {
+      "key": "crit_chance_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        10,
+        38
+      ]
+    },
+    {
+      "key": "crit_chance_increased_pct_local",
+      "unit": "percent_local",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        10,
+        38
+      ]
+    },
+    {
+      "key": "crit_multiplier_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        8,
+        38
+      ]
+    },
+    {
+      "key": "damage_taken_to_life_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        4,
+        15
+      ]
+    },
+    {
+      "key": "dexterity_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        8,
+        60
+      ]
+    },
+    {
+      "key": "dot_multiplier_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        7,
+        45
+      ]
+    },
+    {
+      "key": "dot_multiplier_with_attacks_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        7,
+        26
+      ]
+    },
+    {
+      "key": "elemental_attack_damage_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 4,
+      "observed_range": [
+        5,
+        100
+      ]
+    },
+    {
+      "key": "elemental_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        3,
+        18
+      ]
+    },
+    {
+      "key": "energy_shield_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        51
+      ]
+    },
+    {
+      "key": "energy_shield_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        2,
+        22
+      ]
+    },
+    {
+      "key": "evasion_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        3,
+        170
+      ]
+    },
+    {
+      "key": "evasion_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        4,
+        36
+      ]
+    },
+    {
+      "key": "fire_damage_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix",
+        "suffix"
+      ],
+      "family_count": 4,
+      "observed_range": [
+        10,
+        200
+      ]
+    },
+    {
+      "key": "fire_dot_multiplier_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        14,
+        75
+      ]
+    },
+    {
+      "key": "fire_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        1
+      ]
+    },
+    {
+      "key": "fire_max_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        3
+      ]
+    },
+    {
+      "key": "fire_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        6,
+        48
+      ]
+    },
+    {
+      "key": "fire_spell_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        4
+      ]
+    },
+    {
+      "key": "flask_charges_used_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        -20,
+        -10
+      ]
+    },
+    {
+      "key": "flask_duration_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        4,
+        33
+      ]
+    },
+    {
+      "key": "flask_effect_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        4,
+        12
+      ]
+    },
+    {
+      "key": "flask_life_recovery_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        5,
+        40
+      ]
+    },
+    {
+      "key": "flask_mana_recovery_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        5,
+        40
+      ]
+    },
+    {
+      "key": "freeze_chance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        18,
+        55
+      ]
+    },
+    {
+      "key": "ignite_chance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        18,
+        55
+      ]
+    },
+    {
+      "key": "intelligence_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        8,
+        60
+      ]
+    },
+    {
+      "key": "item_rarity_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix",
+        "suffix"
+      ],
+      "family_count": 5,
+      "observed_range": [
+        6,
+        28
+      ]
+    },
+    {
+      "key": "life_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 5,
+      "observed_range": [
+        3,
+        189
+      ]
+    },
+    {
+      "key": "life_gain_on_hit_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        2,
+        4
+      ]
+    },
+    {
+      "key": "life_gain_on_hit_local",
+      "unit": "flat_local",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        2,
+        30
+      ]
+    },
+    {
+      "key": "life_gain_on_kill_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        7,
+        110
+      ]
+    },
+    {
+      "key": "life_leech_pct_local",
+      "unit": "percent_local",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        200,
+        450
+      ]
+    },
+    {
+      "key": "life_leech_pct_physical_attack",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        20,
+        120
+      ]
+    },
+    {
+      "key": "life_regen_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        9,
+        21
+      ]
+    },
+    {
+      "key": "life_regen_per_min_pct",
+      "unit": "percent_per_minute",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 5,
+      "observed_range": [
+        60,
+        10560
+      ]
+    },
+    {
+      "key": "light_radius_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        5,
+        15
+      ]
+    },
+    {
+      "key": "lightning_damage_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix",
+        "suffix"
+      ],
+      "family_count": 4,
+      "observed_range": [
+        10,
+        200
+      ]
+    },
+    {
+      "key": "lightning_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        1
+      ]
+    },
+    {
+      "key": "lightning_max_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        3
+      ]
+    },
+    {
+      "key": "lightning_resistance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        6,
+        48
+      ]
+    },
+    {
+      "key": "lightning_spell_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        4
+      ]
+    },
+    {
+      "key": "mana_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 4,
+      "observed_range": [
+        15,
+        229
+      ]
+    },
+    {
+      "key": "mana_gain_on_kill_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        4,
+        50
+      ]
+    },
+    {
+      "key": "mana_leech_pct_local",
+      "unit": "percent_local",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        260,
+        320
+      ]
+    },
+    {
+      "key": "mana_leech_pct_physical_attack",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        20,
+        80
+      ]
+    },
+    {
+      "key": "mana_regen_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        10,
+        105
+      ]
+    },
+    {
+      "key": "minion_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        2
+      ]
+    },
+    {
+      "key": "movement_speed_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        10,
+        35
+      ]
+    },
+    {
+      "key": "physical_damage_increased_pct_local",
+      "unit": "percent_local",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        15,
+        179
+      ]
+    },
+    {
+      "key": "physical_damage_reduction_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        4,
+        8
+      ]
+    },
+    {
+      "key": "physical_dot_multiplier_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        14,
+        75
+      ]
+    },
+    {
+      "key": "physical_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        1
+      ]
+    },
+    {
+      "key": "physical_spell_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        4
+      ]
+    },
+    {
+      "key": "projectile_speed_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        10,
+        46
+      ]
+    },
+    {
+      "key": "reflect_physical_damage_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        50
+      ]
+    },
+    {
+      "key": "self_crit_multiplier_reduction_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        21,
+        60
+      ]
+    },
+    {
+      "key": "shock_chance_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        18,
+        55
+      ]
+    },
+    {
+      "key": "socketed_bow_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        2
+      ]
+    },
+    {
+      "key": "socketed_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        1
+      ]
+    },
+    {
+      "key": "socketed_melee_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        1,
+        2
+      ]
+    },
+    {
+      "key": "spell_block_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        4,
+        15
+      ]
+    },
+    {
+      "key": "spell_block_pct_extra",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        8,
+        20
+      ]
+    },
+    {
+      "key": "spell_crit_chance_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        40,
+        164
+      ]
+    },
+    {
+      "key": "spell_damage_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 3,
+      "observed_range": [
+        3,
+        200
+      ]
+    },
+    {
+      "key": "spell_gem_level_bonus",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "prefix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        1,
+        2
+      ]
+    },
+    {
+      "key": "strength_flat",
+      "unit": "integer",
+      "stack_mode": "flat",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 2,
+      "observed_range": [
+        8,
+        60
+      ]
+    },
+    {
+      "key": "stun_duration_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        11,
+        35
+      ]
+    },
+    {
+      "key": "stun_recovery_increased_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        11,
+        28
+      ]
+    },
+    {
+      "key": "stun_threshold_reduction_pct",
+      "unit": "percent",
+      "stack_mode": "increased",
+      "affix_kinds": [
+        "suffix"
+      ],
+      "family_count": 1,
+      "observed_range": [
+        5,
+        15
+      ]
+    }
+  ]
+}

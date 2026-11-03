@@ -40,3 +40,7 @@ games/demo/
 ```
 
 CLI 会从源码 checkout 的相邻 `packages/`/`kits/`，或安装布局的 `node_modules/@lunego` 发现并复制；kit 列表不硬编码，新增 `kits/kit-*` 会自动进入镜像。已有本仓库 `packages/`/`kits/` 或镜像目录时不会重复创建外部镜像。之后在该目录 `pnpm install --offline` 可解析模板的 `@lunego/*` 与 `@lunego/kit-*` workspace 依赖。
+
+`nineSlice: { border }` 会进入生成的 Assets；border 必须为正整数并为图片中心留出空间。UI 使用生成元数据配置切片，不能另写一份资源尺寸。
+
+本仓库的 `templates/game` 就是第一款正式游戏 p9，不是待替换的演示。`new game` 复制这个可玩起点时为新项目写入独立包名，不要求源游戏保留占位包名或测试探针。

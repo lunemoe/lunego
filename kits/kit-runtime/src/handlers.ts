@@ -1,4 +1,6 @@
 import { ok, reject, type HandlerContext } from '@lunego/core'
+import { performAttack } from './attack.js'
+import { spawnEncounterActors } from './encounter.js'
 import { EncounterRuntime } from '@lunego/kit-encounter'
 import { StatusSet } from '@lunego/kit-status'
 import type { RuntimeContent } from './content.js'
@@ -19,16 +21,16 @@ import {
 } from './state-bridge.js'
 import {
   ActorControllable,
+  ActorMoveSpeed,
+  ActorPosition,
   ActorFacing,
   ActorSpawned,
   ActorVelocity,
   CombatDead,
   CombatHealth,
-  CombatTeam,
-  DamageRequested,
   DialogueChanged,
   DialogueSnapshot,
-  EncounterMember,
+  EncounterPhaseChanged,
   EncounterStateModel,
   GroundItem,
   ItemPicked,
@@ -39,9 +41,9 @@ import {
   ZoneChanged,
   ZoneStateModel,
 } from './schema.js'
-import type { RuntimeHooks } from './types.js'
+import type { RuntimeFeatureOptions, RuntimeHooks } from './types.js'
 
-export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
+export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks, options: RuntimeFeatureOptions) {
   const spawn = {
     run(ctx: HandlerContext, payload: { readonly prefab: string; readonly controllable: boolean | undefined }) {
       const prefab = content.prefabs.get(payload.prefab)
@@ -56,44 +58,24 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
     run(ctx: HandlerContext, payload: { readonly x: number; readonly y: number }) {
       const velocity = ctx.write(ActorVelocity)
       const facing = ctx.write(ActorFacing)
-      for (const entity of ctx.query(ActorControllable)) {
-        velocity.x[entity] = payload.x
-        velocity.y[entity] = payload.y
-        facing.x[entity] = payload.x
-        facing.y[entity] = payload.y
+      const length = ctx.math.sqrt(payload.x * payload.x + payload.y * payload.y)
+      const divisor = Math.max(1, length)
+      for (const entity of ctx.query(ActorControllable, ActorVelocity, ActorFacing)) {
+        const dead = ctx.has(entity, CombatDead) || (ctx.has(entity, CombatHealth) && ctx.read(CombatHealth).current[entity] <= 0)
+        const speed = dead ? 0 : (ctx.has(entity, ActorMoveSpeed) ? ctx.read(ActorMoveSpeed).value[entity] : 0)
+        velocity.x[entity] = payload.x / divisor * speed
+        velocity.y[entity] = payload.y / divisor * speed
+        if (length > 0 && !dead) {
+          facing.x[entity] = payload.x / length
+          facing.y[entity] = payload.y / length
+        }
       }
       return ok()
     },
   }
   const attack = {
     run(ctx: HandlerContext, payload: { readonly target: number; readonly ability: string; readonly source: number | undefined }) {
-      if (!ctx.has(payload.target, CombatHealth) || ctx.has(payload.target, CombatDead)) {
-        return reject('invalid_target')
-      }
-      const source = payload.source ?? playerEntity(ctx)
-      if (
-        source === undefined ||
-        source <= 0 ||
-        source === payload.target ||
-        !ctx.has(source, CombatHealth) ||
-        ctx.has(source, CombatDead) ||
-        !ctx.has(source, CombatTeam) ||
-        !ctx.has(payload.target, CombatTeam)
-      ) {
-        return reject('invalid_source')
-      }
-      if (ctx.read(CombatTeam).side[source] === ctx.read(CombatTeam).side[payload.target]) {
-        return reject('invalid_target')
-      }
-      const ability = content.abilities.get(payload.ability)
-      const damage = ability?.damage ?? { amount: 0, type: 'physical' }
-      ctx.emit(DamageRequested, {
-        target: payload.target,
-        source,
-        amount: damage.amount,
-        damageType: damage.type,
-      })
-      return ok()
+      return performAttack(ctx, content, hooks, payload.source ?? playerEntity(ctx), payload.target, payload.ability)
     },
   }
   const buy = {
@@ -144,10 +126,18 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
   }
   const pickup = {
     run(ctx: HandlerContext, payload: { readonly ground: number }) {
-      if (!ctx.has(payload.ground, GroundItem)) return reject('missing_ground')
+      if (!ctx.has(payload.ground, GroundItem) || ctx.read(GroundItem).item[payload.ground] === '') return reject('missing_ground')
       const item = parseItemSnapshot(ctx.read(GroundItem).item[payload.ground])
       const player = playerEntity(ctx)
       if (player === undefined) return reject('missing_inventory')
+      if (ctx.has(player, CombatDead) || (ctx.has(player, CombatHealth) && ctx.read(CombatHealth).current[player] <= 0)) return reject('dead')
+      if (options.pickupRange !== undefined) {
+        if (!ctx.has(player, ActorPosition) || !ctx.has(payload.ground, ActorPosition)) return reject('missing_position')
+        const position = ctx.read(ActorPosition)
+        const dx = position.x[player] - position.x[payload.ground]
+        const dy = position.y[player] - position.y[payload.ground]
+        if (dx * dx + dy * dy > options.pickupRange * options.pickupRange) return reject('out_of_range')
+      }
       const inventory = readInventory(ctx, player)
       const def = content.items.get(item.contentId)
       const max = def?.maxStack ?? 1
@@ -171,8 +161,27 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
         remaining -= moved
       }
       writeInventory(ctx, player, { slots })
+      ctx.write(GroundItem).item[payload.ground] = ''
       ctx.despawn(payload.ground)
       ctx.emit(ItemPicked, { entity: player, item: item.contentId })
+      return ok()
+    },
+  }
+  const sell = {
+    run(ctx: HandlerContext, payload: { readonly vendor: string; readonly slot: number }) {
+      const vendor = content.vendors.get(payload.vendor)
+      if (vendor === undefined) return reject('unknown_vendor')
+      const player = playerEntity(ctx)
+      if (player === undefined) return reject('missing_inventory')
+      const inventory = readInventory(ctx, player)
+      const item = inventory.slots[payload.slot]
+      if (item === undefined || item === null) return reject('missing_item')
+      const price = vendor.sell[item.contentId]
+      if (price === undefined || !Number.isInteger(price) || price < 0) return reject('invalid_price')
+      const slots = [...inventory.slots]
+      slots[payload.slot] = null
+      writeInventory(ctx, player, { slots })
+      ctx.write(WalletState).gold[player] += price * item.quantity
       return ok()
     },
   }
@@ -187,13 +196,29 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
       if (def === undefined || def.slot === undefined) return reject('invalid_slot')
       if (hooks.canEquip !== undefined && !hooks.canEquip(def, def.slot)) return reject('cannot_equip')
       const equipment = readEquipment(ctx, player)
-      if (equipment.slots[def.slot] !== undefined && equipment.slots[def.slot] !== null) {
-        return reject('slot_occupied')
-      }
       const slots = [...inventory.slots]
-      slots[payload.slot] = null
+      slots[payload.slot] = equipment.slots[def.slot] ?? null
       writeInventory(ctx, player, { slots })
       writeEquipment(ctx, player, { slots: { ...equipment.slots, [def.slot]: item } })
+      return ok()
+    },
+  }
+  const useItem = {
+    run(ctx: HandlerContext, payload: { readonly slot: number }) {
+      const player = playerEntity(ctx)
+      if (player === undefined || !ctx.has(player, CombatHealth)) return reject('missing_player')
+      const health = ctx.write(CombatHealth)
+      if (ctx.has(player, CombatDead) || health.current[player] <= 0) return reject('dead')
+      const inventory = readInventory(ctx, player)
+      const item = inventory.slots[payload.slot]
+      if (item === undefined || item === null) return reject('missing_item')
+      const heal = content.items.get(item.contentId)?.heal
+      if (heal === undefined || heal <= 0) return reject('not_consumable')
+      if (health.current[player] >= health.max[player]) return reject('full_health')
+      const slots = [...inventory.slots]
+      slots[payload.slot] = item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : null
+      writeInventory(ctx, player, { slots })
+      health.current[player] = Math.min(health.max[player], health.current[player] + heal)
       return ok()
     },
   }
@@ -281,20 +306,9 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
       const runtime = new EncounterRuntime({ def, rng: ctx.rng('encounter'), spawnPoints: points })
       const result = runtime.start()
       if (!result.ok) return reject(result.reason ?? 'spawn_failed')
-      for (const spawned of result.spawned) {
-        const prefab = content.prefabs.get(spawned.contentId)
-        if (prefab === undefined) continue
-        const entity = ctx.spawn(prefab, {
-          'runtime.actor.position': { x: spawned.x, y: spawned.y },
-          'runtime.content.tag': { contentId: spawned.contentId },
-        })
-        ctx.add(entity, EncounterMember, {
-          encounter: payload.encounter,
-          wave: spawned.wave,
-          spawnKey: spawned.entity,
-        })
-        ctx.emit(ActorSpawned, { entity, prefab: spawned.contentId })
-      }
+      spawnEncounterActors(ctx, content, payload.encounter, result.spawned)
+      ctx.mutModel(EncounterStateModel).spawnTick = ctx.tick
+      ctx.emit(EncounterPhaseChanged, { encounter: payload.encounter, phase: runtime.phase ?? '' })
       ctx.mutModel(EncounterStateModel).snapshot = JSON.stringify({
         encounter: payload.encounter,
         runtime: runtime.serialize(),
@@ -315,5 +329,5 @@ export function createHandlers(content: RuntimeContent, hooks: RuntimeHooks) {
       return ok()
     },
   }
-  return { spawn, move, attack, buy, pickup, equip, acceptQuest, turnInQuest, dialogueStart, dialogueChoose, applyStatus, encounterStart, usePortal }
+  return { spawn, move, attack, buy, sell, pickup, equip, useItem, acceptQuest, turnInQuest, dialogueStart, dialogueChoose, applyStatus, encounterStart, usePortal }
 }

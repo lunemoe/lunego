@@ -106,7 +106,7 @@ export class Game {
     }
     this.modelDefs = uniqueModels(this.features)
     this.interpolated = interpolatedComponents(this.features)
-    this.worldValue = new World(this.restoreOptions())
+    this.worldValue = new World({ ...this.restoreOptions(), ...(options.seed === undefined ? {} : { seed: options.seed }) })
     this.initialSnapshot = this.worldValue.snapshot()
     const initialHash = this.worldValue.hash()
     this.hashLog.push({ tick: 0, hash: initialHash })
@@ -131,7 +131,7 @@ export class Game {
   /** Read-only frame subscription for UI/view adapters. */
   subscribeFrames(listener: (frame: GameFrame) => void): () => void {
     this.frameListeners.add(listener)
-    listener(this.frameValue)
+    this.notifyView(listener, this.frameValue)
     return () => { this.frameListeners.delete(listener) }
   }
   get paused(): boolean {
@@ -184,15 +184,12 @@ export class Game {
     }
     return this.worldValue.send(command, payload as CommandPayload<CommandDef>, options)
   }
-
   query<Args, Result>(query: QueryDef<Args, Result>, args: Args): Result {
     return this.worldValue.runQuery(query, args)
   }
-
   pause(): void {
     this.pausedValue = true
   }
-
   resume(): void {
     this.pausedValue = false
   }
@@ -316,7 +313,7 @@ export class Game {
       this.worldValue.frame,
     )
     for (const listener of this.frameListeners) {
-      listener(this.frameValue)
+      this.notifyView(listener, this.frameValue)
     }
   }
 
@@ -375,7 +372,7 @@ export class Game {
       }
       this.frameValue = frame
       for (const listener of this.frameListeners) {
-        listener(frame)
+        this.notifyView(listener, frame)
       }
       if (this.onFrame !== undefined) {
         try {
@@ -391,6 +388,9 @@ export class Game {
       this.onError?.(this.crashValue)
       return null
     }
+  }
+  private notifyView(listener: (frame: GameFrame) => void, frame: GameFrame): void {
+    try { listener(frame) } catch (error) { this.viewErrorValue = error }
   }
 }
 

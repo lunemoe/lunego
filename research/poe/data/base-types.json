@@ -1,0 +1,1083 @@
+{
+  "meta": {
+    "schema": "p9.ref.poe/1",
+    "schema_doc": "research/poe/README.md",
+    "source": {
+      "dataset": "RePoE (community GGPK export)",
+      "repository": "https://github.com/repoe-fork/repoe",
+      "hosted_export": "https://repoe-fork.github.io/",
+      "upstream_commit": "aa9fa7c3",
+      "export_http_last_modified": "2026-10-19T04:15:16Z",
+      "game": "Path of Exile 1 (PC)",
+      "redistribution": "raw data (c) Grinding Gear Games; not redistributed - aggregates only",
+      "revision_note": "PoE1 3.2x-era snapshot; structure is what matters, exact numbers drift per league"
+    },
+    "method": "RePoE JSON -> self-named aggregates; no names, text or art",
+    "license": {
+      "code": "this script: project-internal",
+      "data": "raw exports (c) Grinding Gear Games, not redistributed",
+      "repository_content": "derived numeric aggregates only"
+    },
+    "slot_order": [
+      "ring",
+      "amulet",
+      "belt",
+      "helmet",
+      "body_armour",
+      "gloves",
+      "boots",
+      "shield",
+      "quiver",
+      "sword_1h",
+      "axe_2h",
+      "bow",
+      "staff",
+      "wand"
+    ],
+    "inputs": {
+      "mods.json": {
+        "sha256": "defbba31b60f9191080c78197278057f834f7f927c1a2a080a7ca6ed3ea686b5"
+      },
+      "base_items.json": {
+        "sha256": "48afb07a5f40eb51552f90c17d53186469db282a2e759dab7b46e7f9d2a0f58b"
+      },
+      "gems.json": {
+        "sha256": "422215bf3ae04beba25c1e563236774e7b3c6ccb198d5026e23e95dc63ce8af1"
+      },
+      "stats.json": {
+        "sha256": "005317f861978f29cec46fcc0fae3313a2579e86942051ad2a1388a12bb36431"
+      },
+      "default_monster_stats.json": {
+        "sha256": "c50d1410e8c2f6ff546552c967e02e2f531d496cda9674a1377f63474eb0fba5"
+      }
+    }
+  },
+  "aggregation": "one row per item class; representative base = lowest drop level, numeric fields only",
+  "classes": [
+    {
+      "class": "amulet",
+      "base_count": 97,
+      "drop_level": {
+        "min": 1,
+        "max": 80,
+        "median": 1
+      },
+      "attribute_requirement": {
+        "min": 0,
+        "max": 0,
+        "median": 0
+      },
+      "implicit_count": {
+        "0": 44,
+        "1": 53
+      }
+    },
+    {
+      "class": "belt",
+      "base_count": 16,
+      "drop_level": {
+        "min": 1,
+        "max": 73,
+        "median": 10.0
+      },
+      "attribute_requirement": {
+        "min": 0,
+        "max": 0,
+        "median": 0.0
+      },
+      "implicit_count": {
+        "1": 16
+      }
+    },
+    {
+      "class": "body_armour",
+      "base_count": 122,
+      "drop_level": {
+        "min": 1,
+        "max": 84,
+        "median": 49.0
+      },
+      "attribute_requirement": {
+        "min": 10,
+        "max": 293,
+        "median": 96.0
+      },
+      "implicit_count": {
+        "0": 117,
+        "1": 5
+      }
+    },
+    {
+      "class": "boots",
+      "base_count": 81,
+      "drop_level": {
+        "min": 1,
+        "max": 84,
+        "median": 49
+      },
+      "attribute_requirement": {
+        "min": 0,
+        "max": 177,
+        "median": 62
+      },
+      "implicit_count": {
+        "0": 67,
+        "1": 14
+      }
+    },
+    {
+      "class": "bow",
+      "base_count": 29,
+      "drop_level": {
+        "min": 1,
+        "max": 71,
+        "median": 44
+      },
+      "attribute_requirement": {
+        "min": 14,
+        "max": 222,
+        "median": 143
+      },
+      "implicit_count": {
+        "0": 14,
+        "1": 15
+      }
+    },
+    {
+      "class": "claw",
+      "base_count": 28,
+      "drop_level": {
+        "min": 3,
+        "max": 72,
+        "median": 47.5
+      },
+      "attribute_requirement": {
+        "min": 11,
+        "max": 131,
+        "median": 87.0
+      },
+      "implicit_count": {
+        "1": 28
+      }
+    },
+    {
+      "class": "dagger",
+      "base_count": 13,
+      "drop_level": {
+        "min": 1,
+        "max": 70,
+        "median": 41
+      },
+      "attribute_requirement": {
+        "min": 9,
+        "max": 121,
+        "median": 77
+      },
+      "implicit_count": {
+        "1": 13
+      }
+    },
+    {
+      "class": "gloves",
+      "base_count": 79,
+      "drop_level": {
+        "min": 1,
+        "max": 84,
+        "median": 47
+      },
+      "attribute_requirement": {
+        "min": 5,
+        "max": 144,
+        "median": 51
+      },
+      "implicit_count": {
+        "0": 66,
+        "1": 13
+      }
+    },
+    {
+      "class": "helmet",
+      "base_count": 94,
+      "drop_level": {
+        "min": 1,
+        "max": 84,
+        "median": 50.0
+      },
+      "attribute_requirement": {
+        "min": 8,
+        "max": 224,
+        "median": 74.0
+      },
+      "implicit_count": {
+        "0": 84,
+        "1": 10
+      }
+    },
+    {
+      "class": "hiddenitem",
+      "base_count": 55,
+      "drop_level": {
+        "min": 1,
+        "max": 81,
+        "median": 3
+      },
+      "attribute_requirement": {
+        "min": 0,
+        "max": 0,
+        "median": 0
+      },
+      "implicit_count": {
+        "0": 55
+      }
+    },
+    {
+      "class": "one_hand_axe",
+      "base_count": 28,
+      "drop_level": {
+        "min": 2,
+        "max": 71,
+        "median": 46.5
+      },
+      "attribute_requirement": {
+        "min": 12,
+        "max": 167,
+        "median": 109.0
+      },
+      "implicit_count": {
+        "0": 22,
+        "1": 6
+      }
+    },
+    {
+      "class": "one_hand_mace",
+      "base_count": 28,
+      "drop_level": {
+        "min": 1,
+        "max": 70,
+        "median": 45.5
+      },
+      "attribute_requirement": {
+        "min": 14,
+        "max": 220,
+        "median": 147.5
+      },
+      "implicit_count": {
+        "1": 28
+      }
+    },
+    {
+      "class": "one_hand_sword",
+      "base_count": 31,
+      "drop_level": {
+        "min": 1,
+        "max": 70,
+        "median": 44
+      },
+      "attribute_requirement": {
+        "min": 0,
+        "max": 122,
+        "median": 81
+      },
+      "implicit_count": {
+        "0": 1,
+        "1": 30
+      }
+    },
+    {
+      "class": "quiver",
+      "base_count": 22,
+      "drop_level": {
+        "min": 4,
+        "max": 74,
+        "median": 29.5
+      },
+      "attribute_requirement": {
+        "min": 0,
+        "max": 0,
+        "median": 0.0
+      },
+      "implicit_count": {
+        "1": 22
+      }
+    },
+    {
+      "class": "ring",
+      "base_count": 47,
+      "drop_level": {
+        "min": 1,
+        "max": 80,
+        "median": 25
+      },
+      "attribute_requirement": {
+        "min": 0,
+        "max": 0,
+        "median": 0
+      },
+      "implicit_count": {
+        "0": 1,
+        "1": 46
+      }
+    },
+    {
+      "class": "rune_dagger",
+      "base_count": 18,
+      "drop_level": {
+        "min": 10,
+        "max": 70,
+        "median": 48.5
+      },
+      "attribute_requirement": {
+        "min": 26,
+        "max": 149,
+        "median": 96.0
+      },
+      "implicit_count": {
+        "1": 18
+      }
+    },
+    {
+      "class": "sceptre",
+      "base_count": 28,
+      "drop_level": {
+        "min": 1,
+        "max": 70,
+        "median": 45.5
+      },
+      "attribute_requirement": {
+        "min": 8,
+        "max": 131,
+        "median": 83.0
+      },
+      "implicit_count": {
+        "1": 28
+      }
+    },
+    {
+      "class": "shield",
+      "base_count": 97,
+      "drop_level": {
+        "min": 1,
+        "max": 70,
+        "median": 45
+      },
+      "attribute_requirement": {
+        "min": 11,
+        "max": 159,
+        "median": 76
+      },
+      "implicit_count": {
+        "0": 10,
+        "1": 87
+      }
+    },
+    {
+      "class": "staff",
+      "base_count": 16,
+      "drop_level": {
+        "min": 4,
+        "max": 70,
+        "median": 47.5
+      },
+      "attribute_requirement": {
+        "min": 12,
+        "max": 117,
+        "median": 82.0
+      },
+      "implicit_count": {
+        "1": 16
+      }
+    },
+    {
+      "class": "thrusting_one_hand_sword",
+      "base_count": 25,
+      "drop_level": {
+        "min": 3,
+        "max": 72,
+        "median": 46
+      },
+      "attribute_requirement": {
+        "min": 20,
+        "max": 220,
+        "median": 149
+      },
+      "implicit_count": {
+        "1": 25
+      }
+    },
+    {
+      "class": "two_hand_axe",
+      "base_count": 25,
+      "drop_level": {
+        "min": 4,
+        "max": 70,
+        "median": 49
+      },
+      "attribute_requirement": {
+        "min": 17,
+        "max": 158,
+        "median": 113
+      },
+      "implicit_count": {
+        "0": 17,
+        "1": 8
+      }
+    },
+    {
+      "class": "two_hand_mace",
+      "base_count": 25,
+      "drop_level": {
+        "min": 3,
+        "max": 70,
+        "median": 48
+      },
+      "attribute_requirement": {
+        "min": 20,
+        "max": 220,
+        "median": 155
+      },
+      "implicit_count": {
+        "1": 25
+      }
+    },
+    {
+      "class": "two_hand_sword",
+      "base_count": 26,
+      "drop_level": {
+        "min": 1,
+        "max": 70,
+        "median": 46.0
+      },
+      "attribute_requirement": {
+        "min": 0,
+        "max": 131,
+        "median": 84.5
+      },
+      "implicit_count": {
+        "1": 26
+      }
+    },
+    {
+      "class": "wand",
+      "base_count": 29,
+      "drop_level": {
+        "min": 1,
+        "max": 72,
+        "median": 45
+      },
+      "attribute_requirement": {
+        "min": 14,
+        "max": 245,
+        "median": 146
+      },
+      "implicit_count": {
+        "1": 29
+      }
+    },
+    {
+      "class": "warstaff",
+      "base_count": 12,
+      "drop_level": {
+        "min": 13,
+        "max": 70,
+        "median": 49.5
+      },
+      "attribute_requirement": {
+        "min": 27,
+        "max": 117,
+        "median": 85.5
+      },
+      "implicit_count": {
+        "1": 12
+      }
+    }
+  ],
+  "representative_bases": [
+    {
+      "id": "base.ring.t0",
+      "slot": "ring",
+      "class": "ring",
+      "drop_level": 2,
+      "tags": [
+        "default",
+        "ring"
+      ],
+      "requirements": null,
+      "inventory": [
+        1,
+        1
+      ],
+      "implicit_count": 1,
+      "defence": {},
+      "weapon": null,
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.amulet.t0",
+      "slot": "amulet",
+      "class": "amulet",
+      "drop_level": 1,
+      "tags": [
+        "amulet",
+        "default"
+      ],
+      "requirements": null,
+      "inventory": [
+        1,
+        1
+      ],
+      "implicit_count": 0,
+      "defence": {},
+      "weapon": null,
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.belt.t0",
+      "slot": "belt",
+      "class": "belt",
+      "drop_level": 2,
+      "tags": [
+        "belt",
+        "default"
+      ],
+      "requirements": null,
+      "inventory": [
+        2,
+        1
+      ],
+      "implicit_count": 1,
+      "defence": {},
+      "weapon": null,
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.helmet.t0",
+      "slot": "helmet",
+      "class": "helmet",
+      "drop_level": 1,
+      "tags": [
+        "armour",
+        "default",
+        "helmet",
+        "str_armour"
+      ],
+      "requirements": {
+        "dexterity": 0,
+        "intelligence": 0,
+        "level": 1,
+        "strength": 9
+      },
+      "inventory": [
+        2,
+        2
+      ],
+      "implicit_count": 0,
+      "defence": {
+        "armour": [
+          9,
+          13
+        ]
+      },
+      "weapon": null,
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.body_armour.t0",
+      "slot": "body_armour",
+      "class": "body_armour",
+      "drop_level": 1,
+      "tags": [
+        "armour",
+        "body_armour",
+        "default",
+        "str_armour"
+      ],
+      "requirements": {
+        "dexterity": 0,
+        "intelligence": 0,
+        "level": 1,
+        "strength": 12
+      },
+      "inventory": [
+        2,
+        3
+      ],
+      "implicit_count": 0,
+      "defence": {
+        "armour": [
+          19,
+          27
+        ]
+      },
+      "weapon": null,
+      "movement_speed_penalty": -3
+    },
+    {
+      "id": "base.gloves.t0",
+      "slot": "gloves",
+      "class": "gloves",
+      "drop_level": 1,
+      "tags": [
+        "armour",
+        "default",
+        "gloves",
+        "str_armour"
+      ],
+      "requirements": {
+        "dexterity": 0,
+        "intelligence": 0,
+        "level": 1,
+        "strength": 6
+      },
+      "inventory": [
+        2,
+        2
+      ],
+      "implicit_count": 0,
+      "defence": {
+        "armour": [
+          6,
+          9
+        ]
+      },
+      "weapon": null,
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.boots.t0",
+      "slot": "boots",
+      "class": "boots",
+      "drop_level": 1,
+      "tags": [
+        "armour",
+        "boots",
+        "default",
+        "str_armour"
+      ],
+      "requirements": {
+        "dexterity": 0,
+        "intelligence": 0,
+        "level": 1,
+        "strength": 8
+      },
+      "inventory": [
+        2,
+        2
+      ],
+      "implicit_count": 0,
+      "defence": {
+        "armour": [
+          6,
+          9
+        ]
+      },
+      "weapon": null,
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.shield.t0",
+      "slot": "shield",
+      "class": "shield",
+      "drop_level": 1,
+      "tags": [
+        "armour",
+        "default",
+        "shield",
+        "str_armour",
+        "str_shield"
+      ],
+      "requirements": {
+        "dexterity": 0,
+        "intelligence": 0,
+        "level": 1,
+        "strength": 11
+      },
+      "inventory": [
+        2,
+        4
+      ],
+      "implicit_count": 0,
+      "defence": {
+        "armour": [
+          9,
+          12
+        ]
+      },
+      "weapon": null,
+      "movement_speed_penalty": -3
+    },
+    {
+      "id": "base.quiver.t0",
+      "slot": "quiver",
+      "class": "quiver",
+      "drop_level": 4,
+      "tags": [
+        "default",
+        "quiver"
+      ],
+      "requirements": null,
+      "inventory": [
+        2,
+        3
+      ],
+      "implicit_count": 1,
+      "defence": {},
+      "weapon": null,
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.sword_1h.t0",
+      "slot": "sword_1h",
+      "class": "one_hand_sword",
+      "drop_level": 1,
+      "tags": [
+        "default",
+        "one_hand_weapon",
+        "onehand",
+        "sword",
+        "weapon"
+      ],
+      "requirements": {
+        "dexterity": 8,
+        "intelligence": 0,
+        "level": 1,
+        "strength": 8
+      },
+      "inventory": [
+        1,
+        3
+      ],
+      "implicit_count": 1,
+      "defence": {},
+      "weapon": {
+        "physical_damage_min": 4,
+        "physical_damage_max": 9,
+        "attack_time": 645,
+        "critical_strike_chance": 500,
+        "range": 11
+      },
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.axe_2h.t0",
+      "slot": "axe_2h",
+      "class": "two_hand_axe",
+      "drop_level": 4,
+      "tags": [
+        "axe",
+        "default",
+        "two_hand_weapon",
+        "twohand",
+        "weapon"
+      ],
+      "requirements": {
+        "dexterity": 8,
+        "intelligence": 0,
+        "level": 4,
+        "strength": 17
+      },
+      "inventory": [
+        2,
+        4
+      ],
+      "implicit_count": 0,
+      "defence": {},
+      "weapon": {
+        "physical_damage_min": 12,
+        "physical_damage_max": 20,
+        "attack_time": 769,
+        "critical_strike_chance": 500,
+        "range": 13
+      },
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.bow.t0",
+      "slot": "bow",
+      "class": "bow",
+      "drop_level": 1,
+      "tags": [
+        "bow",
+        "default",
+        "ranged",
+        "two_hand_weapon",
+        "twohand",
+        "weapon"
+      ],
+      "requirements": {
+        "dexterity": 14,
+        "intelligence": 0,
+        "level": 1,
+        "strength": 0
+      },
+      "inventory": [
+        2,
+        3
+      ],
+      "implicit_count": 0,
+      "defence": {},
+      "weapon": {
+        "physical_damage_min": 5,
+        "physical_damage_max": 13,
+        "attack_time": 714,
+        "critical_strike_chance": 500,
+        "range": 120
+      },
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.staff.t0",
+      "slot": "staff",
+      "class": "staff",
+      "drop_level": 4,
+      "tags": [
+        "default",
+        "small_staff",
+        "staff",
+        "two_hand_weapon",
+        "twohand",
+        "weapon"
+      ],
+      "requirements": {
+        "dexterity": 0,
+        "intelligence": 12,
+        "level": 4,
+        "strength": 12
+      },
+      "inventory": [
+        1,
+        4
+      ],
+      "implicit_count": 1,
+      "defence": {},
+      "weapon": {
+        "physical_damage_min": 9,
+        "physical_damage_max": 19,
+        "attack_time": 769,
+        "critical_strike_chance": 750,
+        "range": 13
+      },
+      "movement_speed_penalty": null
+    },
+    {
+      "id": "base.wand.t0",
+      "slot": "wand",
+      "class": "wand",
+      "drop_level": 1,
+      "tags": [
+        "default",
+        "one_hand_weapon",
+        "onehand",
+        "ranged",
+        "wand",
+        "wand_can_roll_caster_modifiers",
+        "weapon"
+      ],
+      "requirements": {
+        "dexterity": 0,
+        "intelligence": 14,
+        "level": 1,
+        "strength": 0
+      },
+      "inventory": [
+        1,
+        3
+      ],
+      "implicit_count": 1,
+      "defence": {},
+      "weapon": {
+        "physical_damage_min": 5,
+        "physical_damage_max": 9,
+        "attack_time": 667,
+        "critical_strike_chance": 830,
+        "range": 120
+      },
+      "movement_speed_penalty": null
+    }
+  ],
+  "scaling_fits": [
+    {
+      "class": "body_armour",
+      "property": "armour",
+      "a": 12.71,
+      "b": 0.891,
+      "r2": 0.837,
+      "n": 62
+    },
+    {
+      "class": "body_armour",
+      "property": "evasion",
+      "a": 11.336,
+      "b": 0.922,
+      "r2": 0.827,
+      "n": 62
+    },
+    {
+      "class": "body_armour",
+      "property": "energy_shield",
+      "a": 3.903,
+      "b": 0.796,
+      "r2": 0.752,
+      "n": 62
+    },
+    {
+      "class": "helmet",
+      "property": "armour",
+      "a": 6.106,
+      "b": 0.899,
+      "r2": 0.855,
+      "n": 47
+    },
+    {
+      "class": "helmet",
+      "property": "evasion",
+      "a": 4.761,
+      "b": 0.965,
+      "r2": 0.863,
+      "n": 46
+    },
+    {
+      "class": "helmet",
+      "property": "energy_shield",
+      "a": 1.895,
+      "b": 0.799,
+      "r2": 0.799,
+      "n": 48
+    },
+    {
+      "class": "gloves",
+      "property": "armour",
+      "a": 4.985,
+      "b": 0.855,
+      "r2": 0.862,
+      "n": 36
+    },
+    {
+      "class": "gloves",
+      "property": "evasion",
+      "a": 4.067,
+      "b": 0.913,
+      "r2": 0.872,
+      "n": 35
+    },
+    {
+      "class": "gloves",
+      "property": "energy_shield",
+      "a": 1.612,
+      "b": 0.746,
+      "r2": 0.778,
+      "n": 36
+    },
+    {
+      "class": "boots",
+      "property": "armour",
+      "a": 4.99,
+      "b": 0.851,
+      "r2": 0.863,
+      "n": 36
+    },
+    {
+      "class": "boots",
+      "property": "evasion",
+      "a": 4.08,
+      "b": 0.903,
+      "r2": 0.845,
+      "n": 38
+    },
+    {
+      "class": "boots",
+      "property": "energy_shield",
+      "a": 1.643,
+      "b": 0.733,
+      "r2": 0.766,
+      "n": 38
+    },
+    {
+      "class": "shield",
+      "property": "armour",
+      "a": 7.385,
+      "b": 0.841,
+      "r2": 0.744,
+      "n": 46
+    },
+    {
+      "class": "shield",
+      "property": "evasion",
+      "a": 6.452,
+      "b": 0.886,
+      "r2": 0.731,
+      "n": 45
+    },
+    {
+      "class": "shield",
+      "property": "energy_shield",
+      "a": 2.289,
+      "b": 0.721,
+      "r2": 0.805,
+      "n": 45
+    },
+    {
+      "class": "one_hand_sword",
+      "property": "physical_dps",
+      "a": 8.755,
+      "b": 0.514,
+      "r2": 0.91,
+      "n": 30
+    },
+    {
+      "class": "two_hand_axe",
+      "property": "physical_dps",
+      "a": 5.66,
+      "b": 0.768,
+      "r2": 0.965,
+      "n": 25
+    },
+    {
+      "class": "bow",
+      "property": "physical_dps",
+      "a": 8.844,
+      "b": 0.533,
+      "r2": 0.634,
+      "n": 29
+    },
+    {
+      "class": "wand",
+      "property": "physical_dps",
+      "a": 7.595,
+      "b": 0.483,
+      "r2": 0.94,
+      "n": 29
+    },
+    {
+      "class": "staff",
+      "property": "physical_dps",
+      "a": 5.695,
+      "b": 0.734,
+      "r2": 0.981,
+      "n": 16
+    },
+    {
+      "class": "body_armour_requirement",
+      "property": "attribute_requirement",
+      "a": 4.338,
+      "b": 0.816,
+      "r2": 0.786,
+      "n": 122
+    },
+    {
+      "class": "helmet_requirement",
+      "property": "attribute_requirement",
+      "a": 3.185,
+      "b": 0.823,
+      "r2": 0.811,
+      "n": 94
+    },
+    {
+      "class": "shield_requirement",
+      "property": "attribute_requirement",
+      "a": 4.86,
+      "b": 0.754,
+      "r2": 0.785,
+      "n": 97
+    }
+  ]
+}

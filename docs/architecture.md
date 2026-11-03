@@ -372,7 +372,7 @@ features/<name>/
 ```ts
 export const HealthFeature = defineFeature({
   name: 'health',
-  deps: [MotionFeature],
+  deps: [AdventureFeature],
   schema,                      // 来自 schema.ts
   registry,                    // 来自 _generated/registry.ts，由 lunego gen 生成
   invariants: [hpWithinMax],   // 开发模式下每个 tick 检查一次
@@ -608,19 +608,23 @@ test('超额伤害致死', () => {
 
 ### 12.1 仓库与日常工作流 **[已定]**
 
+模板就是第一款游戏：`templates/game` 是正式维护的 p9，包名 `@lunego/game-p9`，承担真实游戏交付与端到端框架验收；不是教学 Demo 或待替换的最小示例。直接在现有目录迭代，不创建另一份 p9。
+
+框架、p9、正式素材、需求与设计参考统一在一个 Git 仓库维护；不再使用外层私有工作区、框架 submodule 或单独的 p9 仓库。根目录 `pnpm install` 即可安装完整工作区依赖，构建不读取仓库外路径。`art/p9` 保存原始素材完整归档，`research/poe` 保存设计参考，二者不参与游戏运行与发布。
+
 ```
-lunego/                      # 公开仓库：框架、模板、文档
-lunego-workspace/            # 私有工作区
-├── pnpm-workspace.yaml      # 包含 lunego/packages/* 与 games/*
-├── lunego/                  # git submodule → 公开的 lunego 仓库
-└── games/
-    └── p9/                  # 第一款游戏
+lunego/
+├── packages/                # 通用引擎与表现层
+├── kits/                    # 通用玩法机制
+└── templates/game/          # 当前 p9，第一款正式游戏与完整验收基准
+    └── features/adventure/     # p9 内容、装配、成长和刷图规则
 ```
 
-- 第一款游戏代号 p9，目录为 `games/p9`。
-- 日常在工作区里同时开发游戏和框架。游戏通过 `workspace:*` 直接引用框架源码，改动立即生效。
-- 框架的改动在 `lunego/` 里提交（附变更记录）并推送到公开仓库；游戏的改动提交到私有仓库。
-- 框架接口变化时，同一轮提交里把游戏也一起改好。
+- 先修游戏暴露的框架问题并验证，再在同一 p9 上完善内容与像素刷图体验。
+- 通用机制放 packages/kits，具体数值、随机装备策略、层数与奖励规则留在 p9。
+- `workspace:*` 使框架与游戏接口同步；框架改动附契约、测试和变更记录。
+- `templates/game/assets/manifest.json` 是正式素材唯一事实源，角色/地图/UI/音频必须实际消费生成的 Assets/AssetPack；用真实画面、声音和游玩流程验收，清除已替换的旧演示与占位资源。
+- `lunego new game <name>` 只在明确创建其他独立游戏时复制可玩的 p9 起点；不把它用于替换当前 p9。
 
 ### 12.2 生长规则：框架与游戏并行演进
 
@@ -689,7 +693,7 @@ lunego-workspace/            # 私有工作区
 | 004 | ECS 与数据 | 列式存储；自研 schema DSL；内容用 TS 编写、编译成 JSON；Model 草稿写入 | 已定 |
 | 005 | 模块化 | Feature 竖切 + `schema.ts` 契约 + 写权限归属 | 已定 |
 | 006 | 防腐 | 规则由机器强制（tsconfig、lint、注册期、运行时、测试、本地检查） | 已定 |
-| 007 | 开源与仓库 | MIT；公开仓库 + 私有工作区（submodule） | 已定 |
+| 007 | 开源与仓库 | MIT；框架、第一款游戏 p9、素材与设计参考统一在一个仓库，无 submodule | 已定 |
 | 008 | 头号原则 | 要么不做，要做就按终局形状做；远期需求只留零成本约束 | 提议 |
 | 009 | 确定性 | 逐位确定、可回放；数学函数走软件实现，为跨引擎一致留路 | 提议 |
 | 010 | 运行位置 | 先在主线程运行，协议边界不变，可切换到 Worker | 提议 |

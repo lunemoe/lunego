@@ -9,7 +9,7 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: 'pnpm --filter @lunego/game-template dev',
+    command: 'pnpm --filter @lunego/game-p9 exec vite --config ../../e2e/vite.config.ts',
     url: 'http://127.0.0.1:4174',
     reuseExistingServer: false,
     timeout: 60_000,

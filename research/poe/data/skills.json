@@ -1,0 +1,1644 @@
+{
+  "meta": {
+    "schema": "p9.ref.poe/1",
+    "schema_doc": "research/poe/README.md",
+    "source": {
+      "dataset": "RePoE (community GGPK export)",
+      "repository": "https://github.com/repoe-fork/repoe",
+      "hosted_export": "https://repoe-fork.github.io/",
+      "upstream_commit": "aa9fa7c3",
+      "export_http_last_modified": "2026-10-19T04:15:16Z",
+      "game": "Path of Exile 1 (PC)",
+      "redistribution": "raw data (c) Grinding Gear Games; not redistributed - aggregates only",
+      "revision_note": "PoE1 3.2x-era snapshot; structure is what matters, exact numbers drift per league"
+    },
+    "method": "RePoE JSON -> self-named aggregates; no names, text or art",
+    "license": {
+      "code": "this script: project-internal",
+      "data": "raw exports (c) Grinding Gear Games, not redistributed",
+      "repository_content": "derived numeric aggregates only"
+    },
+    "slot_order": [
+      "ring",
+      "amulet",
+      "belt",
+      "helmet",
+      "body_armour",
+      "gloves",
+      "boots",
+      "shield",
+      "quiver",
+      "sword_1h",
+      "axe_2h",
+      "bow",
+      "staff",
+      "wand"
+    ],
+    "inputs": {
+      "mods.json": {
+        "sha256": "defbba31b60f9191080c78197278057f834f7f927c1a2a080a7ca6ed3ea686b5"
+      },
+      "base_items.json": {
+        "sha256": "48afb07a5f40eb51552f90c17d53186469db282a2e759dab7b46e7f9d2a0f58b"
+      },
+      "gems.json": {
+        "sha256": "422215bf3ae04beba25c1e563236774e7b3c6ccb198d5026e23e95dc63ce8af1"
+      },
+      "stats.json": {
+        "sha256": "005317f861978f29cec46fcc0fae3313a2579e86942051ad2a1388a12bb36431"
+      },
+      "default_monster_stats.json": {
+        "sha256": "c50d1410e8c2f6ff546552c967e02e2f531d496cda9674a1377f63474eb0fba5"
+      }
+    }
+  },
+  "counts": {
+    "gems_total": 1458,
+    "active": 1010,
+    "support": 448,
+    "color": {
+      "b": 466,
+      "g": 386,
+      "r": 327,
+      "w": 279
+    },
+    "max_level": {
+      "1": 21,
+      "10": 154,
+      "20": 773,
+      "3": 52,
+      "4": 3,
+      "40": 16,
+      "5": 35,
+      "6": 5,
+      "None": 399
+    }
+  },
+  "active_types": [
+    {
+      "type": "Spell",
+      "gem_count": 632
+    },
+    {
+      "type": "Area",
+      "gem_count": 607
+    },
+    {
+      "type": "Triggerable",
+      "gem_count": 545
+    },
+    {
+      "type": "Totemable",
+      "gem_count": 487
+    },
+    {
+      "type": "Mineable",
+      "gem_count": 413
+    },
+    {
+      "type": "Duration",
+      "gem_count": 411
+    },
+    {
+      "type": "Cooldown",
+      "gem_count": 391
+    },
+    {
+      "type": "Trappable",
+      "gem_count": 380
+    },
+    {
+      "type": "Damage",
+      "gem_count": 374
+    },
+    {
+      "type": "AreaSpell",
+      "gem_count": 350
+    },
+    {
+      "type": "Attack",
+      "gem_count": 334
+    },
+    {
+      "type": "Multicastable",
+      "gem_count": 271
+    },
+    {
+      "type": "Projectile",
+      "gem_count": 208
+    },
+    {
+      "type": "CanRapidFire",
+      "gem_count": 179
+    },
+    {
+      "type": "Fire",
+      "gem_count": 172
+    },
+    {
+      "type": "Melee",
+      "gem_count": 171
+    },
+    {
+      "type": "Triggered",
+      "gem_count": 166
+    },
+    {
+      "type": "Physical",
+      "gem_count": 161
+    },
+    {
+      "type": "Lightning",
+      "gem_count": 154
+    },
+    {
+      "type": "RangedAttack",
+      "gem_count": 153
+    },
+    {
+      "type": "ProjectilesFromUser",
+      "gem_count": 152
+    },
+    {
+      "type": "InbuiltTrigger",
+      "gem_count": 145
+    },
+    {
+      "type": "Buff",
+      "gem_count": 142
+    },
+    {
+      "type": "Minion",
+      "gem_count": 131
+    },
+    {
+      "type": "Cold",
+      "gem_count": 117
+    },
+    {
+      "type": "Multistrikeable",
+      "gem_count": 116
+    },
+    {
+      "type": "CreatesMinion",
+      "gem_count": 113
+    },
+    {
+      "type": "InstantShiftAttackForLeftMouse",
+      "gem_count": 98
+    },
+    {
+      "type": "MinionsCanExplode",
+      "gem_count": 98
+    },
+    {
+      "type": "Instant",
+      "gem_count": 95
+    },
+    {
+      "type": "InstantNoRepeatWhenHeld",
+      "gem_count": 95
+    },
+    {
+      "type": "Chaos",
+      "gem_count": 82
+    },
+    {
+      "type": "DamageOverTime",
+      "gem_count": 80
+    },
+    {
+      "type": "MeleeSingleTarget",
+      "gem_count": 69
+    },
+    {
+      "type": "HasReservation",
+      "gem_count": 64
+    },
+    {
+      "type": "Cascadable",
+      "gem_count": 63
+    },
+    {
+      "type": "Vaal",
+      "gem_count": 59
+    },
+    {
+      "type": "Movement",
+      "gem_count": 56
+    },
+    {
+      "type": "MirageArcherCanUse",
+      "gem_count": 54
+    },
+    {
+      "type": "Channel",
+      "gem_count": 52
+    },
+    {
+      "type": "Nova",
+      "gem_count": 50
+    },
+    {
+      "type": "TotemCastsAlone",
+      "gem_count": 48
+    },
+    {
+      "type": "Aura",
+      "gem_count": 48
+    },
+    {
+      "type": "ProjectileSpeed",
+      "gem_count": 43
+    },
+    {
+      "type": "Slam",
+      "gem_count": 40
+    },
+    {
+      "type": "Travel",
+      "gem_count": 37
+    },
+    {
+      "type": "Trapped",
+      "gem_count": 36
+    },
+    {
+      "type": "Rain",
+      "gem_count": 32
+    },
+    {
+      "type": "ProjectilesNotFromUser",
+      "gem_count": 32
+    },
+    {
+      "type": "SummonsTotem",
+      "gem_count": 30
+    },
+    {
+      "type": "AppliesCurse",
+      "gem_count": 26
+    },
+    {
+      "type": "Chains",
+      "gem_count": 25
+    },
+    {
+      "type": "DegenOnlySpellDamage",
+      "gem_count": 24
+    },
+    {
+      "type": "ProjectileNumber",
+      "gem_count": 24
+    },
+    {
+      "type": "Orb",
+      "gem_count": 23
+    },
+    {
+      "type": "ChillingArea",
+      "gem_count": 22
+    },
+    {
+      "type": "CanHaveBlessing",
+      "gem_count": 21
+    },
+    {
+      "type": "MinionsAreUndamagable",
+      "gem_count": 21
+    },
+    {
+      "type": "Hex",
+      "gem_count": 20
+    },
+    {
+      "type": "SkillGrantedBySupport",
+      "gem_count": 20
+    },
+    {
+      "type": "CausesBurning",
+      "gem_count": 18
+    },
+    {
+      "type": "WandAttack",
+      "gem_count": 17
+    },
+    {
+      "type": "Golem",
+      "gem_count": 17
+    },
+    {
+      "type": "NeverExertable",
+      "gem_count": 15
+    },
+    {
+      "type": "ThresholdJewelArea",
+      "gem_count": 14
+    },
+    {
+      "type": "Warcry",
+      "gem_count": 14
+    },
+    {
+      "type": "Mark",
+      "gem_count": 12
+    },
+    {
+      "type": "Blink",
+      "gem_count": 12
+    },
+    {
+      "type": "AuraAffectsEnemies",
+      "gem_count": 11
+    },
+    {
+      "type": "RandomElement",
+      "gem_count": 10
+    },
+    {
+      "type": "SingleMainProjectile",
+      "gem_count": 10
+    },
+    {
+      "type": "Arcane",
+      "gem_count": 10
+    },
+    {
+      "type": "AttackInPlaceIsDefault",
+      "gem_count": 10
+    },
+    {
+      "type": "TotemsAreBallistae",
+      "gem_count": 10
+    },
+    {
+      "type": "Brand",
+      "gem_count": 10
+    },
+    {
+      "type": "TotemCastsWhenNotDetached",
+      "gem_count": 9
+    },
+    {
+      "type": "ElementalStatus",
+      "gem_count": 9
+    },
+    {
+      "type": "RequiresShield",
+      "gem_count": 8
+    },
+    {
+      "type": "CreatesSentinelMinion",
+      "gem_count": 8
+    },
+    {
+      "type": "RemoteMined",
+      "gem_count": 8
+    },
+    {
+      "type": "Offering",
+      "gem_count": 8
+    },
+    {
+      "type": "ProjectileSpiral",
+      "gem_count": 7
+    },
+    {
+      "type": "Guard",
+      "gem_count": 7
+    },
+    {
+      "type": "AuraNotOnCaster",
+      "gem_count": 7
+    },
+    {
+      "type": "NonHitChill",
+      "gem_count": 7
+    },
+    {
+      "type": "ProjectilesNumberModifiersNotApplied",
+      "gem_count": 7
+    },
+    {
+      "type": "Retaliation",
+      "gem_count": 7
+    },
+    {
+      "type": "DualWieldOnly",
+      "gem_count": 6
+    },
+    {
+      "type": "CreatesCorpse",
+      "gem_count": 6
+    },
+    {
+      "type": "Herald",
+      "gem_count": 6
+    },
+    {
+      "type": "Link",
+      "gem_count": 6
+    },
+    {
+      "type": "Aegis",
+      "gem_count": 5
+    },
+    {
+      "type": "DestroysCorpse",
+      "gem_count": 4
+    },
+    {
+      "type": "ThresholdJewelChaining",
+      "gem_count": 4
+    },
+    {
+      "type": "Steel",
+      "gem_count": 4
+    },
+    {
+      "type": "FixedCastTime",
+      "gem_count": 4
+    },
+    {
+      "type": "Stance",
+      "gem_count": 4
+    },
+    {
+      "type": "RequiresOffHandNotWeapon",
+      "gem_count": 4
+    },
+    {
+      "type": "Pact",
+      "gem_count": 4
+    },
+    {
+      "type": "AuraDuration",
+      "gem_count": 3
+    },
+    {
+      "type": "Banner",
+      "gem_count": 3
+    },
+    {
+      "type": "DualWieldRequiresDifferentTypes",
+      "gem_count": 2
+    },
+    {
+      "type": "DynamicCooldown",
+      "gem_count": 2
+    },
+    {
+      "type": "ProjectileCannotReturn",
+      "gem_count": 2
+    },
+    {
+      "type": "ZeroReservation",
+      "gem_count": 2
+    },
+    {
+      "type": "InnateTrauma",
+      "gem_count": 2
+    },
+    {
+      "type": "NonRepeatable",
+      "gem_count": 2
+    },
+    {
+      "type": "OtherThingUsesSkill",
+      "gem_count": 2
+    },
+    {
+      "type": "OwnerCannotUse",
+      "gem_count": 2
+    },
+    {
+      "type": "RequiresStaff",
+      "gem_count": 1
+    },
+    {
+      "type": "ThresholdJewelDuration",
+      "gem_count": 1
+    },
+    {
+      "type": "NoVolley",
+      "gem_count": 1
+    },
+    {
+      "type": "KillNoDamageModifiers",
+      "gem_count": 1
+    },
+    {
+      "type": "GainsIntensity",
+      "gem_count": 1
+    },
+    {
+      "type": "LateConsumeCooldown",
+      "gem_count": 1
+    },
+    {
+      "type": "MinionsPersistWhenSkillRemoved",
+      "gem_count": 1
+    },
+    {
+      "type": "DisallowTriggerSupports",
+      "gem_count": 1
+    }
+  ],
+  "gem_tags": [
+    {
+      "tag": "grants_active_skill",
+      "gem_count": 766
+    },
+    {
+      "tag": "area",
+      "gem_count": 534
+    },
+    {
+      "tag": "spell",
+      "gem_count": 508
+    },
+    {
+      "tag": "intelligence",
+      "gem_count": 399
+    },
+    {
+      "tag": "attack",
+      "gem_count": 354
+    },
+    {
+      "tag": "duration",
+      "gem_count": 351
+    },
+    {
+      "tag": "dexterity",
+      "gem_count": 349
+    },
+    {
+      "tag": "support",
+      "gem_count": 313
+    },
+    {
+      "tag": "strength",
+      "gem_count": 289
+    },
+    {
+      "tag": "projectile",
+      "gem_count": 229
+    },
+    {
+      "tag": "melee",
+      "gem_count": 202
+    },
+    {
+      "tag": "physical",
+      "gem_count": 167
+    },
+    {
+      "tag": "fire",
+      "gem_count": 158
+    },
+    {
+      "tag": "lightning",
+      "gem_count": 150
+    },
+    {
+      "tag": "cold",
+      "gem_count": 110
+    },
+    {
+      "tag": "minion",
+      "gem_count": 95
+    },
+    {
+      "tag": "bow",
+      "gem_count": 91
+    },
+    {
+      "tag": "chaos",
+      "gem_count": 81
+    },
+    {
+      "tag": "strike",
+      "gem_count": 75
+    },
+    {
+      "tag": "vaal",
+      "gem_count": 61
+    },
+    {
+      "tag": "low_max_level",
+      "gem_count": 61
+    },
+    {
+      "tag": "critical",
+      "gem_count": 59
+    },
+    {
+      "tag": "aura",
+      "gem_count": 59
+    },
+    {
+      "tag": "exceptional",
+      "gem_count": 59
+    },
+    {
+      "tag": "channelling",
+      "gem_count": 55
+    },
+    {
+      "tag": "movement",
+      "gem_count": 53
+    },
+    {
+      "tag": "trigger",
+      "gem_count": 46
+    },
+    {
+      "tag": "trap",
+      "gem_count": 46
+    },
+    {
+      "tag": "slam",
+      "gem_count": 45
+    },
+    {
+      "tag": "totem",
+      "gem_count": 39
+    },
+    {
+      "tag": "awakened",
+      "gem_count": 38
+    },
+    {
+      "tag": "travel",
+      "gem_count": 34
+    },
+    {
+      "tag": "hex",
+      "gem_count": 30
+    },
+    {
+      "tag": "chaining",
+      "gem_count": 29
+    },
+    {
+      "tag": "nova",
+      "gem_count": 28
+    },
+    {
+      "tag": "curse",
+      "gem_count": 21
+    },
+    {
+      "tag": "orb",
+      "gem_count": 20
+    },
+    {
+      "tag": "mine",
+      "gem_count": 19
+    },
+    {
+      "tag": "warcry",
+      "gem_count": 17
+    },
+    {
+      "tag": "golem",
+      "gem_count": 17
+    }
+  ],
+  "level_curve_medians": {
+    "damage_multiplier": [
+      {
+        "gem_level": 1,
+        "median": 4525.0
+      },
+      {
+        "gem_level": 5,
+        "median": 6370.0
+      },
+      {
+        "gem_level": 10,
+        "median": 9210.0
+      },
+      {
+        "gem_level": 15,
+        "median": 12615.0
+      },
+      {
+        "gem_level": 20,
+        "median": 15750.0
+      }
+    ],
+    "damage_multiplier_n": 190,
+    "mana": [
+      {
+        "gem_level": 1,
+        "median": 8.0
+      },
+      {
+        "gem_level": 5,
+        "median": 10.0
+      },
+      {
+        "gem_level": 10,
+        "median": 12.0
+      },
+      {
+        "gem_level": 15,
+        "median": 15.0
+      },
+      {
+        "gem_level": 20,
+        "median": 18.0
+      }
+    ],
+    "mana_n": 472,
+    "required_level": [
+      {
+        "gem_level": 1,
+        "median": 12
+      },
+      {
+        "gem_level": 5,
+        "median": 27
+      },
+      {
+        "gem_level": 10,
+        "median": 44
+      },
+      {
+        "gem_level": 15,
+        "median": 59
+      },
+      {
+        "gem_level": 20,
+        "median": 70
+      }
+    ],
+    "required_level_n": 635,
+    "attribute_requirement": [
+      {
+        "gem_level": 1,
+        "median": 33
+      },
+      {
+        "gem_level": 5,
+        "median": 58
+      },
+      {
+        "gem_level": 10,
+        "median": 75
+      },
+      {
+        "gem_level": 15,
+        "median": 117
+      },
+      {
+        "gem_level": 20,
+        "median": 155
+      }
+    ],
+    "attribute_requirement_n": 635
+  },
+  "damage_growth_ratio_lvl1_to_20": {
+    "median": 2.357,
+    "p25": 0.838,
+    "p75": 3.946,
+    "n": 190
+  },
+  "mana_growth_ratio_lvl1_to_20": {
+    "median": 1.833,
+    "n": 472
+  },
+  "cast_time_ms": {
+    "0": 98,
+    "100": 2,
+    "1000": 514,
+    "1150": 5,
+    "120": 2,
+    "1200": 2,
+    "1400": 7,
+    "150": 5,
+    "160": 2,
+    "170": 1,
+    "180": 5,
+    "200": 10,
+    "210": 1,
+    "220": 5,
+    "230": 1,
+    "250": 8,
+    "2500": 2,
+    "260": 1,
+    "2600": 2,
+    "280": 1,
+    "300": 11,
+    "400": 7,
+    "4000": 4,
+    "50": 24,
+    "500": 79,
+    "600": 64,
+    "650": 8,
+    "700": 36,
+    "750": 36,
+    "800": 52,
+    "850": 11,
+    "900": 4,
+    "None": 448
+  },
+  "weapon_restriction_buckets": {
+    "0": 1141,
+    "1": 113,
+    "2": 8,
+    "3": 13,
+    "4": 1,
+    "5": 47,
+    "6": 5,
+    "7": 9,
+    "8": 21,
+    "9": 3,
+    "10": 6,
+    "11": 15,
+    "13": 37,
+    "14": 21,
+    "15": 2,
+    "16": 16
+  },
+  "archetypes": [
+    {
+      "id": "skill.melee_strike.01",
+      "role": "melee_strike",
+      "color": "g",
+      "cast_time_ms": 1000,
+      "max_level": 20,
+      "types": [
+        "Attack",
+        "Melee",
+        "MeleeSingleTarget",
+        "Multistrikeable",
+        "Physical"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          4380,
+          7790,
+          13580,
+          21150,
+          30960
+        ],
+        "mana": [
+          7,
+          8,
+          9,
+          11,
+          13
+        ],
+        "required_level": [
+          1,
+          11,
+          32,
+          52,
+          70
+        ],
+        "primary_stat": null
+      }
+    },
+    {
+      "id": "skill.melee_slam_area.01",
+      "role": "melee_slam_area",
+      "color": "r",
+      "cast_time_ms": 1000,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "Attack",
+        "Melee",
+        "Multistrikeable",
+        "Slam",
+        "Totemable"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          3230,
+          6180,
+          11140,
+          17530,
+          25690
+        ],
+        "mana": [
+          6,
+          7,
+          8,
+          10,
+          11
+        ],
+        "required_level": [
+          1,
+          11,
+          32,
+          52,
+          70
+        ],
+        "primary_stat": null
+      }
+    },
+    {
+      "id": "skill.projectile_spell.01",
+      "role": "projectile_spell",
+      "color": "b",
+      "cast_time_ms": 750,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "AreaSpell",
+        "CanRapidFire",
+        "Damage",
+        "Fire",
+        "Mineable",
+        "Multicastable",
+        "Projectile",
+        "ProjectilesFromUser",
+        "Spell",
+        "Totemable",
+        "Trappable",
+        "Triggerable"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          5,
+          7,
+          11,
+          16,
+          20
+        ],
+        "required_level": [
+          1,
+          11,
+          32,
+          52,
+          70
+        ],
+        "primary_stat": {
+          "raw": [
+            9,
+            28,
+            157,
+            611,
+            1883
+          ],
+          "ratio_to_lvl1": [
+            1.0,
+            3.11,
+            17.44,
+            67.89,
+            209.22
+          ]
+        }
+      }
+    },
+    {
+      "id": "skill.projectile_attack.01",
+      "role": "projectile_attack",
+      "color": "g",
+      "cast_time_ms": 1000,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "Attack",
+        "Cold",
+        "Fire",
+        "Lightning",
+        "Mineable",
+        "MirageArcherCanUse",
+        "Projectile",
+        "ProjectilesFromUser",
+        "RangedAttack",
+        "Totemable",
+        "Trappable",
+        "Triggerable",
+        "WandAttack"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "required_level": [
+          12,
+          27,
+          44,
+          59,
+          70
+        ],
+        "primary_stat": {
+          "raw": [
+            8,
+            21,
+            53,
+            110,
+            182
+          ],
+          "ratio_to_lvl1": [
+            1.0,
+            2.62,
+            6.62,
+            13.75,
+            22.75
+          ]
+        }
+      }
+    },
+    {
+      "id": "skill.aura.01",
+      "role": "aura",
+      "color": "g",
+      "cast_time_ms": 0,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "AreaSpell",
+        "Aura",
+        "Buff",
+        "CanHaveBlessing",
+        "Cooldown",
+        "HasReservation",
+        "Instant",
+        "InstantNoRepeatWhenHeld",
+        "InstantShiftAttackForLeftMouse",
+        "Spell",
+        "TotemCastsAlone",
+        "Totemable"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "required_level": [
+          24,
+          36,
+          50,
+          60,
+          70
+        ],
+        "primary_stat": null
+      }
+    },
+    {
+      "id": "skill.curse.01",
+      "role": "curse",
+      "color": "g",
+      "cast_time_ms": 500,
+      "max_level": 20,
+      "types": [
+        "AppliesCurse",
+        "Area",
+        "AreaSpell",
+        "CanRapidFire",
+        "Cascadable",
+        "Duration",
+        "Hex",
+        "InstantNoRepeatWhenHeld",
+        "InstantShiftAttackForLeftMouse",
+        "Mineable",
+        "Multicastable",
+        "Spell",
+        "Totemable",
+        "Trappable",
+        "Triggerable"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          16,
+          21,
+          26,
+          29,
+          33
+        ],
+        "required_level": [
+          24,
+          36,
+          50,
+          60,
+          70
+        ],
+        "primary_stat": null
+      }
+    },
+    {
+      "id": "skill.minion.01",
+      "role": "minion",
+      "color": "b",
+      "cast_time_ms": 850,
+      "max_level": 20,
+      "types": [
+        "CanRapidFire",
+        "CreatesMinion",
+        "Mineable",
+        "Minion",
+        "MinionsCanExplode",
+        "Multicastable",
+        "Spell",
+        "Totemable",
+        "Trappable",
+        "Triggerable"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          9,
+          13,
+          18,
+          23,
+          28
+        ],
+        "required_level": [
+          1,
+          11,
+          32,
+          52,
+          70
+        ],
+        "primary_stat": null
+      }
+    },
+    {
+      "id": "skill.movement.01",
+      "role": "movement",
+      "color": "r",
+      "cast_time_ms": 1400,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "Attack",
+        "Melee",
+        "Movement",
+        "Slam",
+        "Totemable",
+        "Travel"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          3640,
+          6340,
+          10410,
+          15380,
+          21450
+        ],
+        "mana": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "required_level": [
+          10,
+          25,
+          42,
+          57,
+          70
+        ],
+        "primary_stat": null
+      }
+    },
+    {
+      "id": "skill.duration_dot.01",
+      "role": "duration_dot",
+      "color": "b",
+      "cast_time_ms": 800,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "AreaSpell",
+        "Cascadable",
+        "ChillingArea",
+        "Cold",
+        "Cooldown",
+        "Damage",
+        "DamageOverTime",
+        "Duration",
+        "Mineable",
+        "Multicastable",
+        "Spell",
+        "Totemable",
+        "Trappable",
+        "Triggerable"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          11,
+          16,
+          21,
+          25,
+          28
+        ],
+        "required_level": [
+          16,
+          31,
+          46,
+          60,
+          70
+        ],
+        "primary_stat": {
+          "raw": [
+            34,
+            117,
+            348,
+            896,
+            1717
+          ],
+          "ratio_to_lvl1": [
+            1.0,
+            3.44,
+            10.24,
+            26.35,
+            50.5
+          ]
+        }
+      }
+    },
+    {
+      "id": "skill.totem.01",
+      "role": "totem",
+      "color": "b",
+      "cast_time_ms": 750,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "AreaSpell",
+        "Damage",
+        "Fire",
+        "Mineable",
+        "Multicastable",
+        "Projectile",
+        "ProjectileSpiral",
+        "ProjectilesFromUser",
+        "Spell",
+        "Totemable",
+        "Trappable",
+        "Vaal"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "required_level": [
+          1,
+          11,
+          32,
+          52,
+          70
+        ],
+        "primary_stat": {
+          "raw": [
+            9,
+            27,
+            132,
+            459,
+            1276
+          ],
+          "ratio_to_lvl1": [
+            1.0,
+            3.0,
+            14.67,
+            51.0,
+            141.78
+          ]
+        }
+      }
+    },
+    {
+      "id": "skill.trap.01",
+      "role": "trap",
+      "color": "b",
+      "cast_time_ms": 700,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "AreaSpell",
+        "CanRapidFire",
+        "Cold",
+        "Damage",
+        "Mineable",
+        "Multicastable",
+        "Nova",
+        "Spell",
+        "Totemable",
+        "Trappable",
+        "Triggerable"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          8,
+          12,
+          16,
+          20,
+          23
+        ],
+        "required_level": [
+          12,
+          27,
+          44,
+          59,
+          70
+        ],
+        "primary_stat": {
+          "raw": [
+            25,
+            81,
+            247,
+            602,
+            1122
+          ],
+          "ratio_to_lvl1": [
+            1.0,
+            3.24,
+            9.88,
+            24.08,
+            44.88
+          ]
+        }
+      }
+    },
+    {
+      "id": "skill.guard.01",
+      "role": "guard",
+      "color": "r",
+      "cast_time_ms": 0,
+      "max_level": 20,
+      "types": [
+        "Buff",
+        "Cooldown",
+        "Duration",
+        "Guard",
+        "Instant",
+        "Spell",
+        "Totemable",
+        "Triggerable"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          21,
+          25,
+          29,
+          33,
+          36
+        ],
+        "required_level": [
+          34,
+          42,
+          52,
+          62,
+          70
+        ],
+        "primary_stat": null
+      }
+    },
+    {
+      "id": "skill.warcry.01",
+      "role": "warcry",
+      "color": "r",
+      "cast_time_ms": 800,
+      "max_level": 20,
+      "types": [
+        "Area",
+        "Buff",
+        "Cooldown",
+        "Duration",
+        "Warcry"
+      ],
+      "damage_effectiveness_pct": null,
+      "curves": {
+        "damage_multiplier_per_10k": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mana": [
+          13,
+          15,
+          16,
+          18,
+          19
+        ],
+        "required_level": [
+          10,
+          25,
+          42,
+          57,
+          70
+        ],
+        "primary_stat": null
+      }
+    }
+  ],
+  "support_rules": {
+    "support_gem_count": 448,
+    "supports_with_excluded_types": 186,
+    "allowed_type_combinations": [
+      {
+        "allowed_type_count": 2,
+        "allowed_types": [
+          "Attack",
+          "Damage"
+        ],
+        "gem_count": 67
+      },
+      {
+        "allowed_type_count": 0,
+        "allowed_types": [],
+        "gem_count": 43
+      },
+      {
+        "allowed_type_count": 3,
+        "allowed_types": [
+          "AND",
+          "Spell",
+          "Triggerable"
+        ],
+        "gem_count": 28
+      },
+      {
+        "allowed_type_count": 1,
+        "allowed_types": [
+          "Melee"
+        ],
+        "gem_count": 21
+      },
+      {
+        "allowed_type_count": 3,
+        "allowed_types": [
+          "AND",
+          "AppliesCurse",
+          "Hex"
+        ],
+        "gem_count": 17
+      },
+      {
+        "allowed_type_count": 1,
+        "allowed_types": [
+          "Attack"
+        ],
+        "gem_count": 16
+      },
+      {
+        "allowed_type_count": 1,
+        "allowed_types": [
+          "Vaal"
+        ],
+        "gem_count": 15
+      },
+      {
+        "allowed_type_count": 1,
+        "allowed_types": [
+          "CreatesMinion"
+        ],
+        "gem_count": 14
+      },
+      {
+        "allowed_type_count": 2,
+        "allowed_types": [
+          "Attack",
+          "ThresholdJewelRangedAttack"
+        ],
+        "gem_count": 9
+      },
+      {
+        "allowed_type_count": 1,
+        "allowed_types": [
+          "MeleeSingleTarget"
+        ],
+        "gem_count": 9
+      },
+      {
+        "allowed_type_count": 3,
+        "allowed_types": [
+          "Attack",
+          "Damage",
+          "DamageOverTime"
+        ],
+        "gem_count": 8
+      },
+      {
+        "allowed_type_count": 3,
+        "allowed_types": [
+          "Projectile",
+          "ThresholdJewelProjectile",
+          "ThresholdJewelRangedAttack"
+        ],
+        "gem_count": 7
+      }
+    ],
+    "cost_multiplier": {
+      "0": 2,
+      "50": 2,
+      "65": 2,
+      "80": 1,
+      "90": 1,
+      "95": 1,
+      "100": 146,
+      "110": 17,
+      "115": 4,
+      "120": 71,
+      "130": 89,
+      "140": 62,
+      "150": 19,
+      "160": 4,
+      "200": 15,
+      "250": 2,
+      "300": 2,
+      "1000": 2
+    },
+    "quality_stat_count_distribution": {
+      "0": 598,
+      "1": 858,
+      "2": 2
+    }
+  }
+}

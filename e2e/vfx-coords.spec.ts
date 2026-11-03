@@ -4,7 +4,7 @@ test('places a known world point at the render-pixi screen pixel at zoom 1 and 2
   await page.goto('/')
   await page.waitForFunction(() => window.__luneGame !== undefined)
   const result = await page.evaluate(async () => {
-    const probe = await import('/src/vfx-probe.ts')
+    const probe = await import('/__test__/vfx-probe.ts')
     return {
       one: probe.probe(100, 80, 10.4, 7.7, 1),
       two: probe.probe(100, 80, 10.4, 7.7, 2),
@@ -26,7 +26,7 @@ test('Pixi effect layer keeps known world pixels aligned at zoom 1 and 2', async
   ] as const) {
     const probe = await page.evaluate(
       async ({ zoom }) => {
-        const module = await import('/src/vfx-probe.ts')
+        const module = await import('/__test__/vfx-probe.ts')
         return module.probePixi(100, 80, 10.4, 7.7, zoom)
       },
       { zoom },
@@ -39,7 +39,7 @@ test('Pixi effect layer keeps known world pixels aligned at zoom 1 and 2', async
     const index = (expectedY * png.width + expectedX) * 4
     expect(png.data[index + 3]).toBeGreaterThan(0)
     await page.evaluate(async () => {
-      const module = await import('/src/vfx-probe.ts')
+      const module = await import('/__test__/vfx-probe.ts')
       module.cleanupPixi()
     })
   }
@@ -52,7 +52,7 @@ test('ground and front Pixi surfaces contain only their own layer', async ({ pag
   for (const layer of ['ground', 'front'] as const) {
     const probe = await page.evaluate(
       async ({ layer }) => {
-        const module = await import('/src/vfx-probe.ts')
+        const module = await import('/__test__/vfx-probe.ts')
         return module.probePixiLayer(layer)
       },
       { layer },
@@ -65,7 +65,7 @@ test('ground and front Pixi surfaces contain only their own layer', async ({ pag
     expect(png.data[own]).toBeGreaterThan(0)
     expect(png.data[other]).toBe(0)
     await page.evaluate(async () => {
-      const module = await import('/src/vfx-probe.ts')
+      const module = await import('/__test__/vfx-probe.ts')
       module.cleanupPixi()
     })
   }
@@ -86,14 +86,14 @@ test('renderer viewport, pointer and vfx agree on one world-to-screen pixel', as
     if (renderer === undefined || input === undefined) {
       throw new Error('missing game hooks')
     }
-    const module = await import('/src/vfx-probe.ts')
+    const module = await import('/__test__/vfx-probe.ts')
     return cases.map((entry) => {
       renderer.setCamera(entry.camera[0], entry.camera[1])
       renderer.setZoom(entry.zoom)
       const viewport = renderer.viewport
       const screen = viewport.worldToScreen(entry.world[0], entry.world[1])
       input.pointer.setViewport(viewport)
-      window.dispatchEvent(
+      renderer.element.dispatchEvent(
         new PointerEvent('pointermove', {
           clientX: viewport.offsetX + screen.x * viewport.cssScale,
           clientY: viewport.offsetY + screen.y * viewport.cssScale,

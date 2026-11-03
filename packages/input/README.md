@@ -22,3 +22,6 @@
 - 手柄边沿由 `GamepadSource.poll()` 产生，按按钮索引/轴索引确定。
 - 无 `Math.random`/`Date`/DOM 直接依赖；默认 browser adapter 是唯一平台入口。
 - 无 UI 文案/glyph/资源路径；设备类型只以枚举记录。
+
+- 同一 action 的多个按键和手柄来源独立计数；松开一个来源不会取消其他仍按住的来源。
+- `attachBrowserInput(input, target?, pointerSurface?)` 可以把指针限定在 renderer.element，避免点击 UI 触发攻击；支持 pointer capture 的表面会继续接收移出画布后的释放事件。

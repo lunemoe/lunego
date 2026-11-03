@@ -1,25 +1,40 @@
 import { expect, test } from '@playwright/test'
 
-test('renders the reactive UI panel and modal over the game', async ({ page }, testInfo) => {
+test('renders the p9 HUD, pauses menus and resumes movement after closing', async ({ page }, testInfo) => {
   await page.goto('/')
   await page.waitForFunction(() => (window.__luneGame?.game.frame.tick ?? 0) >= 2)
-  await expect(page.locator('.lg-panel__title')).toHaveText('Status')
-  await expect(page.locator('.lg-bar__label')).toHaveText('40/40')
-  await testInfo.attach('ui-panel.png', {
-    body: await page.screenshot(),
-    contentType: 'image/png',
-  })
+  await expect(page.locator('.lg-panel__title')).toHaveText('P9')
+  await expect(page.locator('.lg-bar--hp .lg-bar__label')).toHaveText('40/40')
+  expect((await page.locator('.lg-bar--hp').boundingBox())?.height).toBeGreaterThan(8)
+  await testInfo.attach('p9-hud.png', { body: await page.screenshot(), contentType: 'image/png' })
 
-  await page.getByRole('button', { name: 'Help' }).click()
+  await page.keyboard.down('ArrowRight')
+  await page.waitForTimeout(100)
+  await page.getByRole('button', { name: 'Help', exact: true }).click()
   const controls = page.locator('.lg-modal__backdrop').filter({ hasText: 'Controls' })
   await expect(controls).toHaveCSS('display', 'grid')
-  await expect(controls.locator('.lg-modal__title')).toHaveText('Controls')
+  const before = await page.evaluate(() => window.__luneGame?.game.frame.tick)
+  await page.waitForTimeout(200)
+  expect(await page.evaluate(() => window.__luneGame?.game.frame.tick)).toBe(before)
+  await page.keyboard.up('ArrowRight')
   await page.keyboard.press('Escape')
   await expect(controls).toHaveCSS('display', 'none')
+  const first = await page.evaluate(() => window.__luneGame?.position())
+  await page.waitForTimeout(180)
+  expect(await page.evaluate(() => window.__luneGame?.position())).toEqual(first)
+  await page.keyboard.down('ArrowRight')
+  await page.waitForTimeout(180)
+  await page.keyboard.up('ArrowRight')
+  expect((await page.evaluate(() => window.__luneGame?.position()))?.x).toBeGreaterThan(first?.x ?? 0)
+})
 
-  const before = await page.evaluate(() => window.__luneGame?.game.frame.tick ?? 0)
-  await page.getByRole('button', { name: 'Move right' }).click()
-  await page.waitForTimeout(250)
-  const after = await page.evaluate(() => window.__luneGame?.game.frame.tick ?? 0)
-  expect(after).toBeGreaterThan(before)
+test('fits the complete arena and controls on a narrow screen', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 })
+  await page.goto('/')
+  await page.waitForFunction(() => (window.__luneGame?.game.frame.tick ?? 0) >= 2)
+  const arena = await page.locator('#game').boundingBox()
+  const canvas = await page.locator('canvas:not(.vfx-layer)').boundingBox()
+  expect(canvas?.width).toBeLessThanOrEqual(arena?.width ?? 0)
+  expect(canvas?.height).toBeLessThanOrEqual(arena?.height ?? 0)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
 })
