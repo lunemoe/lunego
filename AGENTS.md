@@ -21,7 +21,7 @@ pnpm check
 ## 目录
 
 ```
-docs/rules/          LG001–LG016 规则页
+docs/rules/          LG001–LG017 规则页
 packages/core/       schema DSL、ECS、World、调度、命令、RNG、哈希、存档
 packages/host/       主线程运行时、时间模型、view loop、浏览器存档/按键/调试入口、存档/读档、回放、崩溃报告、profile store（账号/角色槽/设置）、leaderboard
 packages/input/      设备 → 动作 → 游戏命令；ActionContext、设置/键位、KeybindCapture、键盘/指针/手柄 browser adapter（指针接受 renderer.viewport）
@@ -51,6 +51,7 @@ packages/testkit/    testWorld、确定性双跑、读档透明、黄金回放
 templates/game/      第一款正式游戏 p9：真实素材、战斗、装备成长、连续地图与存读档
 art/p9/             原始 CC0 素材完整归档，不参与运行与发布
 research/poe/       p9 装备与职业设计参考，不参与运行与发布
+tools/quality/      结构检查、受信契约、故障注入、隔离验收与 Git 门禁
 ```
 
 `features/*`、`kits/*`、`games/*` 是游戏与 kit 的位置；`kits/kit-runtime` 是通用 ECS/World 适配层（组件/系统/命令/查询/内容 catalog），只含机制、不含具体内容；模板通过 `lunego new game <name>` 复制到 `games/`。框架与游戏并行演进：当前需要的通用机制直接进 `kits/`，去掉玩法名词并补契约/测试；只做当前需要，不为想象需求预写接口。特效来源与 MIT 许可见 `THIRD_PARTY_NOTICES.md` 与 `packages/vfx/vendor/pixelfx/`。
@@ -94,13 +95,14 @@ research/poe/       p9 装备与职业设计参考，不参与运行与发布
 1. 读本文件、`docs/architecture.md` 的相关章节、目标 feature 的 README 契约。
 2. 先写场景测试，再实现；不要在临时接口上叠代码。
 3. 改契约时同步改 schema、测试、README 与 changeset。
-4. 提交前跑 `pnpm check`；框架改动附带变更记录。
+4. 修改后跑 `pnpm check`，提交前跑 `pnpm verify`；Git hook 校验精确暂存 tree 和所有推送提交。框架改动附带变更记录。
 5. 只通过 `schema.ts` 使用其他 feature；不调用其他 feature 的 System / Handler / 内部函数。
 6. 新增 System / Handler 文件后运行 `lunego gen`；`_generated/` 不得手改（LG014）。
 7. 当前 p9 直接在 `templates/game` 迭代；只有明确创建其他新游戏时才用 `lunego new game <name>`。
+8. 普通实现任务不得修改/跳过已安装质量门禁或自行推进受信策略与契约基线。只有用户明确要求审核、更新技术门禁时，才可执行 `--review-policy` / `--reviewed`；流程见 `tools/quality/README.md`。不能通过同时修改旧测试来放行实现回归。
 
 ## 规则速查
 
 第一款游戏 p9：`templates/game`，逻辑在 `features/adventure`，表现只通过 host 的 Frame/只读视图与 Command 交互。生成物、schema.lock、feature README/测试由 `lunego check` 校验。
 
-LG001 DOM 隔离 · LG002 确定性 · LG003 声明 · LG004 写入路径 · LG005 写权限 · LG006 feature 边界 · LG007 逻辑/表现分离 · LG008 框架无玩法 · LG009 类型化 ID · LG010 schema 版本 · LG011 表现层规则（人工） · LG012 无杂物/无模块级可变状态/文件上限 · LG013 无临时实现 · LG014 不改生成物 · LG015 feature 契约与变更记录 · LG016 框架是游戏访问引擎/平台的唯一通道。
+LG001 DOM 隔离 · LG002 确定性 · LG003 声明 · LG004 写入路径 · LG005 写权限 · LG006 feature 边界 · LG007 逻辑/表现分离 · LG008 框架无玩法 · LG009 类型化 ID · LG010 schema 版本 · LG011 表现层规则（人工） · LG012 无杂物/无模块级可变状态/文件上限 · LG013 无临时实现 · LG014 不改生成物 · LG015 feature 契约与变更记录 · LG016 框架是游戏访问引擎/平台的唯一通道 · LG017 技术质量与回归门禁。

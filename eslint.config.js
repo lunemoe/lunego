@@ -106,6 +106,11 @@ export default tseslint.config(
     },
   },
   {
+    files: ['packages/core/src/**/*.ts', 'kits/*/src/**/*.ts'],
+    ignores: ['**/__tests__/**', '**/*.test.ts'],
+    rules: { '@lunego/lg002': 'error' },
+  },
+  {
     files: ['packages/core/src/world.ts'],
     rules: {
       // The context host is an object literal of getters/arrows that closes

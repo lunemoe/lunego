@@ -32,9 +32,12 @@ pnpm depcruise
 pnpm gen:check
 pnpm test:e2e
 pnpm check
+pnpm verify
 ```
 
 `pnpm test` 运行 Vitest workspace；`pnpm test:e2e` 运行 Playwright 浏览器冒烟；`pnpm check` 串联 build、typecheck、lint、depcruise、test、gen:check 与 e2e。具体测试数量随批次变化，以上述命令结果为准。
+
+`pnpm verify` 使用独立安装与构建验证精确 Git tree，保护旧测试契约，并要求关键测试能发现故障。首次安装依赖时自动安装本地提交/推送门禁；检查策略快照与签名证据位于 Git 元数据中。规则与基线升级须单独审核，详见 [`tools/quality/README.md`](tools/quality/README.md)。
 
 第一款游戏 p9 直接在 `templates/game` 开发和验收；其定位准则见 `AGENTS.md`。`lunego new game <name>` 仅用于明确创建其他游戏时复制这个可玩起点。框架与游戏并行演进：当前真实需要的通用机制进入 `kits/` 或 `packages/`，去掉玩法名词并补齐契约、测试与变更记录。
 

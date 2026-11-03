@@ -4,8 +4,8 @@ import type {
   World,
   WorldSnapshot,
 } from '@lunego/core'
-import type { ReplayCheckpoint, ReplayData, ReplayHash, ReplayReport } from './types.js'
-import { verifyReplay } from './replay.js'
+import type { ReplayCheckpoint, ReplayData, ReplayHash } from './types.js'
+export { verifyReplay as replayGame } from './replay.js'
 
 export interface ExportReplayInput {
   readonly world: World
@@ -41,8 +41,4 @@ export interface ReplayGameOptions {
   readonly dt: number
   readonly dev: boolean
   readonly content?: ContentRegistry
-}
-
-export function replayGame(data: ReplayData, options: ReplayGameOptions): ReplayReport {
-  return verifyReplay(data, options)
 }

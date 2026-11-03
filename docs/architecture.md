@@ -509,6 +509,7 @@ export const combatCues = defineCueMap({
 4. **运行时（开发模式）**：访问未声明的状态就抛错，tick 之外写入就抛错，每个 tick 检查不变量。
 5. **测试期**：确定性双跑、黄金回放、读档透明。
 6. **提交前本地检查**：`pnpm check` 覆盖以上全部，外加生成文件是否最新的检查。本项目不使用 GitHub Actions/CI。
+7. **受信回归门禁**：`pnpm verify` 在独立安装/构建的精确 Git tree 上验证当前测试，并在测试或夹具变更时复跑旧契约；关键路径必须检测既定故障，玩家验收只能通过输入/UI。Git hooks 使用工作区外的策略快照和精确 tree 的签名证据，策略与基线不随普通代码变更自动放宽。见 `tools/quality/README.md`。
 
 ### 10.2 规则表
 
@@ -532,6 +533,7 @@ export const combatCues = defineCueMap({
 | LG014 | 不手改 `_generated/` 下的文件 | `lunego gen --check` |
 | LG015 | 新 feature 必须有 README 契约和测试；修改框架必须附变更记录 | check + 提交前本地检查 |
 | LG016 | 游戏代码只能通过 `@lunego/*` 访问引擎/平台；禁止本地坐标/时间/资源/输入/音频/存储/渲染/UI/相机/锚点实现 | ESLint 分区 + dependency-cruiser + tsconfig + `lunego check` + 审查 |
+| LG017 | 禁止空转实现、较大复制、无行为转发、不可达模块和测试旁路；旧契约、故障敏感度、真实输入验收与精确 tree 证据 | AST/模块图 + 隔离验证 + 受信基线 + 故障注入 + 本地 Git hooks |
 
 ### 10.3 生成器与模板
 

@@ -1,5 +1,5 @@
 import type { RenderLayer, SpriteFrame, TextureId } from './types.js'
-import { cameraWorldTransform } from './viewport.js'
+export { cameraWorldTransform as cameraTransform } from './viewport.js'
 
 export interface TilesetDefinition {
   readonly texture: TextureId
@@ -152,14 +152,6 @@ export interface TilemapViewport {
   readonly height: number
 }
 
-export function cameraTransform(
-  cameraX: number,
-  cameraY: number,
-  zoom: number,
-  pixelSnap = true,
-): TilemapTransform {
-  return cameraWorldTransform(cameraX, cameraY, zoom, pixelSnap)
-}
 
 /**
  * Owns tile handles so replacing a map destroys exactly the old instances and

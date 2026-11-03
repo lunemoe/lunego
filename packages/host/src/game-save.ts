@@ -10,9 +10,9 @@ import type {
   ReplayCheckpoint,
   ReplayData,
   ReplayHash,
-  ReplayReport,
 } from './types.js'
-import { exportGameReplay, replayGame, type ReplayGameOptions } from './game-replay.js'
+import { exportGameReplay } from './game-replay.js'
+export { replayGame as replaySession } from './game-replay.js'
 
 export function snapshotGame(world: World): GameSave {
   return {
@@ -55,8 +55,4 @@ export function exportSession(
   checkpoints: readonly ReplayCheckpoint[],
 ): ReplayData {
   return exportGameReplay({ world, initialSnapshot, schemaVersion, hashes, checkpoints })
-}
-
-export function replaySession(data: ReplayData, options: ReplayGameOptions): ReplayReport {
-  return replayGame(data, options)
 }
